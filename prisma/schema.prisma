@@ -1,0 +1,29 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+    previewFeatures = ["referentialIntegrity"]
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+    referentialIntegrity = "prisma"
+}
+
+model Puzzle {
+    id Int @id @default(autoincrement())
+    createdAt DateTime @default(now())
+
+    full String @db.Char(89) // "|" to separate rows, "1-9" for value
+    start String @db.Char(89) // "|" to separate rows, "1-9" for value, "." for hidden
+
+    hash String @db.Char(32) @default("") // MD5 of `full`
+
+    @@index(hash)
+}
+
+// 547321689|281976354|963845217|634758921|179432568|851169743|495683172|716294835|328517496
+// .47.21689|.819.....|.638452.7|...75.92.|.7..32...|8.......3|49....1.2|7....483.|.2.5.....
+// b53ff2210e4500f232d9758edddbfeb2
