@@ -7,10 +7,10 @@ export type Point = { row: Coord; col: Coord };
 
 export const UNKNOWN = null;
 export type Unknown = null;
-export type Digit = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+export type Known = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-type Known = Digit | Unknown;
-type Possible = Set<Digit>;
+type Value = Known | Unknown;
+type Possible = Set<Known>;
 
 type Group<T> = [T, T, T, T, T, T, T, T, T];
 type Groups<T> = [
@@ -31,32 +31,8 @@ export interface Board {
 
 interface Cell {
   point: Point;
-  known: Known;
+  value: Value;
   possible: Possible;
-}
-
-export interface Changes {
-  before: Board;
-  after: Board;
-
-  knowns: Map<Point, Known>;
-  possibles: Map<Point, Known[]>;
-}
-
-export function setKnown(board: Board, digit: Digit, point: Point) {
-  //...
-}
-
-function copyAndSetKnown(board: Board, known: Known, point: Point) {
-  const { row, col } = point;
-
-  if (board.cells[row][col].known !== known) {
-    const after = { ...board };
-
-    after.cells = [...after.cells];
-    after.cells[row] = [...after.cells[row]];
-    after.cells[row][col] = { ...after.cells[row][col], known };
-  }
 }
 
 class ModifiableBoard {
@@ -75,30 +51,30 @@ class ModifiableBoard {
     return this.board.cells[row][col];
   }
 
-  getKnown(point: Point): Known {
-    return this.getCell(point).known;
+  getValue(point: Point): Value {
+    return this.getCell(point).value;
   }
 
-  setKnown(point: Point, known: Known): boolean {
-    const previous = this.getKnown(point);
-    if (previous === known) {
+  setValue(point: Point, value: Value): boolean {
+    const previous = this.getValue(point);
+    if (previous === value) {
       return false;
     }
 
     this.unlockCell(point);
     this.board.cells[point.row][point.col] = {
       ...this.board.cells[point.row][point.col],
-      known,
+      value,
       possible:
-        known === UNKNOWN ? this.getAllActuallyPossible(point) : new Set(),
+        value === UNKNOWN ? this.getAllActuallyPossible(point) : new Set(),
     };
 
     const { row, col } = point;
     const positions = touchedCellsByRowCol[row]![col]!;
     const changes: Point[] = [];
-    if (known !== UNKNOWN) {
+    if (value !== UNKNOWN) {
       positions.forEach((point) => {
-        if (this.removePossible(point, known)) {
+        if (this.removePossible(point, value)) {
           changes.push(point);
         }
       });
@@ -113,7 +89,7 @@ class ModifiableBoard {
           changes.push(point);
         }
       });
-      console.log("set", point, known);
+      console.log("set", point, value);
       console.dir(changes);
     } else {
       throw new Error(`Invalid known ${previous}`);
@@ -122,13 +98,13 @@ class ModifiableBoard {
     return true;
   }
 
-  isPossible(point: Point, digit: Digit) {
-    return this.getCell(point).possible.has(digit);
+  isPossible(point: Point, known: Known) {
+    return this.getCell(point).possible.has(known);
   }
 
-  isActuallyPossible({ row, col }: Point, digit: Digit): boolean {
+  isActuallyPossible({ row, col }: Point, known: Known): boolean {
     for (const point of touchedCellsByRowCol[row]![col]!) {
-      if (this.getKnown(point) === digit) {
+      if (this.getValue(point) === known) {
         return false;
       }
     }
@@ -136,10 +112,10 @@ class ModifiableBoard {
     return true;
   }
 
-  getAllActuallyPossible({ row, col }: Point): Set<Digit> {
-    const possible = new Set(digits);
+  getAllActuallyPossible({ row, col }: Point): Set<Known> {
+    const possible = new Set(knowns);
     for (const point of touchedCellsByRowCol[row]![col]!) {
-      const known = this.getKnown(point);
+      const known = this.getValue(point);
       if (known !== UNKNOWN) {
         possible.delete(known);
       }
@@ -148,28 +124,28 @@ class ModifiableBoard {
     return possible;
   }
 
-  addPossible(point: Point, digit: Digit): boolean {
-    if (this.getCell(point).possible.has(digit)) {
+  addPossible(point: Point, known: Known): boolean {
+    if (this.getCell(point).possible.has(known)) {
       return false;
     }
 
     this.unlockCell(point);
     const cell = this.getCell(point);
     cell.possible = new Set(cell.possible);
-    cell.possible.add(digit);
+    cell.possible.add(known);
 
     return true;
   }
 
-  removePossible(point: Point, digit: Digit): boolean {
-    if (!this.getCell(point).possible.has(digit)) {
+  removePossible(point: Point, known: Known): boolean {
+    if (!this.getCell(point).possible.has(known)) {
       return false;
     }
 
     this.unlockCell(point);
     const cell = this.getCell(point);
     cell.possible = new Set(cell.possible);
-    cell.possible.delete(digit);
+    cell.possible.delete(known);
 
     return true;
   }
@@ -211,12 +187,12 @@ class ModifiableBoard {
   }
 
   printKnowns() {
-    indexes.forEach((row) =>
+    coords.forEach((row) =>
       console.log(
         row + 1,
-        indexes
+        coords
           .reduce((cells: string[], col) => {
-            const known = this.getCell(getPoint(row, col)).known;
+            const known = this.getCell(getPoint(row, col)).value;
             return [...cells, known === UNKNOWN ? "." : known.toString()];
           }, [])
           .join("")
@@ -225,10 +201,10 @@ class ModifiableBoard {
   }
 
   printPossibleCounts() {
-    indexes.forEach((row) =>
+    coords.forEach((row) =>
       console.log(
         row + 1,
-        indexes
+        coords
           .reduce((cells: string[], col) => {
             const count = this.getCell(getPoint(row, col)).possible.size;
             return [...cells, count ? count.toString() : "."];
@@ -238,16 +214,14 @@ class ModifiableBoard {
     );
   }
 
-  printPossibles(digit: Digit) {
-    indexes.forEach((row) =>
+  printPossibles(known: Known) {
+    coords.forEach((row) =>
       console.log(
         row + 1,
-        indexes
+        coords
           .reduce((cells: string[], col) => {
-            const possible = this.getCell(getPoint(row, col)).possible.has(
-              digit
-            );
-            return [...cells, possible ? digit.toString() : "."];
+            const possible = this.isPossible(getPoint(row, col), known);
+            return [...cells, possible ? known.toString() : "."];
           }, [])
           .join("")
       )
@@ -259,8 +233,8 @@ function emptyBoard(): Board {
   return {
     cells: everyCell<Cell>((point) => ({
       point,
-      known: UNKNOWN,
-      possible: new Set(digits),
+      value: UNKNOWN,
+      possible: new Set(knowns),
     })) as Groups<Cell>,
   };
 }
@@ -288,7 +262,7 @@ function uniqueCells(cells: Point[]): Point[] {
 }
 
 function rowCells({ row, col }: Point, include = false): Point[] {
-  return indexes.reduce(
+  return coords.reduce(
     (cells: Point[], c: Coord) =>
       include || c !== col ? [...cells, { row, col: c }] : cells,
     []
@@ -296,7 +270,7 @@ function rowCells({ row, col }: Point, include = false): Point[] {
 }
 
 function colCells({ row, col }: Point, include = false): Point[] {
-  return indexes.reduce(
+  return coords.reduce(
     (cells: Point[], r: Coord) =>
       include || r !== row ? [...cells, { row: r, col }] : cells,
     []
@@ -325,10 +299,10 @@ function touchedCells(point: Point, include = false): Point[] {
 }
 
 function everyCell<T>(factory: (point: Point) => T): T[][] {
-  return indexes.reduce(
+  return coords.reduce(
     (itemRows: T[][], row: Coord) => [
       ...itemRows,
-      indexes.reduce(
+      coords.reduce(
         (items: T[], col: Coord) => [...items, factory(getPoint(row, col))],
         []
       ),
@@ -352,8 +326,15 @@ function delta({ row, col }: Point, addRow: number, addCol: number): Point {
   return getPoint(coord(row + addRow, "row"), coord(col + addCol, "col"));
 }
 
-const digits: Digit[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-const indexes: Coord[] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+function known(value: number): Known {
+  if (value < 1 || 9 < value) {
+    throw new Error(`Invalid cell value (${value})`);
+  }
+  return value as Known;
+}
+
+const knowns: Known[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+const coords: Coord[] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 const topLeftCellsByBlock = [
   getPoint(0, 0),
@@ -399,9 +380,9 @@ const touchedCellsByRowCol = everyCell((p) => touchedCells(p));
 // console.dir(blockCells(cell(4, 3)));
 
 const b = new ModifiableBoard(emptyBoard());
-b.setKnown(getPoint(1, 6), 4);
-b.setKnown(getPoint(2, 3), 5);
-b.setKnown(getPoint(5, 7), 6);
+b.setValue(getPoint(1, 6), 4);
+b.setValue(getPoint(2, 3), 5);
+b.setValue(getPoint(5, 7), 6);
 b.printKnowns();
 b.printPossibles(4);
 b.printPossibles(5);
