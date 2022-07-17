@@ -21,11 +21,13 @@ export const puzzleRouter = createRouter()
       return { puzzle };
     },
   })
+
   .query("getAll", {
     async resolve({ ctx }) {
-      return await ctx.prisma.puzzle.findMany();
+      return { puzzles: await ctx.prisma.puzzle.findMany() };
     },
   })
+
   .query("get", {
     input: z.object({
       id: z.number().min(1).nullish(),
