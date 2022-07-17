@@ -6,7 +6,7 @@ import SmallDotPuzzle from "../components/SmallDotPuzzle";
 import { trpc } from "../utils/trpc";
 
 const Home: NextPage = () => {
-  const puzzles = trpc.useQuery(["puzzle.getAll"]);
+  const query = trpc.useQuery(["puzzle.getAll"]);
 
   return (
     <>
@@ -23,12 +23,12 @@ const Home: NextPage = () => {
         <h1 className="font-extrabold text-center text-7xl">Sudoku Puzzles</h1>
 
         <main className="mt-5">
-          {puzzles.data ? (
+          {query.data ? (
             <ul
               role="list"
               className="border rounded-lg border-slate-500 p-6 divide-y divide-slate-200"
             >
-              {puzzles.data.map((puzzle) => (
+              {query.data.puzzles.map((puzzle) => (
                 <li
                   key={puzzle.hash}
                   className="flex items-center py-4 first:pt-0 last:pb-0"
