@@ -7,6 +7,9 @@
  */
 export type Coord = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
+/**
+ * All valid coordinate values for iterating and generating other constructs.
+ */
 const coords: Coord[] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 /**
@@ -24,22 +27,22 @@ function coord(value: number, type: string): Coord {
 /**
  * Identifies a single cell on the board.
  */
-export type Point = { x: Coord; y: Coord; b: Coord; k: string };
+export type Point = { c: Coord; r: Coord; b: Coord; k: string };
 
 /**
  * All points indexed by their coordinates, row then column.
  */
 const pointsByRowCol: Point[][] = coords.reduce(
-  (itemRows: Point[][], y: Coord) => [
+  (itemRows: Point[][], r: Coord) => [
     ...itemRows,
     coords.reduce(
-      (items: Point[], x: Coord) => [
+      (items: Point[], c: Coord) => [
         ...items,
         {
-          x,
-          y,
-          b: coord(3 * Math.floor(y / 3) + Math.floor(x / 3), "b"),
-          k: [x, y].join(","),
+          r,
+          c,
+          b: coord(3 * Math.floor(r / 3) + Math.floor(c / 3), "b"),
+          k: [c, r].join(","),
         },
       ],
       []
@@ -49,24 +52,10 @@ const pointsByRowCol: Point[][] = coords.reduce(
 );
 
 /**
- * All points from left-to-right, top-to-bottom.
- */
-const points: Point[] = coords.reduce(
-  (points: Point[], y: Coord) => [
-    ...points,
-    ...coords.reduce(
-      (points: Point[], x: Coord) => [...points, getPoint(x, y)],
-      []
-    ),
-  ],
-  []
-);
-
-/**
  * Returns the unique point instance for the given coordinates.
  */
-function getPoint(x: Coord, y: Coord): Point {
-  return pointsByRowCol[y]![x]!;
+function getPoint(r: Coord, c: Coord): Point {
+  return pointsByRowCol[r]![c]!;
 }
 
 /**
@@ -74,33 +63,15 @@ function getPoint(x: Coord, y: Coord): Point {
  *
  * @throws {Error} If the new coordinates are outside the board
  */
-function delta({ x, y }: Point, dx: number, dy: number): Point {
-  return getPoint(coord(x + dx, "x"), coord(y + dy, "y"));
+function delta({ r, c }: Point, dc: number, dr: number): Point {
+  return getPoint(coord(r + dr, "r"), coord(c + dc, "c"));
 }
 
 /**
  * Returns a new list of points without any duplicates.
  */
 function uniquePoints(points: Point[]): Point[] {
-  const seen = [
-    [false, false, false, false, false, false, false, false, false],
-    [false, false, false, false, false, false, false, false, false],
-    [false, false, false, false, false, false, false, false, false],
-    [false, false, false, false, false, false, false, false, false],
-    [false, false, false, false, false, false, false, false, false],
-    [false, false, false, false, false, false, false, false, false],
-    [false, false, false, false, false, false, false, false, false],
-    [false, false, false, false, false, false, false, false, false],
-    [false, false, false, false, false, false, false, false, false],
-    [false, false, false, false, false, false, false, false, false],
-  ];
-  return points.filter(({ x, y }) => {
-    if (seen[y]![x]!) {
-      return false;
-    }
-    seen[y]![x] = true;
-    return true;
-  });
+  return Array.from(new Set<Point>(points));
 }
 
 enum Grouping {
@@ -119,7 +90,7 @@ abstract class Group {
   topLeft: Point;
   points: Point[];
 
-  constructor(grouping: Grouping, coord: Coord, points: Point[]) {
+  protected constructor(grouping: Grouping, coord: Coord, points: Point[]) {
     this.grouping = grouping;
     this.coord = coord;
     this.topLeft = points[0]!;
@@ -128,12 +99,12 @@ abstract class Group {
 }
 
 class Row extends Group {
-  constructor(y: Coord) {
+  constructor(r: Coord) {
     super(
       Grouping.ROW,
-      y,
+      r,
       coords.reduce(
-        (points: Point[], x: Coord) => [...points, getPoint(x, y)],
+        (points: Point[], c: Coord) => [...points, getPoint(r, c)],
         []
       )
     );
@@ -141,12 +112,12 @@ class Row extends Group {
 }
 
 class Column extends Group {
-  constructor(x: Coord) {
+  constructor(c: Coord) {
     super(
       Grouping.COLUMN,
-      x,
+      c,
       coords.reduce(
-        (points: Point[], y: Coord) => [...points, getPoint(x, y)],
+        (points: Point[], r: Coord) => [...points, getPoint(r, c)],
         []
       )
     );
@@ -156,14 +127,14 @@ class Column extends Group {
 class Block extends Group {
   constructor(b: Coord) {
     const topLeft = getPoint(
-      coord(3 * (b % 3), "x"),
-      coord(3 * Math.floor(b / 3), "y")
+      coord(3 * Math.floor(b / 3), "r"),
+      coord(3 * (b % 3), "c")
     );
     super(
       Grouping.BLOCK,
       b,
       blockDeltas.reduce(
-        (points: Point[], [dx, dy]) => [...points, delta(topLeft, dx, dy)],
+        (points: Point[], [dc, dr]) => [...points, delta(topLeft, dc, dr)],
         []
       )
     );
@@ -171,7 +142,7 @@ class Block extends Group {
 }
 
 /**
- * Delta values as [dx, dy] from the top-left cell in a block that identify its cells.
+ * Delta values as [dc, dr] from the top-left cell in a block that identify its cells.
  * The resulting cells will be left-to-right, top-to-bottom.
  */
 const blockDeltas: [number, number][] = [
@@ -220,17 +191,16 @@ class Board {
   cells: Map<Point, Cell>;
 
   constructor() {
-    this.rows = coords.map((y) => new Row(y));
-    this.columns = coords.map((x) => new Column(x));
+    this.rows = coords.map((r) => new Row(r));
+    this.columns = coords.map((c) => new Column(c));
     this.blocks = coords.map((b) => new Block(b));
-    this.cells = points.reduce(
-      (map, p) =>
-        map.set(
-          p,
-          new Cell(p, this.rows[p.y]!, this.columns[p.x]!, this.blocks[p.b]!)
-        ),
-      new Map<Point, Cell>()
-    );
+    this.cells = new Map<Point, Cell>();
+    for (const r of coords) {
+      for (const c of coords) {
+        const point = getPoint(r, c)
+        this.cells.set(point, new Cell(point, this.rows[r]!, this.columns[c]!, this.blocks[point.b]!))
+      }
+    }
   }
 }
 
