@@ -2,7 +2,19 @@
  * Functions to modify a board.
  */
 
-import { board, Cell, coords, getPoint, Point, points } from "./board";
+import {
+  BOARD,
+  Cell,
+  Coord,
+  ALL_COORDS,
+  getPoint,
+  Grouping,
+  ALL_GROUPINGS,
+  Point,
+  ALL_POINTS,
+} from "./board";
+
+// FIXME Move known/unknown stuff to board.ts
 
 /**
  * Identifies a value to track known and possible values.
@@ -12,7 +24,7 @@ export type Known = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 /**
  * All valid cell values for iterating.
  */
-const knowns: Known[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+export const ALL_KNOWNS: Known[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 /**
  * Returns the value as the correct type if it is valid.
@@ -43,10 +55,34 @@ type Possible = Set<Known>;
  */
 type Puzzle = {
   cells: Map<Point, PuzzleCell>;
+  groups: Map<Grouping, Map<Coord, Map<Known, Set<Point>>>>;
 };
 
-function clonePuzzle({ cells }: Puzzle) {
-  return { cells: new Map(cells) };
+function clonePuzzle({ cells, groups }: Puzzle) {
+  return {
+    cells: new Map(cells),
+    groups: cloneGroupPossibles(groups),
+  };
+}
+
+function cloneGroupPossibles(
+  groups: Map<Grouping, Map<Coord, Map<Known, Set<Point>>>>
+): Map<Grouping, Map<Coord, Map<Known, Set<Point>>>> {
+  const clone = new Map<Grouping, Map<Coord, Map<Known, Set<Point>>>>();
+
+  for (const [grouping, group] of groups) {
+    const groupClone = new Map<Coord, Map<Known, Set<Point>>>();
+    clone.set(grouping, groupClone);
+    for (const [c, knowns] of group) {
+      const knownsClone = new Map<Known, Set<Point>>();
+      groupClone.set(c, knownsClone);
+      for (const [k, points] of knowns) {
+        knownsClone.set(k, new Set(points));
+      }
+    }
+  }
+
+  return clone;
 }
 
 /**
@@ -69,7 +105,7 @@ function clonePuzzleCell({ cell, value, possible }: PuzzleCell) {
 /**
  * Provides copy-on-write semantics for editing a puzzle.
  */
-class EditablePuzzle {
+export class EditablePuzzle {
   puzzle: Puzzle;
 
   unlockedPuzzle = false;
@@ -103,7 +139,8 @@ class EditablePuzzle {
 
     const cell = this.unlockCell(point);
     cell.value = known;
-    cell.possible = this.getActuallyPossible(point);
+    cell.possible.forEach((k) => this.removePossible(point, k));
+    cell.possible = new Set();
 
     const changes: Point[] = [];
     cell.cell.neighbors.forEach((point) => {
@@ -111,8 +148,8 @@ class EditablePuzzle {
         changes.push(point);
       }
     });
-    console.log("set", point);
-    console.dir(changes);
+    console.log("set", point, known);
+    // console.dir(changes);
 
     return true;
   }
@@ -137,7 +174,7 @@ class EditablePuzzle {
       }
     });
     console.log("clear", point);
-    console.dir(changes);
+    // console.dir(changes);
 
     return true;
   }
@@ -157,7 +194,7 @@ class EditablePuzzle {
   }
 
   getActuallyPossible(point: Point): Set<Known> {
-    const possible = new Set(knowns);
+    const possible = new Set(ALL_KNOWNS);
     for (const p of this.getCell(point).cell.neighbors) {
       const value = this.getValue(p);
       if (value !== UNKNOWN) {
@@ -173,8 +210,8 @@ class EditablePuzzle {
       return false;
     }
 
-    this.unlockCell(point);
-    this.getCell(point).possible.add(known);
+    const cell = this.unlockCell(point);
+    cell.possible.add(known);
 
     return true;
   }
@@ -184,8 +221,37 @@ class EditablePuzzle {
       return false;
     }
 
-    this.unlockCell(point);
-    this.getCell(point).possible.delete(known);
+    const cell = this.unlockCell(point);
+    cell.possible.delete(known);
+    // if 1 left, trigger solver
+
+    this.removeGroupPossible(Grouping.ROW, point.r, point, known);
+    this.removeGroupPossible(Grouping.COLUMN, point.c, point, known);
+    this.removeGroupPossible(Grouping.BLOCK, point.b, point, known);
+
+    return true;
+  }
+
+  removeGroupPossible(
+    grouping: Grouping,
+    coord: Coord,
+    point: Point,
+    known: Known
+  ): boolean {
+    const knowns = this.puzzle.groups.get(grouping)!.get(coord);
+    if (!knowns) {
+      return false;
+    }
+    const points = knowns.get(known);
+    if (!points || !points.has(point)) {
+      return false;
+    }
+
+    points.delete(point);
+    if (!points.size) {
+      knowns.delete(known);
+    }
+    // else if 1 left, trigger solver
 
     return true;
   }
@@ -213,66 +279,93 @@ class EditablePuzzle {
   }
 
   printValues() {
-    coords.forEach((r) =>
+    ALL_COORDS.forEach((r) =>
       console.log(
         r + 1,
-        coords
-          .reduce((cells: string[], c) => {
-            const value = this.getValue(getPoint(r, c));
-            return [...cells, value === UNKNOWN ? "." : value.toString()];
-          }, [])
-          .join("")
+        ALL_COORDS.reduce((cells: string[], c) => {
+          const value = this.getValue(getPoint(r, c));
+          return [...cells, value === UNKNOWN ? "." : value.toString()];
+        }, []).join("")
       )
     );
   }
 
   printPossibleCounts() {
-    coords.forEach((r) =>
+    console.log("POSSIBLE COUNTS");
+    ALL_COORDS.forEach((r) =>
       console.log(
         r + 1,
-        coords
-          .reduce((cells: string[], c) => {
-            const count = this.getCell(getPoint(r, c)).possible.size;
-            return [...cells, count ? count.toString() : "."];
-          }, [])
-          .join("")
+        ALL_COORDS.reduce((cells: string[], c) => {
+          const count = this.getCell(getPoint(r, c)).possible.size;
+          return [...cells, count ? count.toString() : "."];
+        }, []).join("")
       )
     );
   }
 
   printPossibles(known: Known) {
-    coords.forEach((r) =>
+    console.log("POSSIBLES", known);
+    ALL_COORDS.forEach((r) =>
       console.log(
         r + 1,
-        coords
-          .reduce((cells: string[], c) => {
-            const possible = this.isPossible(getPoint(r, c), known);
-            return [...cells, possible ? known.toString() : "."];
-          }, [])
-          .join("")
+        ALL_COORDS.reduce((cells: string[], c) => {
+          const possible = this.isPossible(getPoint(r, c), known);
+          return [...cells, possible ? known.toString() : "."];
+        }, []).join("")
       )
     );
+    for (const [g, groups] of this.puzzle.groups) {
+      for (const [c, group] of groups) {
+        const points = group.get(known);
+        if (points) {
+          console.log("POSSIBLES GROUP", g, "COORD", c);
+          console.log(points);
+        }
+      }
+    }
   }
 }
 
-function emptyPuzzle(): Puzzle {
-  const cells = Array.from(board.cells.values());
+export function emptyPuzzle(): Puzzle {
+  const cells = Array.from(BOARD.cells.values());
   return {
     cells: cells.reduce(
       (map, cell) =>
         map.set(cell.point, {
           cell,
           value: UNKNOWN,
-          possible: new Set(knowns),
+          possible: new Set(ALL_KNOWNS),
         }),
       new Map<Point, PuzzleCell>()
     ),
+    groups: emptyGroupPossibles(),
   };
 }
 
-function puzzleFromString(values: string): EditablePuzzle {
+function emptyGroupPossibles(): Map<
+  Grouping,
+  Map<Coord, Map<Known, Set<Point>>>
+> {
+  const groups = new Map<Grouping, Map<Coord, Map<Known, Set<Point>>>>();
+
+  for (const g of ALL_GROUPINGS) {
+    const group = new Map<Coord, Map<Known, Set<Point>>>();
+    groups.set(g, group);
+    for (const c of ALL_COORDS) {
+      const knowns = new Map<Known, Set<Point>>();
+      group.set(c, knowns);
+      for (const k of ALL_KNOWNS) {
+        knowns.set(k, new Set(BOARD.groups[g]![c]!.points));
+      }
+    }
+  }
+
+  return groups;
+}
+
+export function puzzleFromString(values: string): EditablePuzzle {
   const puzzle = new EditablePuzzle(emptyPuzzle());
-  points.forEach((p) => {
+  ALL_POINTS.forEach((p) => {
     const value = values.charAt(10 * p.r + p.c);
     if ("1" <= value && value <= "9")
       return puzzle.setKnown(p, known(parseInt(value)));
@@ -281,21 +374,25 @@ function puzzleFromString(values: string): EditablePuzzle {
 }
 
 // const b = new EditablePuzzle(emptyPuzzle());
-// b.setValue(getPoint(6, 1), 4);
+// b.setValue(getPoint(0, 0), 1);
 // b.setValue(getPoint(3, 2), 5);
 // b.setValue(getPoint(7, 5), 6);
 // b.printValues();
-// b.printPossibles(4);
 // b.printPossibles(5);
 // b.printPossibles(6);
 // b.printPossibles(1);
 // b.printPossibleCounts();
 
-const start =
-  ".47.21689|.819.....|.638452.7|...75.92.|.7..32...|8.......3|49....1.2|7....483.|.2.5.....";
-const done =
-  "547321689|281976354|963845217|634758921|179432568|851169743|495683172|716294835|328517496";
+// const b = new EditablePuzzle(emptyPuzzle());
+// b.setValue(getPoint(0, 0), 1);
+// b.printValues();
+// b.printPossibles(1);
 
-const b = puzzleFromString(start);
-b.printValues();
-b.printPossibleCounts();
+// const start =
+//   ".47.21689|.819.....|.638452.7|...75.92.|.7..32...|8.......3|49....1.2|7....483.|.2.5.....";
+// const done =
+//   "547321689|281976354|963845217|634758921|179432568|851169743|495683172|716294835|328517496";
+//
+// const b = puzzleFromString(start);
+// b.printValues();
+// b.printPossibleCounts();
