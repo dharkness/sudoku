@@ -10,14 +10,14 @@ export type Coord = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 /**
  * All valid coordinate values for iterating and generating other constructs.
  */
-const coords: Coord[] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+export const coords: Coord[] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 /**
  * Returns the coordinate as the correct type if it is valid.
  *
  * @throws {Error} If the coordinate is outside the board
  */
-function coord(value: number, type: string): Coord {
+export function coord(value: number, type: string): Coord {
   if (value < 0 || 8 < value) {
     throw new Error(`Invalid ${type} (${value})`);
   }
@@ -33,10 +33,10 @@ export type Point = { c: Coord; r: Coord; b: Coord; k: string };
  * All points indexed by their coordinates, row then column.
  */
 const pointsByRowCol: Point[][] = coords.reduce(
-  (itemRows: Point[][], r: Coord) => [
+  (itemRows, r) => [
     ...itemRows,
     coords.reduce(
-      (items: Point[], c: Coord) => [
+      (items, c) => [
         ...items,
         {
           r,
@@ -45,16 +45,24 @@ const pointsByRowCol: Point[][] = coords.reduce(
           k: [c, r].join(","),
         },
       ],
-      []
+      [] as Point[]
     ),
   ],
-  []
+  [] as Point[][]
+);
+
+export const points: Point[] = coords.reduce(
+  (points, r) => [
+    ...points,
+    ...coords.reduce((points, c) => [...points, getPoint(r, c)], [] as Point[]),
+  ],
+  [] as Point[]
 );
 
 /**
  * Returns the unique point instance for the given coordinates.
  */
-function getPoint(r: Coord, c: Coord): Point {
+export function getPoint(r: Coord, c: Coord): Point {
   return pointsByRowCol[r]![c]!;
 }
 
@@ -160,7 +168,7 @@ const blockDeltas: [number, number][] = [
 /**
  * Identifies a single unique cell and every other structure it touches.
  */
-class Cell {
+export class Cell {
   point: Point;
   row: Row;
   column: Column;
@@ -197,8 +205,16 @@ class Board {
     this.cells = new Map<Point, Cell>();
     for (const r of coords) {
       for (const c of coords) {
-        const point = getPoint(r, c)
-        this.cells.set(point, new Cell(point, this.rows[r]!, this.columns[c]!, this.blocks[point.b]!))
+        const point = getPoint(r, c);
+        this.cells.set(
+          point,
+          new Cell(
+            point,
+            this.rows[r]!,
+            this.columns[c]!,
+            this.blocks[point.b]!
+          )
+        );
       }
     }
   }
