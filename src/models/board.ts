@@ -1,245 +1,87 @@
 /*
- * Functions to modify a board.
+ * Defines the structure of a standard Sudoku board.
  */
 
+/**
+ * Identifies a row, column, or block (numbered left-to-right, top-to-bottom)
+ */
 export type Coord = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-export type Point = { row: Coord; col: Coord };
 
-export const UNKNOWN = null;
-export type Unknown = null;
-export type Known = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+const coords: Coord[] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
-type Value = Known | Unknown;
-type Possible = Set<Known>;
-
-type Group<T> = [T, T, T, T, T, T, T, T, T];
-type Groups<T> = [
-  Group<T>,
-  Group<T>,
-  Group<T>,
-  Group<T>,
-  Group<T>,
-  Group<T>,
-  Group<T>,
-  Group<T>,
-  Group<T>
-];
-
-export interface Board {
-  cells: Groups<Cell>;
+/**
+ * Returns the coordinate as the correct type if it is valid.
+ *
+ * @throws {Error} If the coordinate is outside the board
+ */
+function coord(value: number, type: string): Coord {
+  if (value < 0 || 8 < value) {
+    throw new Error(`Invalid ${type} (${value})`);
+  }
+  return value as Coord;
 }
 
-interface Cell {
-  point: Point;
-  value: Value;
-  possible: Possible;
+/**
+ * Identifies a single cell on the board.
+ */
+export type Point = { x: Coord; y: Coord; b: Coord; k: string };
+
+/**
+ * All points indexed by their coordinates, row then column.
+ */
+const pointsByRowCol: Point[][] = coords.reduce(
+  (itemRows: Point[][], y: Coord) => [
+    ...itemRows,
+    coords.reduce(
+      (items: Point[], x: Coord) => [
+        ...items,
+        {
+          x,
+          y,
+          b: coord(3 * Math.floor(y / 3) + Math.floor(x / 3), "b"),
+          k: [x, y].join(","),
+        },
+      ],
+      []
+    ),
+  ],
+  []
+);
+
+/**
+ * All points from left-to-right, top-to-bottom.
+ */
+const points: Point[] = coords.reduce(
+  (points: Point[], y: Coord) => [
+    ...points,
+    ...coords.reduce(
+      (points: Point[], x: Coord) => [...points, getPoint(x, y)],
+      []
+    ),
+  ],
+  []
+);
+
+/**
+ * Returns the unique point instance for the given coordinates.
+ */
+function getPoint(x: Coord, y: Coord): Point {
+  return pointsByRowCol[y]![x]!;
 }
 
-class ModifiableBoard {
-  board: Board;
-
-  unlockedBoard = false;
-  unlockedKnown = false;
-  unlockedRows = new Set<Coord>();
-  unlockedCells = new Map<Coord, Set<Coord>>();
-
-  constructor(board: Board) {
-    this.board = board;
-  }
-
-  getCell({ row, col }: Point): Cell {
-    return this.board.cells[row][col];
-  }
-
-  getValue(point: Point): Value {
-    return this.getCell(point).value;
-  }
-
-  setValue(point: Point, value: Value): boolean {
-    const previous = this.getValue(point);
-    if (previous === value) {
-      return false;
-    }
-
-    this.unlockCell(point);
-    this.board.cells[point.row][point.col] = {
-      ...this.board.cells[point.row][point.col],
-      value,
-      possible:
-        value === UNKNOWN ? this.getAllActuallyPossible(point) : new Set(),
-    };
-
-    const { row, col } = point;
-    const positions = touchedCellsByRowCol[row]![col]!;
-    const changes: Point[] = [];
-    if (value !== UNKNOWN) {
-      positions.forEach((point) => {
-        if (this.removePossible(point, value)) {
-          changes.push(point);
-        }
-      });
-      console.log("clear", point, previous);
-      console.dir(changes);
-    } else if (previous !== UNKNOWN) {
-      positions.forEach((point) => {
-        if (
-          this.isActuallyPossible(point, previous) &&
-          this.addPossible(point, previous)
-        ) {
-          changes.push(point);
-        }
-      });
-      console.log("set", point, value);
-      console.dir(changes);
-    } else {
-      throw new Error(`Invalid known ${previous}`);
-    }
-
-    return true;
-  }
-
-  isPossible(point: Point, known: Known) {
-    return this.getCell(point).possible.has(known);
-  }
-
-  isActuallyPossible({ row, col }: Point, known: Known): boolean {
-    for (const point of touchedCellsByRowCol[row]![col]!) {
-      if (this.getValue(point) === known) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  getAllActuallyPossible({ row, col }: Point): Set<Known> {
-    const possible = new Set(knowns);
-    for (const point of touchedCellsByRowCol[row]![col]!) {
-      const known = this.getValue(point);
-      if (known !== UNKNOWN) {
-        possible.delete(known);
-      }
-    }
-
-    return possible;
-  }
-
-  addPossible(point: Point, known: Known): boolean {
-    if (this.getCell(point).possible.has(known)) {
-      return false;
-    }
-
-    this.unlockCell(point);
-    const cell = this.getCell(point);
-    cell.possible = new Set(cell.possible);
-    cell.possible.add(known);
-
-    return true;
-  }
-
-  removePossible(point: Point, known: Known): boolean {
-    if (!this.getCell(point).possible.has(known)) {
-      return false;
-    }
-
-    this.unlockCell(point);
-    const cell = this.getCell(point);
-    cell.possible = new Set(cell.possible);
-    cell.possible.delete(known);
-
-    return true;
-  }
-
-  unlockBoard() {
-    if (!this.unlockedBoard) {
-      this.board = { ...this.board };
-      this.unlockedBoard = true;
-    }
-  }
-
-  unlockCells() {
-    if (!this.unlockedKnown) {
-      this.unlockBoard();
-      this.board.cells = [...this.board.cells];
-      this.unlockedKnown = true;
-    }
-  }
-
-  unlockRow(row: Coord) {
-    if (!this.unlockedRows.has(row)) {
-      this.unlockCells();
-      this.board.cells[row] = [...this.board.cells[row]];
-      this.unlockedRows.add(row);
-    }
-  }
-
-  unlockCell({ row, col }: Point) {
-    const cells = this.unlockedCells.get(row);
-    if (!cells) {
-      this.unlockRow(row);
-      this.unlockedCells.set(row, new Set([col]));
-    } else if (!cells.has(col)) {
-      cells.add(col);
-    } else {
-      return;
-    }
-    this.board.cells[row][col] = { ...this.board.cells[row][col] };
-  }
-
-  printKnowns() {
-    coords.forEach((row) =>
-      console.log(
-        row + 1,
-        coords
-          .reduce((cells: string[], col) => {
-            const known = this.getCell(getPoint(row, col)).value;
-            return [...cells, known === UNKNOWN ? "." : known.toString()];
-          }, [])
-          .join("")
-      )
-    );
-  }
-
-  printPossibleCounts() {
-    coords.forEach((row) =>
-      console.log(
-        row + 1,
-        coords
-          .reduce((cells: string[], col) => {
-            const count = this.getCell(getPoint(row, col)).possible.size;
-            return [...cells, count ? count.toString() : "."];
-          }, [])
-          .join("")
-      )
-    );
-  }
-
-  printPossibles(known: Known) {
-    coords.forEach((row) =>
-      console.log(
-        row + 1,
-        coords
-          .reduce((cells: string[], col) => {
-            const possible = this.isPossible(getPoint(row, col), known);
-            return [...cells, possible ? known.toString() : "."];
-          }, [])
-          .join("")
-      )
-    );
-  }
+/**
+ * Returns a point relative to another.
+ *
+ * @throws {Error} If the new coordinates are outside the board
+ */
+function delta({ x, y }: Point, dx: number, dy: number): Point {
+  return getPoint(coord(x + dx, "x"), coord(y + dy, "y"));
 }
 
-function emptyBoard(): Board {
-  return {
-    cells: everyCell<Cell>((point) => ({
-      point,
-      value: UNKNOWN,
-      possible: new Set(knowns),
-    })) as Groups<Cell>,
-  };
-}
-
-function uniqueCells(cells: Point[]): Point[] {
+/**
+ * Returns a new list of points without any duplicates.
+ */
+function uniquePoints(points: Point[]): Point[] {
   const seen = [
     [false, false, false, false, false, false, false, false, false],
     [false, false, false, false, false, false, false, false, false],
@@ -252,140 +94,144 @@ function uniqueCells(cells: Point[]): Point[] {
     [false, false, false, false, false, false, false, false, false],
     [false, false, false, false, false, false, false, false, false],
   ];
-  return cells.filter(({ row, col }) => {
-    if (seen[row]![col]!) {
+  return points.filter(({ x, y }) => {
+    if (seen[y]![x]!) {
       return false;
     }
-    seen[row]![col] = true;
+    seen[y]![x] = true;
     return true;
   });
 }
 
-function rowCells({ row, col }: Point, include = false): Point[] {
-  return coords.reduce(
-    (cells: Point[], c: Coord) =>
-      include || c !== col ? [...cells, { row, col: c }] : cells,
-    []
-  );
+enum Grouping {
+  ROW,
+  COLUMN,
+  BLOCK,
 }
 
-function colCells({ row, col }: Point, include = false): Point[] {
-  return coords.reduce(
-    (cells: Point[], r: Coord) =>
-      include || r !== row ? [...cells, { row: r, col }] : cells,
-    []
-  );
-}
+/**
+ * Holds the points that make up one of the three group types.
+ */
+abstract class Group {
+  grouping: Grouping;
+  coord: Coord;
 
-function blockCells({ row, col }: Point, include = false): Point[] {
-  const block = (3 * Math.floor(row / 3) + Math.floor(col / 3)) as Coord;
-  let cells = cellsByBlock[block];
-  if (!cells) {
-    throw new Error(`Invalid cell (${row}, ${col})`);
+  topLeft: Point;
+  points: Point[];
+
+  constructor(grouping: Grouping, coord: Coord, points: Point[]) {
+    this.grouping = grouping;
+    this.coord = coord;
+    this.topLeft = points[0]!;
+    this.points = points;
   }
-
-  return include
-    ? cells
-    : cells.filter(({ row: r, col: c }) => r != row || c != col);
 }
 
-function touchedCells(point: Point, include = false): Point[] {
-  const touched = uniqueCells([
-    ...rowCells(point),
-    ...colCells(point),
-    ...blockCells(point),
-  ]);
-  return include ? [point, ...touched] : touched;
-}
-
-function everyCell<T>(factory: (point: Point) => T): T[][] {
-  return coords.reduce(
-    (itemRows: T[][], row: Coord) => [
-      ...itemRows,
+class Row extends Group {
+  constructor(y: Coord) {
+    super(
+      Grouping.ROW,
+      y,
       coords.reduce(
-        (items: T[], col: Coord) => [...items, factory(getPoint(row, col))],
+        (points: Point[], x: Coord) => [...points, getPoint(x, y)],
         []
-      ),
-    ],
-    []
-  );
-}
-
-function coord(value: number, type: string): Coord {
-  if (value < 0 || 8 < value) {
-    throw new Error(`Invalid ${type} (${value})`);
+      )
+    );
   }
-  return value as Coord;
 }
 
-function getPoint(row: Coord, col: Coord): Point {
-  return { row, col };
-}
-
-function delta({ row, col }: Point, addRow: number, addCol: number): Point {
-  return getPoint(coord(row + addRow, "row"), coord(col + addCol, "col"));
-}
-
-function known(value: number): Known {
-  if (value < 1 || 9 < value) {
-    throw new Error(`Invalid cell value (${value})`);
+class Column extends Group {
+  constructor(x: Coord) {
+    super(
+      Grouping.COLUMN,
+      x,
+      coords.reduce(
+        (points: Point[], y: Coord) => [...points, getPoint(x, y)],
+        []
+      )
+    );
   }
-  return value as Known;
 }
 
-const knowns: Known[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-const coords: Coord[] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+class Block extends Group {
+  constructor(b: Coord) {
+    const topLeft = getPoint(
+      coord(3 * (b % 3), "x"),
+      coord(3 * Math.floor(b / 3), "y")
+    );
+    super(
+      Grouping.BLOCK,
+      b,
+      blockDeltas.reduce(
+        (points: Point[], [dx, dy]) => [...points, delta(topLeft, dx, dy)],
+        []
+      )
+    );
+  }
+}
 
-const topLeftCellsByBlock = [
-  getPoint(0, 0),
-  getPoint(0, 3),
-  getPoint(0, 6),
-  getPoint(3, 0),
-  getPoint(3, 3),
-  getPoint(3, 6),
-  getPoint(6, 0),
-  getPoint(6, 3),
-  getPoint(6, 6),
+/**
+ * Delta values as [dx, dy] from the top-left cell in a block that identify its cells.
+ * The resulting cells will be left-to-right, top-to-bottom.
+ */
+const blockDeltas: [number, number][] = [
+  [0, 0],
+  [1, 0],
+  [2, 0],
+  [0, 1],
+  [1, 1],
+  [2, 1],
+  [0, 2],
+  [1, 2],
+  [2, 2],
 ];
-const cellsByBlock = topLeftCellsByBlock.reduce(
-  (blocks: Point[][], topLeft) => [
-    ...blocks,
-    (
-      [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [2, 0],
-        [2, 1],
-        [2, 2],
-      ] as [number, number][]
-    ).reduce(
-      (cells: Point[], [addRow, addCol]) => [
-        ...cells,
-        delta(topLeft, addRow, addCol),
-      ],
-      []
-    ),
-  ],
-  []
-);
-const pointsByCoords = everyCell((p) => p);
-const touchedCellsByRowCol = everyCell((p) => touchedCells(p));
 
-// console.dir(rowCells(cell(4, 3)));
-// console.dir(colCells(cell(4, 3)));
-// console.dir(blockCells(cell(4, 3)));
+/**
+ * Identifies a single unique cell and every other structure it touches.
+ */
+class Cell {
+  point: Point;
+  row: Row;
+  column: Column;
+  block: Block;
+  neighbors: Point[];
 
-const b = new ModifiableBoard(emptyBoard());
-b.setValue(getPoint(1, 6), 4);
-b.setValue(getPoint(2, 3), 5);
-b.setValue(getPoint(5, 7), 6);
-b.printKnowns();
-b.printPossibles(4);
-b.printPossibles(5);
-b.printPossibles(6);
-b.printPossibles(1);
-b.printPossibleCounts();
+  constructor(point: Point, row: Row, column: Column, block: Block) {
+    this.point = point;
+    this.row = row;
+    this.column = column;
+    this.block = block;
+    this.neighbors = uniquePoints([
+      point,
+      ...this.row.points,
+      ...this.column.points,
+      ...this.block.points,
+    ]).slice(1);
+  }
+}
+
+/**
+ * Provides access to the cells and related structures that make up a standard Sudoku board.
+ */
+class Board {
+  rows: Row[];
+  columns: Column[];
+  blocks: Block[];
+  cells: Map<Point, Cell>;
+
+  constructor() {
+    this.rows = coords.map((y) => new Row(y));
+    this.columns = coords.map((x) => new Column(x));
+    this.blocks = coords.map((b) => new Block(b));
+    this.cells = points.reduce(
+      (map, p) =>
+        map.set(
+          p,
+          new Cell(p, this.rows[p.y]!, this.columns[p.x]!, this.blocks[p.b]!)
+        ),
+      new Map<Point, Cell>()
+    );
+  }
+}
+
+export const board = new Board();
