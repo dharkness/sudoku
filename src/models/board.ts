@@ -10,7 +10,7 @@ export type Coord = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 /**
  * All valid coordinate values for iterating and generating other constructs.
  */
-export const coords: Coord[] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+export const ALL_COORDS: Coord[] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 /**
  * Returns the coordinate as the correct type if it is valid.
@@ -32,10 +32,10 @@ export type Point = { c: Coord; r: Coord; b: Coord; k: string };
 /**
  * All points indexed by their coordinates, row then column.
  */
-const pointsByRowCol: Point[][] = coords.reduce(
+const pointsByRowCol: Point[][] = ALL_COORDS.reduce(
   (itemRows, r) => [
     ...itemRows,
-    coords.reduce(
+    ALL_COORDS.reduce(
       (items, c) => [
         ...items,
         {
@@ -51,10 +51,13 @@ const pointsByRowCol: Point[][] = coords.reduce(
   [] as Point[][]
 );
 
-export const points: Point[] = coords.reduce(
+export const ALL_POINTS: Point[] = ALL_COORDS.reduce(
   (points, r) => [
     ...points,
-    ...coords.reduce((points, c) => [...points, getPoint(r, c)], [] as Point[]),
+    ...ALL_COORDS.reduce(
+      (points, c) => [...points, getPoint(r, c)],
+      [] as Point[]
+    ),
   ],
   [] as Point[]
 );
@@ -82,11 +85,17 @@ function uniquePoints(points: Point[]): Point[] {
   return Array.from(new Set<Point>(points));
 }
 
-enum Grouping {
+export enum Grouping {
   ROW,
   COLUMN,
   BLOCK,
 }
+
+export const ALL_GROUPINGS: Grouping[] = [
+  Grouping.ROW,
+  Grouping.COLUMN,
+  Grouping.BLOCK,
+];
 
 /**
  * Holds the points that make up one of the three group types.
@@ -111,7 +120,7 @@ class Row extends Group {
     super(
       Grouping.ROW,
       r,
-      coords.reduce(
+      ALL_COORDS.reduce(
         (points: Point[], c: Coord) => [...points, getPoint(r, c)],
         []
       )
@@ -124,7 +133,7 @@ class Column extends Group {
     super(
       Grouping.COLUMN,
       c,
-      coords.reduce(
+      ALL_COORDS.reduce(
         (points: Point[], r: Coord) => [...points, getPoint(r, c)],
         []
       )
@@ -196,15 +205,19 @@ class Board {
   rows: Row[];
   columns: Column[];
   blocks: Block[];
+
+  groups: Group[][];
   cells: Map<Point, Cell>;
 
   constructor() {
-    this.rows = coords.map((r) => new Row(r));
-    this.columns = coords.map((c) => new Column(c));
-    this.blocks = coords.map((b) => new Block(b));
+    this.rows = ALL_COORDS.map((r) => new Row(r));
+    this.columns = ALL_COORDS.map((c) => new Column(c));
+    this.blocks = ALL_COORDS.map((b) => new Block(b));
+
+    this.groups = [this.rows, this.columns, this.blocks];
     this.cells = new Map<Point, Cell>();
-    for (const r of coords) {
-      for (const c of coords) {
+    for (const r of ALL_COORDS) {
+      for (const c of ALL_COORDS) {
         const point = getPoint(r, c);
         this.cells.set(
           point,
@@ -220,4 +233,4 @@ class Board {
   }
 }
 
-export const board = new Board();
+export const BOARD = new Board();
