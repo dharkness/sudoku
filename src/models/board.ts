@@ -27,7 +27,13 @@ export function coord(value: number, type: string): Coord {
 /**
  * Identifies a single cell on the board.
  */
-export type Point = { c: Coord; r: Coord; b: Coord; k: string };
+export type Point = {
+  c: Coord;
+  r: Coord;
+  b: Coord;
+  i: [Coord, Coord, Coord];
+  k: string;
+};
 
 /**
  * All points indexed by their coordinates, row then column.
@@ -35,18 +41,19 @@ export type Point = { c: Coord; r: Coord; b: Coord; k: string };
 const pointsByRowCol: Point[][] = ALL_COORDS.reduce(
   (itemRows, r) => [
     ...itemRows,
-    ALL_COORDS.reduce(
-      (items, c) => [
+    ALL_COORDS.reduce((items, c) => {
+      const b = coord(3 * Math.floor(r / 3) + Math.floor(c / 3), "b");
+      return [
         ...items,
         {
           r,
           c,
-          b: coord(3 * Math.floor(r / 3) + Math.floor(c / 3), "b"),
-          k: [c, r].join(","),
+          b,
+          i: [c, r, coord(3 * (r % 3) + (c % 3), "bi")],
+          k: `${r + 1},${c + 1},${b + 1}`,
         },
-      ],
-      [] as Point[]
-    ),
+      ];
+    }, [] as Point[]),
   ],
   [] as Point[][]
 );
@@ -96,6 +103,20 @@ export const ALL_GROUPINGS: Grouping[] = [
   Grouping.COLUMN,
   Grouping.BLOCK,
 ];
+
+/**
+ * Returns a string containing nine slots, each showing the slot's coordinate
+ * if any point in the set matches it or a period otherwise.
+ */
+export function pointGroupCoordsToString(
+  g: Grouping,
+  points: Set<Point>
+): string {
+  const coords = new Set<Coord>(Array.from(points.values()).map((p) => p.i[g]));
+  return ALL_COORDS.map((c) => (coords.has(c) ? (c + 1).toString() : ".")).join(
+    ""
+  );
+}
 
 /**
  * Holds the points that make up one of the three group types.
