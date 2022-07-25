@@ -110,6 +110,10 @@ class Solved {
     return this.solutions.size;
   }
 
+  randomized(): [Point, Known][] {
+    return shuffle([...this.solutions.entries()]);
+  }
+
   add(point: Point, known: Known): boolean {
     const current = this.solutions.get(point);
     if (known === current) {
@@ -136,14 +140,42 @@ class Solved {
   }
 }
 
+/**
+ * Returns the single value of the given set
+ *
+ * @throws {Error} If the set is empty or has more than one element
+ */
 function singleSetValue<T>(set: Set<T>): T {
-  if (set.size !== 1) {
-    throw new Error(
-      `Cannot get single value from set with ${set.size} members`
-    );
+  switch (set.size) {
+    case 0:
+      throw new Error(`Cannot get a single value from an empty set`);
+    case 1:
+      return set.values().next().value;
+    default:
+      throw new Error(
+        `Cannot get a single value from a set with ${set.size} members`
+      );
+  }
+}
+
+/**
+ * Shuffles the given array in-place and returns it for convenience.
+ */
+function shuffle<T>(array: T[]): T[] {
+  let currentIndex = array.length,
+    randomIndex;
+
+  while (currentIndex != 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex]!,
+      array[currentIndex]!,
+    ];
   }
 
-  return set.values().next().value;
+  return array;
 }
 
 /**
@@ -159,6 +191,10 @@ export class EditablePuzzle {
 
   constructor(puzzle: Puzzle) {
     this.puzzle = puzzle;
+  }
+
+  clone(): EditablePuzzle {
+    return new EditablePuzzle(this.puzzle);
   }
 
   getTotalKnown(): number {
@@ -594,6 +630,17 @@ export function puzzleFromString(values: string): EditablePuzzle {
   return puzzle;
 }
 
+export function solvedFromString(values: string): Solved {
+  const solved = new Solved();
+  for (const p of ALL_POINTS) {
+    const value = values.charAt(10 * p.r + p.c);
+    if ("1" <= value && value <= "9") {
+      solved.add(p, known(parseInt(value)));
+    }
+  }
+  return solved;
+}
+
 // const b = new EditablePuzzle(emptyPuzzle());
 // b.setValue(getPoint(0, 0), 1);
 // b.setValue(getPoint(3, 2), 5);
@@ -614,25 +661,36 @@ const start =
 const done =
   "547321689|281976354|963845217|634758921|179432568|852169743|495683172|716294835|328517496";
 
-const b = puzzleFromString(start);
-b.printValues();
-while (b.solved.size) {
-  const solved = b.solved;
-  b.solved = new Solved();
-  console.log("solving", solved.size, "of", 81 - b.getTotalKnown(), "unknowns");
-  for (const [p, k] of solved.solutions) {
-    if (b.setKnown(p, k)) {
-      b.validate();
-    } else {
-      console.log("DUP", p, k);
+let puzzle = new EditablePuzzle(emptyPuzzle());
+const solutions = [solvedFromString(start)];
+const puzzles = [puzzle];
+while (solutions.length) {
+  const solved = solutions.shift()!;
+  console.log(
+    "solving",
+    solved.size,
+    "of",
+    81 - puzzle.getTotalKnown(),
+    "unknowns"
+  );
+  for (const [p, k] of solved.randomized()) {
+    puzzle = puzzle.clone();
+    puzzle.setKnown(p, k);
+    puzzles.push(puzzle);
+    if (puzzle.solved.size) {
+      solutions.push(puzzle.solved);
     }
+    // puzzle.printValues();
   }
-  b.printValues();
   // ALL_KNOWNS.forEach((k) => b.printPossibles(k));
   // break;
 }
 
-console.log("still", 81 - b.getTotalKnown(), "unknown");
-console.log("correct?", done === b.toString());
+console.log("still", 81 - puzzle.getTotalKnown(), "unknown");
+console.log("correct?", done === puzzle.toString());
+
+for (let p of puzzles) {
+  p.printValues();
+}
 
 // b.printPossibleCounts();
