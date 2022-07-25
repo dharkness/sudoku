@@ -103,6 +103,49 @@ function clonePuzzleCell({ cell, value, possible }: PuzzleCell) {
   };
 }
 
+class Solved {
+  solutions = new Map<Point, Known>();
+
+  get size(): number {
+    return this.solutions.size;
+  }
+
+  add(point: Point, known: Known): boolean {
+    const current = this.solutions.get(point);
+    if (known === current) {
+      // console.log("SOLVE AGAIN", point.k, "=>", known);
+      return false;
+    } else if (current) {
+      // console.log("SOLVE DIFFERENTLY", point.k, "=>", known);
+    } else {
+      // console.log("SOLVE", point.k, "=>", known);
+    }
+
+    this.solutions.set(point, known);
+    return true;
+  }
+
+  remove(point: Point): boolean {
+    if (!this.solutions.has(point)) {
+      return false;
+    }
+
+    // console.log("REMOVE SOLVED", point.k, "=>", this.solutions.get(point));
+    this.solutions.delete(point);
+    return true;
+  }
+}
+
+function singleSetValue<T>(set: Set<T>): T {
+  if (set.size !== 1) {
+    throw new Error(
+      `Cannot get single value from set with ${set.size} members`
+    );
+  }
+
+  return set.values().next().value;
+}
+
 /**
  * Provides copy-on-write semantics for editing a puzzle.
  */
@@ -112,7 +155,7 @@ export class EditablePuzzle {
   unlockedPuzzle = false;
   unlockedCells = new Set<Point>();
 
-  solved = new Map<Point, Known>();
+  solved = new Solved();
 
   constructor(puzzle: Puzzle) {
     this.puzzle = puzzle;
@@ -144,6 +187,13 @@ export class EditablePuzzle {
     }
   }
 
+  /**
+   * Sets a cell to a known value.
+   *
+   * - Clear its possibles without triggering a final-possible solution.
+   * - Remove the known from all touched cells' possibles.
+   * - Remove the known from all containing groups.
+   */
   setKnown(point: Point, known: Known): boolean {
     const previous = this.getValue(point);
     if (previous === known) {
@@ -152,15 +202,16 @@ export class EditablePuzzle {
 
     const cell = this.unlockCell(point);
     if (previous === UNKNOWN) {
-      console.log("set", point, known);
+      console.log("set", point.k, "to", known);
     } else {
-      console.log("overwrite", point, previous, "to", known);
+      console.log("set", point.k, "from", previous, "to", known);
     }
     cell.value = known;
-    this.removeGroupPossibles(Grouping.ROW, point.r, known);
-    this.removeGroupPossibles(Grouping.COLUMN, point.c, known);
-    this.removeGroupPossibles(Grouping.BLOCK, point.b, known);
-    this.removePossibles(point);
+    this.solved.remove(point);
+    this.clearGroupPossibles(Grouping.ROW, point.r, known);
+    this.clearGroupPossibles(Grouping.COLUMN, point.c, known);
+    this.clearGroupPossibles(Grouping.BLOCK, point.b, known);
+    this.clearPossibles(point);
     cell.possible = new Set();
 
     const changes: Point[] = [];
@@ -182,18 +233,18 @@ export class EditablePuzzle {
 
     const cell = this.unlockCell(point);
     cell.value = UNKNOWN;
-    cell.possible = this.getActuallyPossible(point);
+    cell.possible = this.getActualPossibles(point);
 
     const changes: Point[] = [];
     cell.cell.neighbors.forEach((point) => {
       if (
-        this.isActuallyPossible(point, previous) &&
+        this.isActualPossible(point, previous) &&
         this.addPossible(point, previous)
       ) {
         changes.push(point);
       }
     });
-    console.log("clear", point);
+    console.log("clear", point.k);
     // console.dir(changes);
 
     return true;
@@ -207,7 +258,7 @@ export class EditablePuzzle {
     return this.getCell(point).possible.size > 0;
   }
 
-  isActuallyPossible(point: Point, known: Known): boolean {
+  isActualPossible(point: Point, known: Known): boolean {
     for (const p of this.getCell(point).cell.neighbors) {
       if (this.getValue(p) === known) {
         return false;
@@ -217,7 +268,7 @@ export class EditablePuzzle {
     return true;
   }
 
-  getActuallyPossible(point: Point): Set<Known> {
+  getActualPossibles(point: Point): Set<Known> {
     const possible = new Set(ALL_KNOWNS);
     for (const p of this.getCell(point).cell.neighbors) {
       const value = this.getValue(p);
@@ -240,7 +291,7 @@ export class EditablePuzzle {
     return true;
   }
 
-  removePossibles(point: Point): boolean {
+  clearPossibles(point: Point): boolean {
     if (!this.isAnyPossible(point)) {
       return false;
     }
@@ -265,16 +316,20 @@ export class EditablePuzzle {
     const cell = this.unlockCell(point);
     cell.possible.delete(known);
     if (cell.possible.size === 1) {
-      this.printValues();
-      console.log(
-        "SOLVE remove",
-        known,
-        "from",
-        point.k,
-        "=>",
-        cell.possible.values().next().value
-      );
-      this.solved.set(point, cell.possible.values().next().value);
+      if (cell.value) {
+        console.log("SOLVING KNOWN CELL", point.k, cell.value, "=>", known);
+      }
+      if (this.solved.add(point, singleSetValue(cell.possible))) {
+        console.log(
+          "SOLVE remove",
+          known,
+          "from",
+          point.k,
+          "=>",
+          singleSetValue(cell.possible)
+        );
+        this.printValues();
+      }
     }
 
     this.removeGroupPossible(Grouping.ROW, point.r, known, point);
@@ -284,28 +339,15 @@ export class EditablePuzzle {
     return true;
   }
 
-  removeGroupPossibles(
-    grouping: Grouping,
-    coord: Coord,
-    known: Known
-  ): boolean {
+  clearGroupPossibles(grouping: Grouping, coord: Coord, known: Known): boolean {
     // console.log("remove", known, "from", Grouping[grouping], coord + 1, "?");
     const knowns = this.puzzle.groups.get(grouping)!.get(coord);
-    if (!knowns) {
+    if (!knowns || !knowns.has(known)) {
       return false;
     }
-    const points = knowns.get(known);
-    if (!points) {
-      return false;
-    }
-    // console.log(
-    //   "points",
-    //   [...points.values()].map((p) => p.i[grouping] + 1).join(", ")
-    // );
+    knowns.delete(known);
 
-    // FIXME remove points from knowns, trigger follow-ons?
-
-    points.clear();
+    // FIXME knowns has only one left now? by necessity, the remaining known is in the remaining unsolved cell, and that cell now has only one possibility
 
     return true;
   }
@@ -343,20 +385,29 @@ export class EditablePuzzle {
     points.delete(point);
     if (!points.size) {
       knowns.delete(known);
+      // FIXME knowns has only one left now?
     } else if (points.size === 1) {
-      this.printValues();
-      console.log(
-        "SOLVE remove",
-        point.k,
-        "from",
-        Grouping[grouping],
-        coord + 1,
-        "SET",
-        points.values().next().value.k,
-        "=>",
-        known
-      );
-      this.solved.set(points.values().next().value, known);
+      const solved = singleSetValue(points);
+      const cell = this.puzzle.cells.get(solved)!;
+      if (cell.value) {
+        console.log("SOLVING KNOWN CELL", solved.k, cell.value, "=>", known);
+      }
+      if (this.solved.add(solved, known)) {
+        this.printValues();
+        console.log(
+          "SOLVE remove",
+          point.k,
+          "from",
+          Grouping[grouping],
+          coord + 1,
+          "FOR",
+          known,
+          "SET",
+          solved.k,
+          "=>",
+          known
+        );
+      }
     }
 
     return true;
@@ -384,6 +435,50 @@ export class EditablePuzzle {
     return clone;
   }
 
+  validate() {
+    for (let p of ALL_POINTS) {
+      const cell = this.getCell(p);
+      if (cell.value) {
+        const known = cell.value;
+        if (cell.possible.size) {
+          console.log(
+            "INVALID - cell",
+            p.k,
+            "known",
+            known,
+            "has possibles",
+            cell.possible
+          );
+        }
+        for (let n of cell.cell.neighbors) {
+          const neighbor = this.getCell(n);
+          if (neighbor.value === known) {
+            console.log(
+              "INVALID - cell",
+              p.k,
+              "known",
+              known,
+              "has neighbor",
+              n.k,
+              "with same value"
+            );
+          }
+          if (neighbor.possible.has(known)) {
+            console.log(
+              "INVALID - cell",
+              p.k,
+              "known",
+              known,
+              "has neighbor",
+              n.k,
+              "with same possible"
+            );
+          }
+        }
+      }
+    }
+  }
+
   toString(): string {
     return ALL_COORDS.map((r) =>
       ALL_COORDS.map((c) => {
@@ -394,6 +489,7 @@ export class EditablePuzzle {
   }
 
   printValues() {
+    console.log("  ", 123456789);
     ALL_COORDS.forEach((r) =>
       console.log(
         r + 1,
@@ -407,6 +503,7 @@ export class EditablePuzzle {
 
   printPossibleCounts() {
     console.log("POSSIBLE COUNTS");
+    console.log("  ", 123456789);
     ALL_COORDS.forEach((r) =>
       console.log(
         r + 1,
@@ -420,6 +517,7 @@ export class EditablePuzzle {
 
   printPossibles(known: Known) {
     console.log("POSSIBLES", known);
+    console.log("  ", 123456789);
     ALL_COORDS.forEach((r) =>
       console.log(
         r + 1,
@@ -487,7 +585,9 @@ export function puzzleFromString(values: string): EditablePuzzle {
   for (const p of ALL_POINTS) {
     const value = values.charAt(10 * p.r + p.c);
     if ("1" <= value && value <= "9") {
-      puzzle.setKnown(p, known(parseInt(value)));
+      if (puzzle.setKnown(p, known(parseInt(value)))) {
+        puzzle.validate();
+      }
       // break;
     }
   }
@@ -512,16 +612,18 @@ export function puzzleFromString(values: string): EditablePuzzle {
 const start =
   ".47.21689|.819.....|.638452.7|...75.92.|.7..32...|8.......3|49....1.2|7....483.|.2.5.....";
 const done =
-  "547321689|281976354|963845217|634758921|179432568|851169743|495683172|716294835|328517496";
+  "547321689|281976354|963845217|634758921|179432568|852169743|495683172|716294835|328517496";
 
 const b = puzzleFromString(start);
 b.printValues();
 while (b.solved.size) {
   const solved = b.solved;
-  b.solved = new Map();
+  b.solved = new Solved();
   console.log("solving", solved.size, "of", 81 - b.getTotalKnown(), "unknowns");
-  for (const [p, k] of solved) {
-    if (!b.setKnown(p, k)) {
+  for (const [p, k] of solved.solutions) {
+    if (b.setKnown(p, k)) {
+      b.validate();
+    } else {
       console.log("DUP", p, k);
     }
   }
@@ -532,4 +634,5 @@ while (b.solved.size) {
 
 console.log("still", 81 - b.getTotalKnown(), "unknown");
 console.log("correct?", done === b.toString());
+
 // b.printPossibleCounts();

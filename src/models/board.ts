@@ -50,7 +50,7 @@ const pointsByRowCol: Point[][] = ALL_COORDS.reduce(
           c,
           b,
           i: [c, r, coord(3 * (r % 3) + (c % 3), "bi")],
-          k: `${r + 1},${c + 1},${b + 1}`,
+          k: `${r + 1},${c + 1}`,
         },
       ];
     }, [] as Point[]),
