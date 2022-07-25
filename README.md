@@ -15,9 +15,9 @@ but feel free to explore and scavenge any code you find useful.
 ## Next Steps
 
 - Solve
-  - group intersections
+  - intersections between blocks and rows/cols
     - e.g. if a digit is only possible in the intersection of a block and a row,
-      it is not possible in the rest of the row.
+      it is not possible in the rest of the row or block.
   - model
     - class for EP.solved
     - group possible cells hold index sets instead of point sets for performance
