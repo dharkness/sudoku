@@ -44,7 +44,7 @@ function solveAnyStep(puzzle: EditablePuzzle): boolean {
 }
 
 const start =
-  ".47.21689|.819.....|.638452.7|...75.92.|.7..32...|8.......3|49....1.2|7....483.|.2.5.....";
+  ".47.21689 .819..... .638452.7 ...75.92. .7..32... 8.......3 49....1.2 7....483. .2.5.....";
 
 let steps = 100;
 const puzzle = puzzleFromString(start);

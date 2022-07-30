@@ -11,7 +11,7 @@ const SmallDotPuzzle = ({
   size,
   digits = false,
 }: SmallDotPuzzleProps): JSX.Element => {
-  const rows = puzzle.start.split("|");
+  const rows = puzzle.start.split(" ");
 
   return (
     <table
