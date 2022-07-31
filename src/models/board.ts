@@ -136,6 +136,9 @@ abstract class Group {
   }
 }
 
+/**
+ * Represents a horizontal row of nine cells.
+ */
 class Row extends Group {
   constructor(r: Coord) {
     super(
@@ -149,6 +152,9 @@ class Row extends Group {
   }
 }
 
+/**
+ * Represents a vertical column of nine cells.
+ */
 class Column extends Group {
   constructor(c: Coord) {
     super(
@@ -162,7 +168,29 @@ class Column extends Group {
   }
 }
 
+/**
+ * Represents a typically-square block of nine cells.
+ *
+ * Non-standard boards may have different arrangements,
+ * but hopefully they can be treated identically.
+ */
 class Block extends Group {
+  /**
+   * Delta values as [dc, dr] from the top-left cell in a block that identify its cells.
+   * The resulting cells will be left-to-right, top-to-bottom.
+   */
+  static deltas: [number, number][] = [
+    [0, 0],
+    [1, 0],
+    [2, 0],
+    [0, 1],
+    [1, 1],
+    [2, 1],
+    [0, 2],
+    [1, 2],
+    [2, 2],
+  ];
+
   constructor(b: Coord) {
     const topLeft = getPoint(
       coord(3 * Math.floor(b / 3), "r"),
@@ -171,29 +199,13 @@ class Block extends Group {
     super(
       Grouping.BLOCK,
       b,
-      blockDeltas.reduce(
+      Block.deltas.reduce(
         (points: Point[], [dc, dr]) => [...points, delta(topLeft, dc, dr)],
         []
       )
     );
   }
 }
-
-/**
- * Delta values as [dc, dr] from the top-left cell in a block that identify its cells.
- * The resulting cells will be left-to-right, top-to-bottom.
- */
-const blockDeltas: [number, number][] = [
-  [0, 0],
-  [1, 0],
-  [2, 0],
-  [0, 1],
-  [1, 1],
-  [2, 1],
-  [0, 2],
-  [1, 2],
-  [2, 2],
-];
 
 /**
  * Identifies a single unique cell and every other structure it touches.
@@ -227,7 +239,7 @@ class Board {
   columns: Column[];
   blocks: Block[];
 
-  groups: Group[][];
+  groups: Group[][]; // FIXME Change to Map<Grouping, Group>
   cells: Map<Point, Cell>;
 
   constructor() {
