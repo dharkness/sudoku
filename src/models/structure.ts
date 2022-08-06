@@ -6,6 +6,7 @@ import { singleSetValue } from "../utils/collections";
 
 import {
   ALL_COORDS,
+  ALL_KNOWNS,
   ALL_POINTS,
   Coord,
   coord,
@@ -16,7 +17,9 @@ import {
   PointSet,
   UNKNOWN,
 } from "./basics";
-import { State } from "./state";
+import { ReadableState, State } from "./state";
+
+const LOG = true;
 
 // known possibles
 // - tracks which knowns are still possible in a cell
@@ -148,6 +151,10 @@ abstract class PointSetTracker {
       return this.points.diff(other.points);
     }
   }
+
+  toString(): string {
+    return this.points.toString();
+  }
 }
 
 /**
@@ -179,6 +186,12 @@ class CellTracker implements PossibleKnownsTracker, Stateful {
     this.row = row;
     this.column = column;
     this.block = block;
+    this.addKnownTracker(row);
+    this.addKnownTracker(column);
+    this.addKnownTracker(block);
+    this.addPointTracker(row);
+    this.addPointTracker(column);
+    this.addPointTracker(block);
   }
 
   addKnownTracker(tracker: PossibleKnownsTracker) {
@@ -211,28 +224,43 @@ class CellTracker implements PossibleKnownsTracker, Stateful {
       console.log("set", point.k, "=>", known);
     } else {
       console.log("set", point.k, "=>", known, "x", previous);
+      return false;
     }
     state.setValue(point, known);
     state.clearPossibleKnowns(point);
     state.removeSolved(point);
 
     for (const t of this.knownTrackers) {
+      LOG && console.log("removePossibleKnown", known, t.toString());
       t.removePossibleKnown(state, known);
     }
+    // FIXME Must tell disjoints to remove all *other* possible knowns for this point
     for (const t of this.pointTrackers) {
-      t.removePossiblePoint(state, known, point);
+      // LOG && console.log("removePossiblePoint", known, point.k, t);
+      LOG && console.log("removePossiblePoint", known, point.k, t.toString());
+      for (const k of ALL_KNOWNS) {
+        if (k !== known) {
+          t.removePossiblePoint(state, known, point);
+        }
+      }
     }
 
     return true;
   }
 
   removePossibleKnown(state: State, known: Known): boolean {
-    if (!state.isPossibleKnown(this.point, known)) {
+    if (
+      state.isSolved(this.point) ||
+      !state.isPossibleKnown(this.point, known)
+    ) {
       return false;
     }
 
+    LOG && console.log("remove", this.point.k, "x", known);
     const remaining = state.removePossibleKnown(this.point, known);
     if (remaining.size === 1) {
+      // LOG &&
+      console.log("solve", this.point.k, "=>", singleSetValue(remaining));
       state.addSolved(this.point, singleSetValue(remaining));
     }
 
@@ -241,6 +269,10 @@ class CellTracker implements PossibleKnownsTracker, Stateful {
     }
 
     return true;
+  }
+
+  toString(): string {
+    return `Cell ${this.point.k}`;
   }
 }
 
@@ -263,10 +295,22 @@ abstract class AbstractPossibleKnownPointsTracker
 
   removePossiblePoint(state: State, known: Known, point: Point): boolean {
     if (!state.isPossiblePoint(this, known, point)) {
+      if (this instanceof DisjointTracker) {
+        LOG && console.log("not possible", known, point.k, this.toString());
+      }
       return false;
     }
 
     const remaining = state.removePossiblePoint(this, known, point);
+    LOG &&
+      console.log(
+        "remove point",
+        known,
+        "x",
+        point.k,
+        "left",
+        new PointSet(remaining).toString()
+      );
     switch (remaining.size) {
       case 1:
         this.onOnePointLeft(state, known, singleSetValue(remaining));
@@ -296,6 +340,13 @@ class GroupTracker
   extends AbstractPossibleKnownPointsTracker
   implements PossibleKnownsTracker
 {
+  coord: Coord;
+
+  constructor(board: Board, points: PointSet, coord: Coord) {
+    super(board, points);
+    this.coord = coord;
+  }
+
   // TODO is this even needed? maybe for other solvers
   removePossibleKnown(state: State, known: Known): boolean {
     if (!state.isPossibleKnown(this, known)) {
@@ -309,6 +360,8 @@ class GroupTracker
   }
 
   onOnePointLeft(state: State, known: Known, point: Point) {
+    // LOG &&
+    console.log("solve group", this.toString(), point.k, "=>", known);
     state.addSolved(point, known);
   }
 }
@@ -318,7 +371,11 @@ class GroupTracker
  */
 class RowTracker extends GroupTracker {
   constructor(board: Board, r: Coord) {
-    super(board, new PointSet(ALL_COORDS.map((c) => getPoint(r, c))));
+    super(board, new PointSet(ALL_COORDS.map((c) => getPoint(r, c))), r);
+  }
+
+  toString(): string {
+    return `Row ${this.coord + 1} ${super.toString()}`;
   }
 }
 
@@ -327,14 +384,18 @@ class RowTracker extends GroupTracker {
  */
 class ColumnTracker extends GroupTracker {
   constructor(board: Board, c: Coord) {
-    super(board, new PointSet(ALL_COORDS.map((r) => getPoint(r, c))));
+    super(board, new PointSet(ALL_COORDS.map((r) => getPoint(r, c))), c);
+  }
+
+  toString(): string {
+    return `Column ${this.coord + 1} ${super.toString()}`;
   }
 }
 
 /**
  * Tracks the possible points per known for a single block.
  */
-class BlockTracker extends GroupTracker {
+export class BlockTracker extends GroupTracker {
   /**
    * Delta values as [dr, dc] from the top-left cell in a block that identify its cells.
    * The resulting cells will be left-to-right, top-to-bottom.
@@ -351,6 +412,8 @@ class BlockTracker extends GroupTracker {
     [2, 2],
   ];
 
+  topLeft: Point;
+
   constructor(board: Board, b: Coord) {
     const topLeft = getPoint(
       coord(3 * Math.floor(b / 3), "r"),
@@ -360,8 +423,14 @@ class BlockTracker extends GroupTracker {
       board,
       new PointSet(
         BlockTracker.deltas.map(([dr, dc]) => delta(topLeft, dr, dc))
-      )
+      ),
+      b
     );
+    this.topLeft = topLeft;
+  }
+
+  toString(): string {
+    return `Block ${this.coord + 1} ${super.toString()}`;
   }
 }
 
@@ -394,9 +463,14 @@ class DisjointTracker extends AbstractPossibleKnownPointsTracker {
   }
 
   onNoPointsLeft(state: State, known: Known): void {
+    LOG && console.log("disjoint empty", this.toString(), "x", known);
     for (const cell of this.disjointCells) {
       cell.removePossibleKnown(state, known);
     }
+  }
+
+  toString(): string {
+    return `Disjoint ${super.toString()} ${this.intersection.toString()}`;
   }
 }
 
@@ -407,6 +481,13 @@ class NeighborsTracker
   extends PointSetTracker
   implements PossibleKnownsTracker, Stateful
 {
+  cell: CellTracker;
+
+  constructor(board: Board, points: PointSet, cell: CellTracker) {
+    super(board, points);
+    this.cell = cell;
+  }
+
   addEmptyState(state: State): void {
     state.setPossiblePointsToAll(this, this.points); // TODO Unused
   }
@@ -414,6 +495,7 @@ class NeighborsTracker
   removePossibleKnown(state: State, known: Known): boolean {
     let removed = false;
 
+    LOG && console.log("remove neighbors", known);
     for (const cell of this.board.getCells(this.points)) {
       if (cell.removePossibleKnown(state, known)) {
         removed = true;
@@ -422,6 +504,10 @@ class NeighborsTracker
 
     return removed;
   }
+
+  toString(): string {
+    return `Neighbors of ${this.cell.toString()}`;
+  }
 }
 
 /**
@@ -429,9 +515,9 @@ class NeighborsTracker
  */
 class Board {
   private readonly cells = new Map<Point, CellTracker>();
-  private readonly rows = new Map<Coord, RowTracker>();
-  private readonly columns = new Map<Coord, ColumnTracker>();
-  private readonly blocks = new Map<Coord, BlockTracker>();
+  readonly rows = new Map<Coord, RowTracker>();
+  readonly columns = new Map<Coord, ColumnTracker>();
+  readonly blocks = new Map<Coord, BlockTracker>();
 
   private readonly statefuls = new Set<Stateful>();
 
@@ -439,7 +525,7 @@ class Board {
     this.createGroups();
     this.createCells();
     this.createNeighbors();
-    this.createIntersections();
+    // this.createIntersections();
   }
 
   private createGroups() {
@@ -474,11 +560,18 @@ class Board {
 
   private createNeighbors() {
     this.cells.forEach((cell) =>
-      cell.addKnownTracker(new NeighborsTracker(this, cell.getNeighbors()))
+      cell.addKnownTracker(
+        new NeighborsTracker(this, cell.getNeighbors(), cell)
+      )
     );
   }
 
   private createIntersections() {
+    // this.createDisjoints(
+    //   this.blocks.get(1)!,
+    //   new Map<Coord, GroupTracker>([[coord(1, "r"), this.rows.get(3)!]])
+    // );
+    // return;
     this.blocks.forEach((block) => {
       this.createDisjoints(block, this.rows);
       this.createDisjoints(block, this.columns);
@@ -491,6 +584,10 @@ class Board {
   ) {
     groups.forEach((group) => {
       const intersection = block.intersect(group);
+      if (!intersection.size) {
+        return;
+      }
+
       const blockPoints = block.diff(intersection);
       const groupPoints = group.diff(intersection);
 
@@ -544,13 +641,73 @@ class Board {
     }
   }
 
-  toString(state: State): string {
+  toString(state: ReadableState): string {
     return ALL_COORDS.map((r) =>
       ALL_COORDS.map((c) => {
         const value = state.getValue(getPoint(r, c));
         return value === UNKNOWN ? "." : value.toString();
       }).join("")
     ).join(" ");
+  }
+
+  validate(state: ReadableState): boolean {
+    let valid = true;
+
+    for (const p of ALL_POINTS) {
+      const value = state.getValue(p);
+      if (value === UNKNOWN) {
+        continue;
+      }
+
+      // TODO Should the cell keep its solved value as its only possible known?
+      const cell = this.cells.get(p)!;
+      if (state.getPossibleKnowns(p).size) {
+        console.log(
+          "INVALID",
+          p.k,
+          "=",
+          value,
+          cell.toString(),
+          "knowns",
+          state.getPossibleKnowns(p)
+        );
+        valid = false;
+      }
+
+      [
+        this.rows.get(p.r)!,
+        this.columns.get(p.c)!,
+        this.blocks.get(p.b)!,
+      ].forEach((group) => {
+        if (state.isPossibleKnown(group, value)) {
+          console.log(
+            "INVALID",
+            p.k,
+            "=",
+            value,
+            group.toString(),
+            "knowns",
+            state.getPossibleKnowns(p)
+          );
+          valid = false;
+        }
+        const possibles = state.getPossiblePoints(group, value);
+        if (possibles.size !== 1 || !possibles.has(p)) {
+          console.log(
+            "INVALID",
+            p.k,
+            "=",
+            value,
+            group.toString(),
+            "points",
+            new PointSet(possibles).toString()
+          );
+          valid = false;
+        }
+      });
+    }
+
+    return valid;
   }
 }
 

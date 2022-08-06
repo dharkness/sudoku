@@ -18,6 +18,10 @@ export class Solutions {
     this.solutions.forEach(callback);
   }
 
+  ordered(): [Point, Known][] {
+    return [...this.solutions.entries()];
+  }
+
   randomized(): [Point, Known][] {
     return shuffle([...this.solutions.entries()]);
   }

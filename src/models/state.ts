@@ -1,8 +1,8 @@
 import { ALL_KNOWNS, Known, Point, PointSet, UNKNOWN, Value } from "./basics";
 import { Solutions } from "./solutions";
-import { BOARD } from "./structure";
+import { BlockTracker, BOARD } from "./structure";
 
-const LOG = false;
+const LOG = true;
 
 /**
  * Exposes only the methods required to inspect the puzzle state.
@@ -14,9 +14,10 @@ export interface ReadableState {
   getValue(point: Point): Value;
   getPossibleKnownsCount(owner: any): number;
   isPossibleKnown(owner: any, known: Known): boolean;
-  // getPossibleKnowns(owner: any): Set<Known>;
+  getPossibleKnowns(owner: any): Set<Known>;
+
   isPossiblePoint(owner: any, known: Known, point: Point): boolean;
-  // getPossiblePoints(owner: any, known: Known): Set<Point>;
+  getPossiblePoints(owner: any, known: Known): Set<Point>;
 }
 
 /**
@@ -76,7 +77,7 @@ export class SimpleState implements State {
     return this.values.get(point)!;
   }
   setValue(point: Point, value: Value): void {
-    LOG && console.log("STATE SET VALUE", value, point);
+    LOG && console.log("STATE SET VALUE", value, point.k);
     this.values.set(point, value);
   }
 
@@ -89,34 +90,40 @@ export class SimpleState implements State {
   isPossibleKnown(owner: any, known: Known): boolean {
     return this.possibleKnowns.get(owner)?.has(known) ?? false;
   }
+  getPossibleKnowns(owner: any): Set<Known> {
+    return this.possibleKnowns.get(owner) || new Set();
+  }
   removePossibleKnown(owner: any, known: Known): Set<Known> {
     const knowns = this.possibleKnowns.get(owner);
     if (knowns?.has(known)) {
-      LOG && console.log("STATE REMOVE KNOWN", known, owner);
+      LOG &&
+        console.log("STATE REMOVE KNOWN", known, owner.k || owner.toString());
       knowns.delete(known);
     }
     return knowns ?? new Set();
   }
   clearPossibleKnowns(owner: any): void {
-    LOG && console.log("STATE CLEAR KNOWNS", owner);
+    LOG && console.log("STATE CLEAR KNOWNS", owner.k || owner.toString());
     this.possibleKnowns.set(owner, new Set());
   }
 
   setPossiblePointsToAll(owner: any, points: PointSet): void {
-    for (const k of ALL_KNOWNS) {
-      this.possiblePoints.set(
-        owner,
-        new Map(ALL_KNOWNS.map((k) => [k, new Set(points)]))
-      );
-    }
+    this.possiblePoints.set(
+      owner,
+      new Map(ALL_KNOWNS.map((k) => [k, new Set(points)]))
+    );
   }
   isPossiblePoint(owner: any, known: Known, point: Point): boolean {
     return this.possiblePoints.get(owner)?.get(known)?.has(point) ?? false;
   }
+  getPossiblePoints(owner: any, known: Known): Set<Point> {
+    return this.possiblePoints.get(owner)?.get(known)!; // ?? new Set();
+  }
   removePossiblePoint(owner: any, known: Known, point: Point): Set<Point> {
     const points = this.possiblePoints.get(owner)?.get(known);
     if (points?.has(point)) {
-      LOG && console.log("STATE REMOVE POINT", known, point, owner);
+      LOG &&
+        console.log("STATE REMOVE POINT", known, point.k, owner.toString());
       points.delete(point);
     }
     return points ?? new Set();

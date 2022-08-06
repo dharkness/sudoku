@@ -49,8 +49,8 @@ const pointsByRowCol: Point[][] = ALL_COORDS.reduce(
           r,
           c,
           b,
-          i: [c, r, coord(3 * (r % 3) + (c % 3), "bi")],
-          k: `${r + 1},${c + 1}`,
+          i: [c, r, coord(3 * (r % 3) + (c % 3), "bc")],
+          k: `${r + 1}${c + 1}`,
         },
       ];
     }, [] as Point[]),
@@ -81,7 +81,7 @@ export function getPoint(r: Coord, c: Coord): Point {
  *
  * @throws {Error} If the new coordinates are outside the board
  */
-export function delta({ r, c }: Point, dc: number, dr: number): Point {
+export function delta({ r, c }: Point, dr: number, dc: number): Point {
   return getPoint(coord(r + dr, "r"), coord(c + dc, "c"));
 }
 
@@ -130,6 +130,10 @@ export class PointSet extends Set<Point> {
     }
 
     return result;
+  }
+
+  toString(): string {
+    return "( " + [...this.values()].map((p) => p.k).join(" ") + " )";
   }
 }
 
