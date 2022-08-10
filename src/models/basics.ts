@@ -196,6 +196,12 @@ export function valueFromString(char: string): Value {
   return "1" <= char && char <= "9" ? known(parseInt(char)) : UNKNOWN;
 }
 
+export function stringFromKnownSet(knowns: Set<Known>): string {
+  return `( ${ALL_KNOWNS.map((k) => (knowns.has(k) ? k.toString() : ".")).join(
+    " "
+  )} )`;
+}
+
 /**
  * Used to mark cells that are not yet known.
  */

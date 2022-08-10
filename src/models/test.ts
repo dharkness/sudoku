@@ -1,4 +1,11 @@
-import { ALL_KNOWNS, getPoint, UNKNOWN } from "./basics";
+import {
+  ALL_KNOWNS,
+  ALL_POINTS,
+  getPoint,
+  Known,
+  Point,
+  UNKNOWN,
+} from "./basics";
 import {
   printAllPossibles,
   printPossibleCounts,
@@ -10,9 +17,14 @@ import { createEmptySimpleState } from "./state";
 import { BOARD } from "./structure";
 
 const start =
-  ".47.21689 .819..... .638452.7 ...75.92. .7..32... 8.......3 49....1.2 7....483. .2.5.....";
+  ".5.78.... 9.823.756 27461..39 .4.9..... ...5.2.98 ..2..31.7 .....7.1. 43....9.5 1.93.....";
 const done =
-  "547321689 281976354 963845217 634758921 179432568 852169743 495683172 716294835 328517496";
+  ".5.78.... 9.823.756 27461..39 .4.9..... ...5.2.98 ..2..31.7 .....7.1. 43....9.5 1.93.....";
+
+// const start =
+//   ".47.21689 .819..... .638452.7 ...75.92. .7..32... 8.......3 49....1.2 7....483. .2.5.....";
+// const done =
+//   "547321689 281976354 963845217 634758921 179432568 852169743 495683172 716294835 328517496";
 
 // const start =
 //   ".18....4. 753...1.. ..6.57... .3..72..4 6.983.2.. 8....9... ..5.6..29 .7...8.61 ....1....";
@@ -23,6 +35,20 @@ const done =
 //   "7..1....9 .2.3..7.. 4.9...... .6.8..2.. ......... .7...1.5. .....49.. .46..5..2 .1...68..";
 // const done =
 //   "735148629 621359785 489627513 564873291 193562478 872491356 358214967 946785132 217936845";
+
+// const state = createEmptySimpleState();
+// for (const [p, k] of [
+//   [getPoint(0, 1), 4],
+//   [getPoint(0, 2), 7],
+// ] as [Point, Known][]) {
+//   BOARD.setKnown(state, p, k);
+//   // if (!BOARD.validate(state)) {
+//   printValues(state);
+//   printAllPossibles(state);
+//   printPossibles(state, 7);
+//   // break;
+//   // }
+// }
 
 const state = createEmptySimpleState();
 const solutions = [solutionsFromString(start)];
@@ -43,6 +69,9 @@ while (!stop && solutions.length) {
       break;
     }
     BOARD.setKnown(state, p, k);
+    printValues(state);
+    printAllPossibles(state);
+    printPossibles(state, k);
     if (!BOARD.validate(state)) {
       console.log("STOPPED AT", p.k, "=>", k, "INVALID");
       stop = true;
@@ -52,7 +81,6 @@ while (!stop && solutions.length) {
       solutions.push(state.getSolved());
       state.clearSolved();
     }
-    printValues(state);
     // break;
   }
 
@@ -62,7 +90,7 @@ while (!stop && solutions.length) {
 }
 
 printAllPossibles(state);
-printPossibles(state, 4);
+// printPossibles(state, 4);
 BOARD.validate(state);
 // console.log(state);
 
