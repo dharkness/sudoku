@@ -35,3 +35,50 @@ export function singleSetValue<T>(set: Set<T>): T {
       );
   }
 }
+
+/**
+ * Returns a new set containing the elements that are in either set,
+ * in the order they appear in the first followed by those that are
+ * only in the second.
+ */
+export function union<T>(a: Set<T>, b: Set<T>): Set<T> {
+  const result = new Set<T>(a);
+
+  for (const t of b) {
+    result.add(t);
+  }
+
+  return result;
+}
+
+/**
+ * Returns a new set containing the elements that are in both sets,
+ * in the order they appear in the first.
+ */
+export function intersect<T>(a: Set<T>, b: Set<T>): Set<T> {
+  const result = new Set<T>();
+
+  for (const t of a) {
+    if (b.has(t)) {
+      result.add(t);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Returns a new set containing the elements that are in the first set
+ * but not in the second, in the order they appear in the first.
+ */
+export function difference<T>(a: Set<T>, b: Set<T>): Set<T> {
+  const result = new Set<T>();
+
+  for (const t of a) {
+    if (!b.has(t)) {
+      result.add(t);
+    }
+  }
+
+  return result;
+}
