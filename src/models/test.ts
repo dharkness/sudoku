@@ -9,12 +9,12 @@ import {
 import {
   printAllPossibles,
   printPossibleCounts,
-  printPossibles,
+  // printPossibles,
   printValues,
-} from "./printers";
+} from "./printers2";
 import { solutionsFromString } from "./solutions";
-import { createEmptySimpleState } from "./state";
-import { BOARD } from "./structure";
+import { createEmptySimpleState } from "./state2";
+import { BOARD } from "./structure2";
 
 const start =
   ".5.78.... 9.823.756 27461..39 .4.9..... ...5.2.98 ..2..31.7 .....7.1. 43....9.5 1.93.....";
@@ -59,28 +59,29 @@ while (!stop && solutions.length) {
     "solving",
     solved.size,
     "of",
-    81 - state.getTotalSolved(),
+    81 - state.solvedCount(),
     "unknowns"
   );
   for (const [p, k] of solved.ordered()) {
-    if (![UNKNOWN, k].includes(state.getValue(p))) {
-      console.log("STOPPED AT", p.k, "=>", k, "x", state.getValue(p));
+    const cell = BOARD.getCell(p);
+    if (![UNKNOWN, k].includes(state.getValue(cell))) {
+      console.log("STOPPED AT", p.k, "=>", k, "x", state.getValue(cell));
       stop = true;
       break;
     }
     BOARD.setKnown(state, p, k);
     printValues(state);
     printAllPossibles(state);
-    printPossibles(state, k);
+    // printPossibles(state, k);
     if (!BOARD.validate(state)) {
       console.log("STOPPED AT", p.k, "=>", k, "INVALID");
       stop = true;
       break;
     }
-    if (state.getSolved().size) {
-      solutions.push(state.getSolved());
-      state.clearSolved();
-    }
+    // if (state.getSolved().size) {
+    //   solutions.push(state.getSolved());
+    //   state.clearSolved();
+    // }
     // break;
   }
 
@@ -94,7 +95,7 @@ printAllPossibles(state);
 BOARD.validate(state);
 // console.log(state);
 
-console.log("still", 81 - state.getTotalSolved(), "unknown");
+console.log("still", 81 - state.solvedCount(), "unknown");
 console.log("done", BOARD.toString(state));
 console.log("real", done);
 console.log("correct?", done === BOARD.toString(state));

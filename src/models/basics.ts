@@ -93,6 +93,13 @@ export function uniquePoints(points: Point[]): Point[] {
 }
 
 /**
+ * Returns a human-readable string representation of a set of points.
+ */
+export function stringFromPointSet(points: Set<Point>): string {
+  return "( " + [...points.values()].map((point) => point.k).join(" ") + " )";
+}
+
+/**
  * Adds set operations to a set of points.
  *
  * FACTOR Use a mixin to add this functionality to any set?

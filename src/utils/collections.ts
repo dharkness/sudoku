@@ -82,3 +82,75 @@ export function difference<T>(a: Set<T>, b: Set<T>): Set<T> {
 
   return result;
 }
+
+/**
+ * Provides a two-level nested map (map of maps).
+ */
+export class NestedMap<K1, K2, V> {
+  static fromArrays<K1, K2, V>(k1s: K1[], k2s: K2[], v: (k1: K1, k2: K2) => V) {
+    return new this(
+      k1s.map((k1) => [k1, new Map(k2s.map((k2) => [k2, v(k1, k2)]))])
+    );
+  }
+
+  // static generate<T, U, V>(
+  //   ts: Iterable<T>,
+  //   us: Iterable<U>,
+  //   generator: (t: T, u: U) => V
+  // ) {
+  //   return new this(ts.forEach);
+  // }
+
+  map: Map<K1, Map<K2, V>>;
+
+  constructor(entries?: Iterable<[K1, Map<K2, V>]>) {
+    this.map = new Map(entries);
+  }
+
+  has(k1: K1, k2: K2): boolean {
+    return this.map.get(k1)?.has(k2) ?? false;
+  }
+
+  get(k1: K1, k2: K2): V | undefined {
+    return this.map.get(k1)?.get(k2);
+  }
+
+  set(k1: K1, k2: K2, v: V): NestedMap<K1, K2, V> {
+    const inner = this.map.get(k1);
+
+    if (inner) {
+      inner.set(k2, v);
+    } else {
+      this.map.set(k1, new Map([[k2, v]]));
+    }
+
+    return this;
+  }
+
+  setMany(k1: K1, k2s: K2[], v: (k1: K1, k2: K2) => V): NestedMap<K1, K2, V> {
+    const inner = this.map.get(k1);
+
+    if (inner) {
+      k2s.forEach((k2) => inner.set(k2, v(k1, k2)));
+    } else {
+      this.map.set(k1, new Map(k2s.map((k2) => [k2, v(k1, k2)])));
+    }
+
+    return this;
+  }
+
+  delete(k1: K1, k2: K2, deleteEmpty?: boolean) {
+    const inner = this.map.get(k1);
+
+    if (inner) {
+      if (inner.delete(k2)) {
+        if (deleteEmpty && !inner.size) {
+          this.map.delete(k1);
+        }
+        return true;
+      }
+    }
+
+    return false;
+  }
+}
