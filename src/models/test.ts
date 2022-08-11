@@ -7,6 +7,7 @@ import {
   Known,
   Point,
   solutionDiff,
+  stringFromKnownSet,
   UNKNOWN,
 } from "./basics";
 import {
@@ -16,9 +17,10 @@ import {
   // printPossibles,
   printValues,
 } from "./printers";
-import { solutionsFromString } from "./solutions";
+import { Solutions, solutionsFromString } from "./solutions";
 import { createEmptySimpleState } from "./state";
 import { BOARD } from "./structure";
+import { solveNakedPairs, solveNakedTriples } from "../solvers/solveNakeds";
 
 const EMPTY =
   "......... ......... ......... ......... ......... ......... ......... ......... .........";
@@ -47,79 +49,158 @@ const EMPTY =
 // const full =
 //   "735148629 621359784 489627513 564873291 193562478 872491356 358214967 946785132 217936845";
 
-// ========== NEEDS NAKED TRIPLES and ??? ========================================
+// ========== NEEDS NAKED TRIPLES ========================================
 
-// ROW 2 has 489
 const start =
   "9........ 3...6..2. ..5...7.3 .31.84... 82..1.549 .4....8.. 75.1.6.8. 4..8..1.. ...7.....";
 const full =
-  "9..3..... 3..56..2. ..54..7.3 531984... 827613549 6492..831 75.1.6.8. 4..8..1.. ...7.....";
+  "962378415 374561928 185429763 531984672 827613549 649257831 753196284 496832157 218745396";
 
 // const state = createEmptySimpleState();
 // for (const [p, k] of [
-//   [getPoint(0, 1), 4],
-//   [getPoint(0, 2), 7],
+//   [getPoint(0, 1), 1],
+//   [getPoint(0, 2), 2],
+//   [getPoint(0, 3), 3],
+//   [getPoint(0, 4), 4],
+//   [getPoint(0, 5), 5],
+//   [getPoint(0, 6), 6],
+//   [getPoint(0, 7), 7],
 // ] as [Point, Known][]) {
 //   BOARD.setKnown(state, p, k);
-//   // if (!BOARD.validate(state)) {
-//   printValues(state);
-//   printAllPossibles(state);
-//   printPossibles(state, 7);
-//   // break;
-//   // }
 // }
+// printValues(state);
+// printAllPossibles(state);
+// solveNakeds(state, 2);
 
 const state = createEmptySimpleState();
-const solutions = [solutionsFromString(start)];
+const knowns = solutionsFromString(start).randomizedSolvedKnowns();
+const pencils = [];
 let stop = false;
-while (!stop && solutions.length) {
-  const solved = solutions.shift()!;
-  console.log(
-    "solving",
-    solved.size,
-    "of",
-    81 - state.solvedCount(),
-    "unknowns"
-  );
-  console.log(solved);
+while (!stop && (knowns.length || pencils.length)) {
+  // check for nakeds to erase pencil marks
+  const nakeds = new Solutions();
+  solveNakedPairs(state, nakeds);
+  solveNakedTriples(state, nakeds);
+  if (!nakeds.isEmpty()) {
+    // console.info("FOUND", nakeds);
+    // nakeds do not solve knowns directly
+    // knowns.push(...nakeds.randomizedSolvedKnowns());
+    pencils.push(...nakeds.randomizedErasedPencils());
+  }
 
-  for (const [p, k] of solved.randomized()) {
-    const value = BOARD.getValue(state, p);
-    if (![UNKNOWN, k].includes(value)) {
-      console.log("STOPPED AT", p.k, "=>", k, "x", value);
-      stop = true;
-      break;
+  // apply all erased pencil marks
+  while (!stop && pencils.length) {
+    const [cell, known] = pencils.shift()!;
+    if (!state.isPossibleKnown(cell, known)) {
+      continue;
     }
-    BOARD.setKnown(state, p, k);
+
+    console.log("");
+    console.log("erasing", cell.toString(), "=>", known);
+    BOARD.removePossible(state, cell, known);
+    // printAllPossibles(state);
+
     const test = BOARD.toString(state);
-    console.log("");
-    printValues(state);
-    console.log("");
-    printAllPossibles(state);
-    printPossibles(state, k);
     if (!BOARD.validate(state) || !isCorrectSoFar(test, full)) {
-      console.log("STOPPED AT", p.k, "=>", k, "INVALID");
+      console.log("");
+      printValues(state);
+      console.log("");
+      printAllPossibles(state);
+      printPossibles(state, known);
+      console.error("STOPPED");
       stop = true;
       break;
     }
-    if (state.getSolved().size) {
-      solutions.push(state.getSolved());
-      state.clearSolved();
+
+    const newSolutions = state.getSolved();
+    state.clearSolved();
+    if (!newSolutions.isEmpty()) {
+      // console.info("FOUND", newSolutions);
+      knowns.push(...newSolutions.randomizedSolvedKnowns());
+      pencils.push(...newSolutions.randomizedErasedPencils());
     }
     // break;
   }
 
-  printPossibleCounts(state);
+  // apply next solved known
+  if (knowns.length) {
+    const [cell, known] = knowns.shift()!;
+    if (state.getValue(cell) === known) {
+      continue;
+    }
+
+    console.log("");
+    console.log("solving", cell.toString(), "=>", known);
+    BOARD.setKnown(state, cell, known);
+    // printValues(state);
+
+    const test = BOARD.toString(state);
+    if (!BOARD.validate(state) || !isCorrectSoFar(test, full)) {
+      printPossibles(state, known);
+      console.error("STOPPED");
+      stop = true;
+      break;
+    }
+
+    const newSolutions = state.getSolved();
+    state.clearSolved();
+    if (!newSolutions.isEmpty()) {
+      // console.info("FOUND", newSolutions);
+      knowns.push(...newSolutions.randomizedSolvedKnowns());
+      pencils.push(...newSolutions.randomizedErasedPencils());
+    }
+    // break;
+  }
+
+  // apply all erased pencil marks
+  while (!stop && pencils.length) {
+    const [cell, known] = pencils.shift()!;
+    if (!state.isPossibleKnown(cell, known)) {
+      continue;
+    }
+
+    console.log("");
+    console.log("erasing", cell.toString(), "=>", known);
+    BOARD.removePossible(state, cell, known);
+    // printAllPossibles(state);
+
+    const test = BOARD.toString(state);
+    if (!BOARD.validate(state) || !isCorrectSoFar(test, full)) {
+      console.log("");
+      printValues(state);
+      console.log("");
+      printAllPossibles(state);
+      printPossibles(state, known);
+      console.error("STOPPED");
+      stop = true;
+      break;
+    }
+
+    const newSolutions = state.getSolved();
+    state.clearSolved();
+    if (!newSolutions.isEmpty()) {
+      console.info("FOUND", newSolutions);
+      knowns.push(...newSolutions.randomizedSolvedKnowns());
+      pencils.push(...newSolutions.randomizedErasedPencils());
+    }
+    // break;
+  }
+
+  console.log(" ");
+  printValues(state);
+  printAllPossibles(state);
+  // printPossibleCounts(state);
   // ALL_KNOWNS.forEach((k) => printPossibles(state, k));
   // break;
 }
 
 console.log("");
 printAllPossibles(state);
-printPossibles(state, 5);
+// printPossibles(state, 5);
 BOARD.validate(state);
 // console.log(state);
 
+console.log("");
 console.log("still", 81 - state.solvedCount(), "unknown");
 
 const test = BOARD.toString(state);

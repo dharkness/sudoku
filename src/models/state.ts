@@ -2,7 +2,6 @@ import { BOARD, Cell, Container } from "./structure";
 import {
   ALL_KNOWNS,
   Known,
-  Point,
   stringFromKnownSet,
   UNKNOWN,
   Value,
@@ -34,8 +33,10 @@ export interface WritableState extends ReadableState {
 
   // FACTOR Move Solved to Context { Board, State, Solved }
   getSolved(): Solutions;
-  addSolved(cell: Cell, known: Known): void;
-  removeSolved(point: Point): void;
+  addSolvedKnown(cell: Cell, known: Known): void;
+  removeSolvedKnown(cell: Cell): void;
+  addErasedPencil(cell: Cell, known: Known): void;
+  removeErasedPencil(cell: Cell, known: Known): void;
   clearSolved(): void;
 }
 
@@ -51,7 +52,7 @@ export class SimpleState implements WritableState {
 
   private readonly possibleCells = new Map<Container, Map<Known, Set<Cell>>>();
 
-  private solved = new Solutions();
+  private solutions = new Solutions();
 
   addCell(cell: Cell): void {
     this.values.set(cell, UNKNOWN);
@@ -123,7 +124,7 @@ export class SimpleState implements WritableState {
     remaining.delete(known);
     LOG &&
       console.info(
-        "STATE",
+        "STATE set",
         cell.toString(),
         "=>",
         known,
@@ -137,28 +138,9 @@ export class SimpleState implements WritableState {
     //   remove known as possible from cell
     //   collect possible cells into set to remove as possible, i.e. neighbors
     //     Groups return cells; Intersections return none
-    const neighbors = new Set<Cell>();
     const containers = [...this.possibleContainers.get(cell)!.get(known)!];
-    LOG && console.info("STATE", cell.toString(), "containers", containers);
     for (const container of containers) {
-      const add = container.onSetKnown(this, cell, known);
-      for (const c of add) {
-        neighbors.add(c);
-      }
-    }
-    neighbors.delete(cell);
-
-    // for every collected cell
-    //   remove cell as possible, triggering last-cell and no-cells
-    LOG &&
-      console.info(
-        "STATE",
-        cell.toString(),
-        "neighbors",
-        Cell.stringFromPoints(neighbors)
-      );
-    for (const n of neighbors) {
-      this.removePossibleKnown(n, known);
+      container.onSetKnown(this, cell, known);
     }
 
     // for every remaining known in cell
@@ -189,10 +171,10 @@ export class SimpleState implements WritableState {
     if (!possibles.has(known)) {
       LOG &&
         console.warn(
-          "STATE",
-          cell.toString(),
-          "x",
+          "STATE erase",
           known,
+          "from",
+          cell.toString(),
           "not in",
           stringFromKnownSet(possibles)
         );
@@ -209,17 +191,17 @@ export class SimpleState implements WritableState {
 
     LOG &&
       console.info(
-        "STATE",
-        cell.toString(),
-        "x",
+        "STATE erase",
         known,
+        "from",
+        cell.toString(),
         "==>",
         stringFromKnownSet(remaining)
       );
 
     // solve cell if only one possible known remaining
     if (remaining.size === 1) {
-      this.addSolved(cell, singleSetValue(remaining));
+      this.addSolvedKnown(cell, singleSetValue(remaining));
     }
 
     // remove possible cell from its containers
@@ -229,10 +211,11 @@ export class SimpleState implements WritableState {
       if (!possibles.has(cell)) {
         LOG &&
           console.warn(
-            "STATE",
-            container.toString(),
+            "STATE remove",
+            container.name,
             "x",
             known,
+            cell.toString(),
             "not in",
             Cell.stringFromPoints(possibles)
           );
@@ -246,10 +229,12 @@ export class SimpleState implements WritableState {
 
       LOG &&
         console.info(
-          "STATE",
-          container.toString(),
-          "x",
+          "STATE erase",
+          known,
+          "from",
           cell.toString(),
+          "in",
+          container.name,
           "==>",
           Cell.stringFromPoints(remaining)
         );
@@ -281,8 +266,8 @@ export class SimpleState implements WritableState {
 
     LOG &&
       console.info(
-        "STATE",
-        container.toString(),
+        "STATE clear",
+        container.name,
         "x",
         known,
         "from",
@@ -300,41 +285,36 @@ export class SimpleState implements WritableState {
     return cells;
   }
 
-  // removePossibleCell(cell: Cell, known: Known): void {
-  //   // for each container with that cell still possible
-  //   //   remove the cell
-  //   //   trigger last-cell and no-cells
-  //   const containers = this.possibleContainers.get(cell)!.get(known)!;
-  //   const possibles = this.getPossibleCells(cell)!.get(known)!;
-  //   if (!possibles.has(known)) {
-  //     LOG &&
-  //       console.warn("STATE", cell.toString(), "x", known, "not in", possibles);
-  //     return;
-  //   }
-  //
-  //   const remaining = new Set(possibles);
-  //   remaining.delete(known);
-  //   this.possibleKnowns.set(cell, remaining);
-  // }
-
   getSolved(): Solutions {
-    return this.solved;
+    return this.solutions;
   }
 
-  addSolved(cell: Cell, known: Known): void {
+  addSolvedKnown(cell: Cell, known: Known): void {
     if (this.isSolved(cell)) {
       return;
     }
 
-    this.solved.add(cell.point, known);
+    this.solutions.addSolvedKnown(cell, known);
   }
 
-  removeSolved(point: Point): void {
-    this.solved.remove(point);
+  removeSolvedKnown(cell: Cell): void {
+    this.solutions.removeSolvedKnown(cell);
+  }
+
+  addErasedPencil(cell: Cell, known: Known): void {
+    if (!this.isPossibleKnown(cell, known)) {
+      return;
+    }
+
+    this.solutions.addErasedPencil(cell, known);
+  }
+
+  removeErasedPencil(cell: Cell, known: Known): void {
+    this.solutions.removeErasedPencil(cell, known);
   }
 
   clearSolved(): void {
-    this.solved = new Solutions();
+    this.solutions = new Solutions();
   }
 }
 
@@ -371,6 +351,9 @@ class ChangeCellValueError extends Error {
   }
 }
 
+/**
+ * Returns a new empty, writable state.
+ */
 export function createEmptySimpleState(): WritableState {
   const state = new SimpleState();
   BOARD.setupEmptyState(state);

@@ -2,6 +2,7 @@ import {
   ALL_COORDS,
   ALL_KNOWNS,
   ALL_POINTS,
+  coord,
   Coord,
   getPoint,
   Grouping,
@@ -77,10 +78,8 @@ export abstract class Container implements Stateful {
     state.addContainer(this);
   }
 
-  onSetKnown(state: WritableState, cell: Cell, known: Known): Set<Cell> {
+  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
     // override to perform actions
-    // TODO Intersection should stop all tracking
-    return new Set();
   }
 
   toString(): string {
@@ -109,12 +108,17 @@ export abstract class Group extends Container {
     this.coord = coord;
   }
 
-  onSetKnown(state: WritableState, cell: Cell, known: Known): Set<Cell> {
-    return state.clearPossibleCells(this, known);
+  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
+    const possibles = state.clearPossibleCells(this, known);
+    for (const neighbor of possibles) {
+      if (neighbor !== cell) {
+        state.addErasedPencil(neighbor, known);
+      }
+    }
   }
 
   onOneCellLeft(state: WritableState, known: Known, cell: Cell): void {
-    state.addSolved(cell, known);
+    state.addSolvedKnown(cell, known);
   }
 }
 
@@ -156,10 +160,8 @@ class Intersect extends Container {
     this.parent = parent;
   }
 
-  onSetKnown(state: WritableState, cell: Cell, known: Known): Set<Cell> {
+  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
     this.parent.clearPossibleCells(state, known);
-
-    return new Set();
   }
 
   onNoCellsLeft(state: WritableState, known: Known): void {
@@ -178,10 +180,8 @@ class Disjoint extends Container {
     this.parent = parent;
   }
 
-  onSetKnown(state: WritableState, cell: Cell, known: Known): Set<Cell> {
+  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
     this.parent.clearPossibleCells(state, known);
-
-    return new Set();
   }
 
   onNoCellsLeft(state: WritableState, known: Known): void {
@@ -308,13 +308,44 @@ class Board {
   }
 
   createIntersections() {
-    for (const [_, group] of this.blocks) {
-      for (const [_, row] of this.rows) {
-        this.intersections.add(new Intersection(group, row));
-      }
-      for (const [_, column] of this.columns) {
-        this.intersections.add(new Intersection(group, column));
-      }
+    for (const [_, block] of this.blocks) {
+      this.intersections.add(
+        new Intersection(
+          block,
+          this.rows.get(coord(3 * Math.floor(block.coord / 3), "row"))!
+        )
+      );
+      this.intersections.add(
+        new Intersection(
+          block,
+          this.rows.get(coord(3 * Math.floor(block.coord / 3) + 1, "row"))!
+        )
+      );
+      this.intersections.add(
+        new Intersection(
+          block,
+          this.rows.get(coord(3 * Math.floor(block.coord / 3) + 2, "row"))!
+        )
+      );
+
+      this.intersections.add(
+        new Intersection(
+          block,
+          this.columns.get(coord(3 * (block.coord % 3), "column"))!
+        )
+      );
+      this.intersections.add(
+        new Intersection(
+          block,
+          this.columns.get(coord(3 * (block.coord % 3) + 1, "column"))!
+        )
+      );
+      this.intersections.add(
+        new Intersection(
+          block,
+          this.columns.get(coord(3 * (block.coord % 3) + 2, "column"))!
+        )
+      );
     }
   }
 
@@ -330,16 +361,42 @@ class Board {
     }
   }
 
-  getCell(point: Point): Cell {
-    return this.cells.get(point)!;
+  getCell(pointOrCell: Point | Cell): Cell {
+    return pointOrCell instanceof Cell
+      ? pointOrCell
+      : this.cells.get(pointOrCell)!;
   }
 
-  getValue(state: ReadableState, point: Point): Value {
-    return state.getValue(this.cells.get(point)!);
+  isPossible(
+    state: ReadableState,
+    pointOrCell: Point | Cell,
+    known: Known
+  ): boolean {
+    return state.isPossibleKnown(this.getCell(pointOrCell), known);
   }
 
-  setKnown(state: WritableState, point: Point, known: Known): boolean {
-    return state.setKnown(this.cells.get(point)!, known);
+  getPossibles(state: ReadableState, pointOrCell: Point | Cell): Set<Known> {
+    return state.getPossibleKnowns(this.getCell(pointOrCell));
+  }
+
+  removePossible(
+    state: WritableState,
+    pointOrCell: Point | Cell,
+    known: Known
+  ): boolean {
+    return state.removePossibleKnown(this.getCell(pointOrCell), known);
+  }
+
+  getValue(state: ReadableState, pointOrCell: Point | Cell): Value {
+    return state.getValue(this.getCell(pointOrCell));
+  }
+
+  setKnown(
+    state: WritableState,
+    pointOrCell: Point | Cell,
+    known: Known
+  ): boolean {
+    return state.setKnown(this.getCell(pointOrCell), known);
   }
 
   toString(state: ReadableState): string {
@@ -361,7 +418,7 @@ class Board {
       }
 
       if (state.getPossibleKnowns(cell).size) {
-        console.log(
+        console.error(
           "INVALID",
           cell.toString(),
           "=",
@@ -382,7 +439,7 @@ class Board {
           possibles.size > 1 ||
           !(possibles.size === 1 || !possibles.has(cell))
         ) {
-          console.log(
+          console.error(
             "INVALID",
             cell.toString(),
             "=",
