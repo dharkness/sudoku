@@ -2,12 +2,15 @@ import { BOARD, Cell, Container } from "./structure2";
 import {
   ALL_KNOWNS,
   Known,
+  Point,
   stringFromKnownSet,
   UNKNOWN,
   Value,
 } from "./basics";
+import { Solutions } from "./solutions";
+import { singleSetValue } from "../utils/collections";
 
-const LOG = true;
+const LOG = false;
 
 export interface ReadableState {
   solvedCount(): number;
@@ -28,6 +31,12 @@ export interface WritableState extends ReadableState {
   setKnown(cell: Cell, known: Known): boolean;
   removePossibleKnown(cell: Cell, known: Known): boolean;
   clearPossibleCells(container: Container, known: Known): Set<Cell>;
+
+  // FACTOR Move Solved to Context { Board, State, Solved }
+  getSolved(): Solutions;
+  addSolved(cell: Cell, known: Known): void;
+  removeSolved(point: Point): void;
+  clearSolved(): void;
 }
 
 export class SimpleState implements WritableState {
@@ -41,6 +50,8 @@ export class SimpleState implements WritableState {
   >();
 
   private readonly possibleCells = new Map<Container, Map<Known, Set<Cell>>>();
+
+  private solved = new Solutions();
 
   addCell(cell: Cell): void {
     this.values.set(cell, UNKNOWN);
@@ -100,7 +111,7 @@ export class SimpleState implements WritableState {
       return false;
     }
     if (current !== UNKNOWN) {
-      throw new CannotChangeCellError(cell, current, known);
+      throw new ChangeCellValueError(cell, current, known);
     }
 
     const possibles = this.getPossibleKnowns(cell);
@@ -187,6 +198,9 @@ export class SimpleState implements WritableState {
         );
       return false;
     }
+    if (possibles.size === 1 && !this.isSolved(cell)) {
+      throw new RemoveLastCellPossibleValueError(cell, known);
+    }
 
     // remove possible known from cell
     const remaining = new Set(possibles);
@@ -202,6 +216,11 @@ export class SimpleState implements WritableState {
         "==>",
         stringFromKnownSet(remaining)
       );
+
+    // solve cell if only one possible known remaining
+    if (remaining.size === 1) {
+      this.addSolved(cell, singleSetValue(remaining));
+    }
 
     // remove possible cell from its containers
     const containers = [...this.possibleContainers.get(cell)!.get(known)!];
@@ -221,11 +240,24 @@ export class SimpleState implements WritableState {
       }
 
       // remove cell from container
-      possibles.delete(cell);
-    }
+      const remaining = new Set(possibles);
+      remaining.delete(cell);
+      this.possibleCells.get(container)!.set(known, remaining);
 
-    if (remaining.size === 1) {
+      LOG &&
+        console.info(
+          "STATE",
+          container.toString(),
+          "x",
+          cell.toString(),
+          "==>",
+          Cell.stringFromSet(remaining)
+        );
 
+      // solve container if only one possible cell remaining
+      if (remaining.size === 1) {
+        this.addSolved(singleSetValue(remaining), known);
+      }
     }
 
     return true;
@@ -278,6 +310,26 @@ export class SimpleState implements WritableState {
   //   remaining.delete(known);
   //   this.possibleKnowns.set(cell, remaining);
   // }
+
+  getSolved(): Solutions {
+    return this.solved;
+  }
+
+  addSolved(cell: Cell, known: Known): void {
+    if (this.isSolved(cell)) {
+      return;
+    }
+
+    this.solved.add(cell.point, known);
+  }
+
+  removeSolved(point: Point): void {
+    this.solved.remove(point);
+  }
+
+  clearSolved(): void {
+    this.solved = new Solutions();
+  }
 }
 
 /**
@@ -286,7 +338,7 @@ export class SimpleState implements WritableState {
 class CellValueNotPossibleError extends Error {
   constructor(cell: Cell, to: Known, possibles: Set<Known>) {
     super(
-      `Cannot set ${cell.toString()} to ${to}, not in ${stringFromKnownSet(
+      `Cannot set ${cell.toString()} to ${to} not in ${stringFromKnownSet(
         possibles
       )}`
     );
@@ -294,9 +346,20 @@ class CellValueNotPossibleError extends Error {
 }
 
 /**
+ * Thrown when attempting to remove a cell's last possible value.
+ */
+class RemoveLastCellPossibleValueError extends Error {
+  constructor(cell: Cell, possible: Known) {
+    super(
+      `Cannot remove last possible value ${possible} from ${cell.toString()}`
+    );
+  }
+}
+
+/**
  * Thrown when attempting to change a cell's value.
  */
-class CannotChangeCellError extends Error {
+class ChangeCellValueError extends Error {
   constructor(cell: Cell, from: Known, to: Known) {
     super(`Cannot change ${cell.toString()} from ${from} to ${to}`);
   }
