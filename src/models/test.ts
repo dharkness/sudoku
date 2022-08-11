@@ -15,10 +15,10 @@ import {
   printPossibles,
   // printPossibles,
   printValues,
-} from "./printers2";
+} from "./printers";
 import { solutionsFromString } from "./solutions";
-import { createEmptySimpleState } from "./state2";
-import { BOARD } from "./structure2";
+import { createEmptySimpleState } from "./state";
+import { BOARD } from "./structure";
 
 const EMPTY =
   "......... ......... ......... ......... ......... ......... ......... ......... .........";
@@ -83,7 +83,7 @@ while (!stop && solutions.length) {
   );
   console.log(solved);
 
-  for (const [p, k] of solved.ordered()) {
+  for (const [p, k] of solved.randomized()) {
     const value = BOARD.getValue(state, p);
     if (![UNKNOWN, k].includes(value)) {
       console.log("STOPPED AT", p.k, "=>", k, "x", value);
