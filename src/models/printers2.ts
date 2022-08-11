@@ -11,7 +11,7 @@ import {
   UNKNOWN,
 } from "./basics";
 import { ReadableState } from "./state2";
-import { BOARD } from "./structure2";
+import { BOARD, Cell } from "./structure2";
 
 export function printValues(state: ReadableState) {
   console.log("  ", 123456789);
@@ -91,55 +91,59 @@ export function printAllPossibles(state: ReadableState) {
   lines.forEach((line) => console.log(line[0], line[1]));
 }
 
-// export function printPossibles(state: ReadableState, known: Known) {
-//   console.log("  ", 123456789, "POSSIBLES FOR", known);
-//   ALL_COORDS.forEach((r) =>
-//     console.log(
-//       r + 1,
-//       ALL_COORDS.reduce((cells: string[], c) => {
-//         const possible = state.isPossibleKnown(getPoint(r, c)!, known);
-//         return [...cells, possible ? known.toString() : "."];
-//       }, []).join("")
-//     )
-//   );
-//   // FIXME Refactor to lay out groups correctly
-//   printRowPossibles(state, known);
-//   printColumnPossibles(state, known);
-//   printBlockPossibles(state, known);
-// }
-//
-// function printRowPossibles(state: ReadableState, known: Known) {
-//   console.log("  ", 123456789, "ROW POSSIBLES FOR", known);
-//   for (const [r, row] of BOARD.rows) {
-//     const points = state.getPossiblePoints(row, known);
-//     console.log(r + 1, pointGroupCoordsToString(0, points));
-//   }
-// }
-//
-// function printColumnPossibles(state: ReadableState, known: Known) {
-//   const lines = Array.from(Array(9), () => "");
-//   for (const [c, column] of BOARD.columns) {
-//     const points = state.getPossiblePoints(column, known);
-//     for (const r of ALL_COORDS) {
-//       lines[r] += points.has(getPoint(r, c)) ? (r + 1).toString() : ".";
-//     }
-//   }
-//   console.log("  ", 123456789, "COLUMN POSSIBLES FOR", known);
-//   lines.forEach((line, r) => console.log(r + 1, line));
-// }
-//
-// function printBlockPossibles(state: ReadableState, known: Known) {
-//   const lines = Array.from(Array(9), () => "");
-//   for (const [b, block] of BOARD.blocks) {
-//     const points = state.getPossiblePoints(block, known);
-//     const topLeft = block.topLeft;
-//     BlockTracker.deltas.forEach(
-//       ([dr, dc], i) =>
-//         (lines[3 * Math.floor(b / 3) + dr] += points.has(delta(topLeft, dr, dc))
-//           ? (i + 1).toString()
-//           : ".")
-//     );
-//   }
-//   console.log("  ", 123456789, "BLOCK POSSIBLES FOR", known);
-//   lines.forEach((line, r) => console.log(r + 1, line));
-// }
+export function printPossibles(state: ReadableState, known: Known) {
+  console.log("  ", 123456789, "POSSIBLES FOR", known);
+  ALL_COORDS.forEach((r) =>
+    console.log(
+      r + 1,
+      ALL_COORDS.reduce((cells: string[], c) => {
+        const possible = state.isPossibleKnown(
+          BOARD.getCell(getPoint(r, c)),
+          known
+        );
+        return [...cells, possible ? known.toString() : "."];
+      }, []).join("")
+    )
+  );
+  // FIXME Refactor to lay out groups correctly
+  printRowPossibles(state, known);
+  printColumnPossibles(state, known);
+  printBlockPossibles(state, known);
+}
+
+function printRowPossibles(state: ReadableState, known: Known) {
+  console.log("  ", 123456789, "ROW POSSIBLES FOR", known);
+  for (const [r, row] of BOARD.rows) {
+    const cells = state.getPossibleCells(row, known);
+    console.log(r + 1, Cell.stringFromGroupCoords(0, cells));
+  }
+}
+
+function printColumnPossibles(state: ReadableState, known: Known) {
+  const lines = Array.from(Array(9), () => "");
+  for (const [c, column] of BOARD.columns) {
+    const cells = state.getPossibleCells(column, known);
+    for (const r of ALL_COORDS) {
+      lines[r] += cells.has(BOARD.getCell(getPoint(r, c)))
+        ? (r + 1).toString()
+        : ".";
+    }
+  }
+  console.log("  ", 123456789, "COLUMN POSSIBLES FOR", known);
+  lines.forEach((line, r) => console.log(r + 1, line));
+}
+
+function printBlockPossibles(state: ReadableState, known: Known) {
+  const lines = Array.from(Array(9), () => "");
+  for (const [b, block] of BOARD.blocks) {
+    const cells = state.getPossibleCells(block, known);
+    block.cells.forEach(
+      (cell) =>
+        (lines[3 * Math.floor(b / 3) + (cell.point.r % 3)] += cells.has(cell)
+          ? (cell.point.i[2] + 1).toString()
+          : ".")
+    );
+  }
+  console.log("  ", 123456789, "BLOCK POSSIBLES FOR", known);
+  lines.forEach((line, r) => console.log(r + 1, line));
+}

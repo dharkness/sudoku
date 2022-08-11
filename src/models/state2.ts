@@ -155,7 +155,7 @@ export class SimpleState implements WritableState {
         "STATE",
         cell.toString(),
         "neighbors",
-        Cell.stringFromSet(neighbors)
+        Cell.stringFromPoints(neighbors)
       );
     for (const n of neighbors) {
       this.removePossibleKnown(n, known);
@@ -234,7 +234,7 @@ export class SimpleState implements WritableState {
             "x",
             known,
             "not in",
-            Cell.stringFromSet(possibles)
+            Cell.stringFromPoints(possibles)
           );
         continue;
       }
@@ -251,12 +251,18 @@ export class SimpleState implements WritableState {
           "x",
           cell.toString(),
           "==>",
-          Cell.stringFromSet(remaining)
+          Cell.stringFromPoints(remaining)
         );
 
-      // solve container if only one possible cell remaining
-      if (remaining.size === 1) {
-        this.addSolved(singleSetValue(remaining), known);
+      // notify container when zero or one possible cell remains
+      switch (remaining.size) {
+        case 1:
+          container.onOneCellLeft(this, known, singleSetValue(remaining));
+          break;
+
+        case 0:
+          container.onNoCellsLeft(this, known);
+          break;
       }
     }
 
@@ -280,7 +286,7 @@ export class SimpleState implements WritableState {
         "x",
         known,
         "from",
-        Cell.stringFromSet(cells)
+        Cell.stringFromPoints(cells)
       );
 
     // remove all cells from the container
