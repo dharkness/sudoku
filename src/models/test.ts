@@ -23,6 +23,7 @@ import { BOARD } from "./structure";
 
 import solveNakedPairs from "../solvers/solveNakedPairs";
 import solveNakedTriples from "../solvers/solveNakedTriples";
+import solveHiddenPairs from "../solvers/solveHiddenPairs";
 
 const EMPTY =
   "......... ......... ......... ......... ......... ......... ......... ......... .........";
@@ -86,6 +87,7 @@ while (!stop && (knowns.length || pencils.length)) {
   const nakeds = new Solutions();
   solveNakedPairs(state, nakeds);
   solveNakedTriples(state, nakeds);
+  solveHiddenPairs(state, nakeds);
   if (!nakeds.isEmpty()) {
     // console.info("FOUND", nakeds);
     // nakeds do not solve knowns directly
