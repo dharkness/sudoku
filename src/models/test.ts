@@ -24,6 +24,7 @@ import { BOARD } from "./structure";
 import solveNakedPairs from "../solvers/solveNakedPairs";
 import solveNakedTriples from "../solvers/solveNakedTriples";
 import solveHiddenPairs from "../solvers/solveHiddenPairs";
+import solveHiddenTriples from "../solvers/solveHiddenTriples";
 
 const EMPTY =
   "......... ......... ......... ......... ......... ......... ......... ......... .........";
@@ -55,7 +56,7 @@ const EMPTY =
 //   "735148629 621359784 489627513 564873291 193562478 872491356 358214967 946785132 217936845";
 
 //
-// ========== NEEDS NAKED PAIRS or TRIPLES ========================================
+// ========== NEEDS NAKED/HIDDEN PAIRS/TRIPLES ========================================
 
 const start =
   "9........ 3...6..2. ..5...7.3 .31.84... 82..1.549 .4....8.. 75.1.6.8. 4..8..1.. ...7.....";
@@ -88,6 +89,7 @@ while (!stop && (knowns.length || pencils.length)) {
   solveNakedPairs(state, solved);
   solveNakedTriples(state, solved);
   solveHiddenPairs(state, solved);
+  solveHiddenTriples(state, solved);
   if (!solved.isEmpty()) {
     // console.info("FOUND", newSolutions);
     // nakeds do not solve knowns directly
