@@ -20,11 +20,14 @@ import {
 import { Solutions, solutionsFromString } from "./solutions";
 import { createEmptySimpleState } from "./state";
 import { BOARD } from "./structure";
-import { solveNakedPairs, solveNakedTriples } from "../solvers/solveNakeds";
+
+import solveNakedPairs from "../solvers/solveNakedPairs";
+import solveNakedTriples from "../solvers/solveNakedTriples";
 
 const EMPTY =
   "......... ......... ......... ......... ......... ......... ......... ......... .........";
 
+//
 // ========== SOLVED BY CELLS AND GROUPS ========================================
 
 // const start =
@@ -42,6 +45,7 @@ const EMPTY =
 // const full =
 //   "218396745 753284196 496157832 531672984 649831257 827549613 185763429 374928561 962415378";
 
+//
 // ========== NEEDS INTERSECTIONS ========================================
 
 // const start =
@@ -49,7 +53,8 @@ const EMPTY =
 // const full =
 //   "735148629 621359784 489627513 564873291 193562478 872491356 358214967 946785132 217936845";
 
-// ========== NEEDS NAKED TRIPLES ========================================
+//
+// ========== NEEDS NAKED PAIRS or TRIPLES ========================================
 
 const start =
   "9........ 3...6..2. ..5...7.3 .31.84... 82..1.549 .4....8.. 75.1.6.8. 4..8..1.. ...7.....";
@@ -129,10 +134,10 @@ while (!stop && (knowns.length || pencils.length)) {
       continue;
     }
 
+    printValues(state);
     console.log("");
     console.log("solving", cell.toString(), "=>", known);
     BOARD.setKnown(state, cell, known);
-    // printValues(state);
 
     const test = BOARD.toString(state);
     if (!BOARD.validate(state) || !isCorrectSoFar(test, full)) {

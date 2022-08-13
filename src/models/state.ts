@@ -21,6 +21,7 @@ export interface ReadableState {
   getPossibleKnowns(cell: Cell): Set<Known>;
 
   getPossibleCells(container: Container, known: Known): Set<Cell>;
+  getPossibleCellsByKnown(container: Container): Map<Known, Set<Cell>>;
 }
 
 export interface WritableState extends ReadableState {
@@ -28,10 +29,14 @@ export interface WritableState extends ReadableState {
   addContainer(container: Container): void;
 
   setKnown(cell: Cell, known: Known): boolean;
-  removePossibleKnown(cell: Cell, known: Known): boolean;
+  removePossibleKnown(
+    cell: Cell,
+    known: Known,
+    triggerLastPossibleKnown?: boolean
+  ): boolean;
   clearPossibleCells(container: Container, known: Known): Set<Cell>;
 
-  // FACTOR Move Solved to Context { Board, State, Solved }
+  // FACTOR Move safety checks to Solutions
   getSolved(): Solutions;
   addSolvedKnown(cell: Cell, known: Known): void;
   removeSolvedKnown(cell: Cell): void;
@@ -146,7 +151,7 @@ export class SimpleState implements WritableState {
     // for every remaining known in cell
     //   remove possible known
     for (const k of [...remaining]) {
-      this.removePossibleKnown(cell, k);
+      this.removePossibleKnown(cell, k, false);
     }
 
     return true;
@@ -166,7 +171,11 @@ export class SimpleState implements WritableState {
     return this.possibleKnowns.get(cell)!;
   }
 
-  removePossibleKnown(cell: Cell, known: Known): boolean {
+  removePossibleKnown(
+    cell: Cell,
+    known: Known,
+    triggerLastPossibleKnown: boolean = true
+  ): boolean {
     const possibles = this.getPossibleKnowns(cell);
     if (!possibles.has(known)) {
       LOG &&
@@ -200,7 +209,7 @@ export class SimpleState implements WritableState {
       );
 
     // solve cell if only one possible known remaining
-    if (remaining.size === 1) {
+    if (triggerLastPossibleKnown && remaining.size === 1) {
       this.addSolvedKnown(cell, singleSetValue(remaining));
     }
 
@@ -260,6 +269,10 @@ export class SimpleState implements WritableState {
     return this.possibleCells.get(container)!.get(known)!;
   }
 
+  getPossibleCellsByKnown(container: Container): Map<Known, Set<Cell>> {
+    return this.possibleCells.get(container)!;
+  }
+
   clearPossibleCells(container: Container, known: Known): Set<Cell> {
     const knowns = this.possibleCells.get(container)!;
     const cells = knowns.get(known)!;
@@ -290,8 +303,22 @@ export class SimpleState implements WritableState {
   }
 
   addSolvedKnown(cell: Cell, known: Known): void {
-    if (this.isSolved(cell)) {
+    // fail on change; ignore when already set to known
+    const current = this.getValue(cell);
+    if (current !== UNKNOWN) {
+      if (current !== known) {
+        throw new ChangeCellValueError(cell, current, known);
+      }
+
       return;
+    }
+
+    if (!this.isPossibleKnown(cell, known)) {
+      throw new CellValueNotPossibleError(
+        cell,
+        known,
+        this.getPossibleKnowns(cell)
+      );
     }
 
     this.solutions.addSolvedKnown(cell, known);
@@ -302,8 +329,15 @@ export class SimpleState implements WritableState {
   }
 
   addErasedPencil(cell: Cell, known: Known): void {
-    if (!this.isPossibleKnown(cell, known)) {
+    if (this.isSolved(cell)) {
       return;
+    }
+    const possibles = this.getPossibleKnowns(cell);
+    if (!possibles.has(known)) {
+      return;
+    }
+    if (possibles.size === 1) {
+      throw new RemoveLastCellPossibleValueError(cell, known);
     }
 
     this.solutions.addErasedPencil(cell, known);
@@ -357,6 +391,5 @@ class ChangeCellValueError extends Error {
 export function createEmptySimpleState(): WritableState {
   const state = new SimpleState();
   BOARD.setupEmptyState(state);
-  console.info(state);
   return state;
 }

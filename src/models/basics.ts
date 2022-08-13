@@ -1,5 +1,7 @@
 // ========== COORDS ============================================================ //
 
+const MISSING = "·";
+
 /**
  * Identifies a row, column, or block (numbered left-to-right, top-to-bottom)
  */
@@ -167,9 +169,9 @@ export function pointGroupCoordsToString(
   points: Set<Point>
 ): string {
   const coords = new Set<Coord>(Array.from(points.values()).map((p) => p.i[g]));
-  return ALL_COORDS.map((c) => (coords.has(c) ? (c + 1).toString() : ".")).join(
-    ""
-  );
+  return ALL_COORDS.map((c) =>
+    coords.has(c) ? (c + 1).toString() : MISSING
+  ).join("");
 }
 
 // ========== VALUES ============================================================ //
@@ -204,9 +206,9 @@ export function valueFromString(char: string): Value {
 }
 
 export function stringFromKnownSet(knowns: Set<Known>): string {
-  return `( ${ALL_KNOWNS.map((k) => (knowns.has(k) ? k.toString() : ".")).join(
-    " "
-  )} )`;
+  return `( ${ALL_KNOWNS.map((k) =>
+    knowns.has(k) ? k.toString() : MISSING
+  ).join(" ")} )`;
 }
 
 /**
@@ -270,7 +272,7 @@ export function solutionDiff(test: string, solution: string): string {
     const s = solution[i]!;
 
     if (t === s || t < "1" || "9" < t || s < "1" || "9" < s) {
-      result += ".";
+      result += MISSING;
     } else {
       result += "x";
     }

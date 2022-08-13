@@ -84,6 +84,23 @@ export function difference<T>(a: Set<T>, b: Set<T>): Set<T> {
 }
 
 /**
+ * Returns true if both sets contain the same elements by identity.
+ */
+export function areEqual<T>(a: Set<T>, b: Set<T>): boolean {
+  if (a.size !== b.size) {
+    return false;
+  }
+
+  for (const t of a) {
+    if (!b.has(t)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * Provides a two-level nested map (map of maps).
  */
 export class NestedMap<K1, K2, V> {

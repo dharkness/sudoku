@@ -34,12 +34,21 @@ export class SolvedKnowns {
   add(cell: Cell, known: Known): boolean {
     const current = this.knowns.get(cell);
     if (known === current) {
-      LOG && console.log("SOLVE", cell.toString(), "=>", known, "DUPE");
+      LOG && console.log("SOLVE set", cell.toString(), "=>", known, "DUPE");
       return false;
     } else if (current) {
-      LOG && console.log("SOLVE", cell.toString(), "=>", known, "x", current);
+      LOG &&
+        console.log(
+          "SOLVE set",
+          cell.toString(),
+          "=>",
+          known,
+          "x",
+          current,
+          "INVALID"
+        );
     } else {
-      LOG && console.log("SOLVE", cell.toString(), "=>", known);
+      LOG && console.log("SOLVE set", cell.toString(), "=>", known);
     }
 
     this.knowns.set(cell, known);
@@ -92,13 +101,13 @@ export class ErasedPencils {
   add(cell: Cell, known: Known): boolean {
     const current = this.pencils.get(cell);
     if (!current) {
-      LOG && console.log("PENCIL", cell.toString(), "x", known);
+      LOG && console.log("SOLVE pencil", cell.toString(), "x", known);
       this.pencils.set(cell, new Set([known]));
     } else if (current.has(known)) {
-      LOG && console.log("PENCIL", cell.toString(), "x", known, "DUPE");
+      LOG && console.log("SOLVE pencil", cell.toString(), "x", known, "DUPE");
       return false;
     } else {
-      LOG && console.log("PENCIL", cell.toString(), "x", known);
+      LOG && console.log("SOLVE pencil", cell.toString(), "x", known);
       this.pencils.get(cell)!.add(known);
     }
 

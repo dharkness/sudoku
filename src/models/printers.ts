@@ -11,8 +11,13 @@ import {
   UNKNOWN,
 } from "./basics";
 import { ReadableState } from "./state";
-import { BOARD, Cell } from "./structure";
+import { BOARD, Cell, Group } from "./structure";
 
+const MISSING = "·";
+
+/**
+ * Prints a grid of cells with their known value or a period.
+ */
 export function printValues(state: ReadableState) {
   console.log("  ", 123456789);
   ALL_COORDS.forEach((r) =>
@@ -20,12 +25,15 @@ export function printValues(state: ReadableState) {
       r + 1,
       ALL_COORDS.map((c) => {
         const value = state.getValue(BOARD.getCell(getPoint(r, c)));
-        return value === UNKNOWN ? "." : value.toString();
+        return value === UNKNOWN ? MISSING : value.toString();
       }).join("")
     )
   );
 }
 
+/**
+ * Prints a grid of cells with the number of possible values or a period.
+ */
 export function printPossibleCounts(state: ReadableState) {
   console.log("  ", 123456789, "POSSIBLE COUNTS");
   ALL_COORDS.forEach((r) =>
@@ -35,13 +43,19 @@ export function printPossibleCounts(state: ReadableState) {
         const count = state.getPossibleKnownsCount(
           BOARD.getCell(getPoint(r, c))
         );
-        return [...cells, count ? count.toString() : "."];
+        return [...cells, count ? count.toString() : MISSING];
       }, []).join("")
     )
   );
 }
 
-export function printAllPossibles(state: ReadableState) {
+/**
+ * Prints a grid of cells, with each cell showing its possibles
+ */
+export function printAllPossibles(
+  state: ReadableState,
+  showKnowns: boolean = false
+) {
   const lines = Array.from(Array(3 * 9 + 8), (_, i) =>
     [1, 5, 9, 13, 17, 21, 25, 29, 33].includes(i)
       ? [Math.floor((i - 1) / 4) + 1, ""]
@@ -54,20 +68,29 @@ export function printAllPossibles(state: ReadableState) {
           "",
         ]
   );
+
   ALL_COORDS.forEach((r) => {
     ALL_COORDS.forEach((c) => {
       const cell = BOARD.getCell(getPoint(r, c));
-      const knowns = state.getPossibleKnowns(cell);
-      for (const k of ALL_KNOWNS) {
-        lines[4 * r + Math.floor((k - 1) / 3)]![1] += knowns.has(k)
-          ? k.toString()
-          : " ";
+      const value = state.getValue(cell);
+      if (showKnowns && value !== UNKNOWN) {
+        [0, 1, 2].forEach(
+          (i) => (lines[4 * r + i]![1] += `${value}${value}${value}`)
+        );
+      } else {
+        const knowns = state.getPossibleKnowns(cell);
+        for (const k of ALL_KNOWNS) {
+          lines[4 * r + Math.floor((k - 1) / 3)]![1] += knowns.has(k)
+            ? k.toString()
+            : MISSING;
+        }
       }
       [0, 1, 2].forEach(
         (i) => (lines[4 * r + i]![1] += c !== 8 && c % 3 === 2 ? " | " : "  ")
       );
     });
   });
+
   console.log(
     "   ",
     1,
@@ -92,6 +115,21 @@ export function printAllPossibles(state: ReadableState) {
 }
 
 export function printPossibles(state: ReadableState, known: Known) {
+  printCellPossibles(state, known);
+  printRowPossibles(state, known);
+  printColumnPossibles(state, known);
+  printBlockPossibles(state, known);
+}
+
+export function printRowPossibles(state: ReadableState, known: Known) {
+  console.log("  ", 123456789, "ROW POSSIBLES FOR", known);
+  for (const [r, row] of BOARD.rows) {
+    const cells = state.getPossibleCells(row, known);
+    console.log(r + 1, Cell.stringFromGroupCoords(0, cells));
+  }
+}
+
+export function printCellPossibles(state: ReadableState, known: Known) {
   console.log("  ", 123456789, "POSSIBLES FOR", known);
   ALL_COORDS.forEach((r) =>
     console.log(
@@ -101,39 +139,27 @@ export function printPossibles(state: ReadableState, known: Known) {
           BOARD.getCell(getPoint(r, c)),
           known
         );
-        return [...cells, possible ? known.toString() : "."];
+        return [...cells, possible ? known.toString() : MISSING];
       }, []).join("")
     )
   );
-  // FIXME Refactor to lay out groups correctly
-  printRowPossibles(state, known);
-  printColumnPossibles(state, known);
-  printBlockPossibles(state, known);
 }
-
-function printRowPossibles(state: ReadableState, known: Known) {
-  console.log("  ", 123456789, "ROW POSSIBLES FOR", known);
-  for (const [r, row] of BOARD.rows) {
-    const cells = state.getPossibleCells(row, known);
-    console.log(r + 1, Cell.stringFromGroupCoords(0, cells));
-  }
-}
-
-function printColumnPossibles(state: ReadableState, known: Known) {
+export function printColumnPossibles(state: ReadableState, known: Known) {
   const lines = Array.from(Array(9), () => "");
   for (const [c, column] of BOARD.columns) {
     const cells = state.getPossibleCells(column, known);
     for (const r of ALL_COORDS) {
       lines[r] += cells.has(BOARD.getCell(getPoint(r, c)))
         ? (r + 1).toString()
-        : ".";
+        : MISSING;
     }
   }
+
   console.log("  ", 123456789, "COLUMN POSSIBLES FOR", known);
   lines.forEach((line, r) => console.log(r + 1, line));
 }
 
-function printBlockPossibles(state: ReadableState, known: Known) {
+export function printBlockPossibles(state: ReadableState, known: Known) {
   const lines = Array.from(Array(9), () => "");
   for (const [b, block] of BOARD.blocks) {
     const cells = state.getPossibleCells(block, known);
@@ -141,9 +167,31 @@ function printBlockPossibles(state: ReadableState, known: Known) {
       (cell) =>
         (lines[3 * Math.floor(b / 3) + (cell.point.r % 3)] += cells.has(cell)
           ? (cell.point.i[2] + 1).toString()
-          : ".")
+          : MISSING)
     );
   }
+
   console.log("  ", 123456789, "BLOCK POSSIBLES FOR", known);
+  lines.forEach((line, r) => console.log(r + 1, line));
+}
+
+export function printGroupPossibles(
+  state: ReadableState,
+  group: Group,
+  description?: string
+) {
+  const lines = ["", "", "", "", "", "", "", "", ""];
+  for (const cell of group.cells) {
+    for (const k of ALL_KNOWNS) {
+      lines[k - 1]! += state.isPossibleKnown(cell, k) ? k.toString() : MISSING;
+    }
+  }
+
+  console.log(
+    "  ",
+    123456789,
+    description || "POSSIBLE KNOWNS FOR",
+    group.toString()
+  );
   lines.forEach((line, r) => console.log(r + 1, line));
 }

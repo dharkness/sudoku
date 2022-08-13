@@ -1,6 +1,5 @@
 import {
   ALL_COORDS,
-  ALL_KNOWNS,
   ALL_POINTS,
   coord,
   Coord,
@@ -12,7 +11,7 @@ import {
   Value,
 } from "./basics";
 import { ReadableState, WritableState } from "./state";
-import { difference, intersect, singleSetValue } from "../utils/collections";
+import { difference, intersect } from "../utils/collections";
 
 /**
  * Implemented by all trackers that manipulate their own state.
@@ -267,6 +266,11 @@ class Board {
   readonly rows = new Map<Coord, Row>();
   readonly columns = new Map<Coord, Column>();
   readonly blocks = new Map<Coord, Block>();
+  readonly groups = new Map<Grouping, Map<Coord, Group>>([
+    [Grouping.ROW, this.rows],
+    [Grouping.COLUMN, this.columns],
+    [Grouping.BLOCK, this.blocks],
+  ]);
 
   private readonly intersections = new Set<Intersection>();
 
@@ -278,7 +282,7 @@ class Board {
     this.createIntersections();
   }
 
-  createCells() {
+  private createCells() {
     for (const c of ALL_COORDS) {
       const row = new Row(c);
       this.rows.set(c, row);
@@ -294,7 +298,7 @@ class Board {
     }
   }
 
-  createGroups() {
+  private createGroups() {
     for (const p of ALL_POINTS) {
       const cell = new Cell(p);
       this.cells.set(p, cell);
@@ -307,7 +311,7 @@ class Board {
     }
   }
 
-  createIntersections() {
+  private createIntersections() {
     for (const [_, block] of this.blocks) {
       this.intersections.add(
         new Intersection(
