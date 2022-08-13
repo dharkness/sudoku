@@ -83,16 +83,16 @@ const knowns = solutionsFromString(start).randomizedSolvedKnowns();
 const pencils = [];
 let stop = false;
 while (!stop && (knowns.length || pencils.length)) {
-  // check for nakeds to erase pencil marks
-  const nakeds = new Solutions();
-  solveNakedPairs(state, nakeds);
-  solveNakedTriples(state, nakeds);
-  solveHiddenPairs(state, nakeds);
-  if (!nakeds.isEmpty()) {
-    // console.info("FOUND", nakeds);
+  // check solvers
+  const solved = new Solutions();
+  solveNakedPairs(state, solved);
+  solveNakedTriples(state, solved);
+  solveHiddenPairs(state, solved);
+  if (!solved.isEmpty()) {
+    // console.info("FOUND", newSolutions);
     // nakeds do not solve knowns directly
     // knowns.push(...nakeds.randomizedSolvedKnowns());
-    pencils.push(...nakeds.randomizedErasedPencils());
+    pencils.push(...solved.randomizedErasedPencils());
   }
 
   // apply all erased pencil marks

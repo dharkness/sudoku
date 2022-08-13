@@ -9,6 +9,7 @@ const LOG = false;
 
 /**
  * Looks for hidden pairs to determine pencil marks to remove.
+ * Removes other knowns from found cells.
  *
  * #xample: This shows a hidden pair of (1, 7) in cells (2, 6).
  *
@@ -31,7 +32,7 @@ export default function solveHiddenPairs(
   state: ReadableState,
   solutions: Solutions
 ): void {
-  for (const [g, groups] of BOARD.groups) {
+  for (const [_, groups] of BOARD.groups) {
     for (const [_, group] of groups) {
       const pairs = new Map(
         ALL_KNOWNS.map(
@@ -68,7 +69,7 @@ export default function solveHiddenPairs(
             continue;
           }
 
-          printGroupPossibles(state, group);
+          LOG && printGroupPossibles(state, group);
           LOG &&
             console.info(
               "SOLVE HIDDEN PAIR",

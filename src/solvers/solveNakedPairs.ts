@@ -3,11 +3,13 @@ import { Solutions } from "../models/solutions";
 import { BOARD, Cell } from "../models/structure";
 import { Known, stringFromKnownSet } from "../models/basics";
 import { difference, union } from "../utils/collections";
+import { printGroupPossibles } from "../models/printers";
 
 const LOG = false;
 
 /**
  * Looks for naked pairs to determine pencil marks to remove.
+ * Removes found knowns from other cells.
  *
  * #xample: This shows a naked pair of (5, 6) in cells (4, 6).
  *
@@ -19,7 +21,7 @@ const LOG = false;
  *   4 ·········
  * → 5 ···5·5···
  * → 6 ··66·6··6  ←-- remove 6 from cells 3 and 9
- *   7 ·········      (coincidence that hidden pair has same result)
+ *   7 ·········      (coincidence that hidden pair [1, 2] has same result)
  *   8 ·········
  *   9 ·········
  */
@@ -62,18 +64,20 @@ export default function solveNakedPairs(
                 "empty naked pair",
                 stringFromKnownSet(ks1ks2),
                 "in",
-                c1.point.k,
-                c2.point.k
+                group.name,
+                Cell.stringFromGroupCoords(g, pair)
               );
             continue;
           }
 
+          LOG && printGroupPossibles(state, group);
           LOG &&
             console.info(
               "SOLVE NAKED PAIR",
               stringFromKnownSet(ks1),
               "in",
               group.name,
+              Cell.stringFromGroupCoords(g, pair),
               "erase",
               ...[...erase.entries()].flatMap(([k, cells]) => [
                 k,

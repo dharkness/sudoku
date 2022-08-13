@@ -3,11 +3,13 @@ import { Solutions } from "../models/solutions";
 import { BOARD, Cell } from "../models/structure";
 import { Known, stringFromKnownSet } from "../models/basics";
 import { difference, union } from "../utils/collections";
+import { printGroupPossibles } from "../models/printers";
 
 const LOG = false;
 
 /**
  * Looks for naked triples to determine pencil marks to remove.
+ * Removes found knowns from other cells.
  *
  * #xample: This shows a naked triple of (3, 7, 9) in cells (2, 6, 9).
  *
@@ -18,11 +20,10 @@ const LOG = false;
  * → 3 ·3···3··3    ↓
  *   4 ·········
  *   5 5·····5··
- *   6 66·6·66·6
+ *   6 66·6·66·6  ←-- remove 6 from cells 1, 4 and 7
  * → 7 ·7···7··7
  *   8 ···8·8···
  * → 9 ·9······9
-
  */
 export default function solveNakedTriples(
   state: ReadableState,
@@ -72,19 +73,20 @@ export default function solveNakedTriples(
                   "empty naked triple",
                   stringFromKnownSet(ks1ks2ks3),
                   "in",
-                  c1.point.k,
-                  c2.point.k,
-                  c3.point.k
+                  group.name,
+                  Cell.stringFromPoints(triple)
                 );
               continue;
             }
 
+            LOG && printGroupPossibles(state, group);
             LOG &&
               console.info(
                 "SOLVE NAKED TRIPLE",
                 stringFromKnownSet(ks1ks2ks3),
                 "in",
                 group.name,
+                Cell.stringFromGroupCoords(g, triple),
                 "erase",
                 ...[...erase.entries()].flatMap(([k, cells]) => [
                   k,
