@@ -25,6 +25,7 @@ import solveNakedPairs from "../solvers/solveNakedPairs";
 import solveNakedTriples from "../solvers/solveNakedTriples";
 import solveHiddenPairs from "../solvers/solveHiddenPairs";
 import solveHiddenTriples from "../solvers/solveHiddenTriples";
+import solveXWings from "../solvers/solveXWings";
 
 const EMPTY =
   "......... ......... ......... ......... ......... ......... ......... ......... .........";
@@ -58,10 +59,18 @@ const EMPTY =
 //
 // ========== NEEDS NAKED/HIDDEN PAIRS/TRIPLES ========================================
 
+// const start =
+//   "9........ 3...6..2. ..5...7.3 .31.84... 82..1.549 .4....8.. 75.1.6.8. 4..8..1.. ...7.....";
+// const full =
+//   "962378415 374561928 185429763 531984672 827613549 649257831 753196284 496832157 218745396";
+
+//
+// ========== NEEDS X-WING ========================================
+
 const start =
-  "9........ 3...6..2. ..5...7.3 .31.84... 82..1.549 .4....8.. 75.1.6.8. 4..8..1.. ...7.....";
+  "1.....569 492.561.8 .561.924. ..964.8.1 .64.1.... 218.356.4 .4.5...16 9.5.614.2 621.....5";
 const full =
-  "962378415 374561928 185429763 531984672 827613549 649257831 753196284 496832157 218745396";
+  "187423569 492756138 356189247 539647821 764218953 218935674 843592716 975361482 621874395";
 
 // const state = createEmptySimpleState();
 // for (const [p, k] of [
@@ -90,6 +99,7 @@ while (!stop && (knowns.length || pencils.length)) {
   solveNakedTriples(state, solved);
   solveHiddenPairs(state, solved);
   solveHiddenTriples(state, solved);
+  solveXWings(state, solved);
   if (!solved.isEmpty()) {
     // console.info("FOUND", newSolutions);
     // nakeds do not solve knowns directly
