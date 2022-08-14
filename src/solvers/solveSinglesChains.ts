@@ -15,13 +15,9 @@ const LOG = false;
 
 type Color = 1 | 2;
 const opposite = (c: Color): Color => (3 - c) as Color;
-type Graph = {
-  colors: Map<Cell, Color>;
-};
-type Free = {
-  sees: Set<Cell>;
-  graphs: Set<Graph>;
-};
+
+type Seen = Set<Cell>;
+type Graph = Map<Cell, Color>;
 
 /**
  * Looks for knowns group pairs forming chains where another cell
@@ -63,7 +59,7 @@ export default function solveSinglesChains(
   //     if map contains both colors, remove cell as possible
 
   for (const k of ALL_KNOWNS) {
-    const free = new Map<Cell, Free>();
+    const free = new Map<Cell, Seen>();
     const graphs = new Map<Cell, Graph>();
 
     for (const [_, groups] of BOARD.groups) {
@@ -81,13 +77,13 @@ export default function solveSinglesChains(
               LOG &&
                 console.info(
                   "loop",
-                  Cell.stringFromPoints(new Set(startGraph.colors.keys()))
+                  Cell.stringFromPoints(new Set(startGraph.keys()))
                 );
               // close loop on one graph
               // ..x....S  graph SxxE, SE forms a loop
               // ..x...E.
-              const startColor = startGraph.colors.get(start)!;
-              const endColor = startGraph.colors.get(end);
+              const startColor = startGraph.get(start)!;
+              const endColor = startGraph.get(end);
               if (endColor === startColor) {
                 throw new LinkedCellsHaveSameColorError(startGraph, [
                   start,
@@ -100,82 +96,66 @@ export default function solveSinglesChains(
                 console.info(
                   "join",
                   k,
-                  Cell.stringFromPoints(new Set(startGraph.colors.keys()))
+                  Cell.stringFromPoints(new Set(startGraph.keys()))
                 );
               // join two graphs
               // ..S....x  graphs Sx and Ex joined by SE
               // .E....x
-              const startColor = startGraph.colors.get(start)!;
-              const endColor = endGraph.colors.get(end);
+              const startColor = startGraph.get(start)!;
+              const endColor = endGraph.get(end);
               if (endColor === startColor) {
                 // add cells of end to start with flipped colors
-                for (const [cell, color] of endGraph.colors) {
-                  startGraph.colors.set(cell, opposite(color));
+                for (const [cell, color] of endGraph) {
+                  startGraph.set(cell, opposite(color));
                 }
               } else {
                 // add cells of end to start with same colors
-                for (const [cell, color] of endGraph.colors) {
-                  startGraph.colors.set(cell, color);
+                for (const [cell, color] of endGraph) {
+                  startGraph.set(cell, color);
                 }
               }
               // switch end graph to startGraph
               graphs.set(end, startGraph);
-              // FACTOR Remove Free.graphs?
-              for (const [f, _] of endGraph.colors) {
-                if (free.get(f)?.graphs.delete(endGraph)) {
-                  free.get(f)!.graphs.add(startGraph);
-                }
-              }
             }
           } else if (startGraph) {
             LOG &&
               console.info(
                 "extend",
                 k,
-                Cell.stringFromPoints(new Set(startGraph.colors.keys()))
+                Cell.stringFromPoints(new Set(startGraph.keys()))
               );
             // FACTOR Extract method for this and next block
             // extend graph from start to end
-            const startColor = startGraph.colors.get(start)!;
-            startGraph.colors.set(end, opposite(startColor));
-            free.set(end, { sees: new Set(), graphs: new Set([startGraph]) });
+            const startColor = startGraph.get(start)!;
+            startGraph.set(end, opposite(startColor));
+            free.set(end, new Set());
             graphs.set(end, startGraph);
           } else if (endGraph) {
             LOG &&
               console.info(
                 "extend",
                 k,
-                Cell.stringFromPoints(new Set(endGraph.colors.keys()))
+                Cell.stringFromPoints(new Set(endGraph.keys()))
               );
             // extend graph from start to end
-            const endColor = endGraph.colors.get(end)!;
-            endGraph.colors.set(start, opposite(endColor));
-            free.set(start, { sees: new Set(), graphs: new Set([endGraph]) });
+            const endColor = endGraph.get(end)!;
+            endGraph.set(start, opposite(endColor));
+            free.set(start, new Set());
             graphs.set(start, endGraph);
           } else {
             LOG && console.info("new", k, Cell.stringFromPoints(cells));
             // create new graph
-            const graph = {
-              colors: new Map<Cell, Color>([
-                [start, 1],
-                [end, 2],
-              ]),
-            };
+            const graph = new Map<Cell, Color>([
+              [start, 1],
+              [end, 2],
+            ]);
             graphs.set(start, graph);
             if (free.has(start)) {
-              // TODO link free.sees to graph?
-              free.get(start)!.graphs.add(graph);
-            } else {
-              // TODO skip? only unlinked cells in free?
-              free.set(start, { sees: new Set(), graphs: new Set([graph]) });
+              free.delete(start);
             }
             graphs.set(end, graph);
             if (free.has(end)) {
-              // TODO link free.sees to graph?
-              free.get(end)!.graphs.add(graph);
-            } else {
-              // TODO skip? only unlinked cells in free?
-              free.set(end, { sees: new Set(), graphs: new Set([graph]) });
+              free.delete(end);
             }
           }
         } else {
@@ -183,11 +163,7 @@ export default function solveSinglesChains(
           for (const c of cells) {
             const f = free.get(c);
             const others = difference(cells, new Set([c]));
-            if (f) {
-              f.sees = union(f.sees, others);
-            } else {
-              free.set(c, { sees: others, graphs: new Set() });
-            }
+            free.set(c, f ? union(f, others) : others);
           }
         }
       }
@@ -196,7 +172,7 @@ export default function solveSinglesChains(
     // check graphs against every free's seen
     for (const g of new Set(graphs.values())) {
       for (const [c, f] of free) {
-        const sees = intersectMap(f.sees, g.colors);
+        const sees = intersectMap(f, g);
         const unique = new Set(sees.values());
         if (unique.size === 2) {
           // printCellPossibles(state, k);
