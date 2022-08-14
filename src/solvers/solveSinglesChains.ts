@@ -175,7 +175,7 @@ export default function solveSinglesChains(
         const sees = intersectMap(f, g);
         const unique = new Set(sees.values());
         if (unique.size === 2) {
-          // printCellPossibles(state, k);
+          LOG && printCellPossibles(state, k);
           LOG &&
             console.info(
               "SOLVE SINGLE'S CHAIN",

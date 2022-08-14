@@ -1,9 +1,10 @@
-import { ReadableState } from "../models/state";
-import { Solutions } from "../models/solutions";
-import { BOARD, Cell } from "../models/structure";
 import { Known, stringFromKnownSet } from "../models/basics";
-import { difference, union } from "../utils/collections";
 import { printGroupPossibles } from "../models/printers";
+import { Solutions } from "../models/solutions";
+import { ReadableState } from "../models/state";
+import { BOARD, Cell } from "../models/structure";
+
+import { difference, union } from "../utils/collections";
 
 const LOG = false;
 
