@@ -21,19 +21,27 @@ export function shuffle<T>(array: T[]): T[] {
 /**
  * Returns the single value of the given set
  *
- * @throws {Error} If the set is empty or has more than one element
+ * @throws {Error} If the set does not have exactly one element
  */
 export function singleSetValue<T>(set: Set<T>): T {
-  switch (set.size) {
-    case 0:
-      throw new Error(`Cannot get a single value from an empty set`);
-    case 1:
-      return set.values().next().value;
-    default:
-      throw new Error(
-        `Cannot get a single value from a set with ${set.size} members`
-      );
+  if (set.size !== 1) {
+    throw new Error(`Set must have 2 elements but has ${set.size}`);
   }
+
+  return set.values().next().value;
+}
+
+/**
+ * Returns the pair of values of the given set
+ *
+ * @throws {Error} If the set does not have exactly two elements
+ */
+export function twoSetValues<T>(set: Set<T>): [T, T] {
+  if (set.size !== 2) {
+    throw new Error(`Set must have 2 elements but has ${set.size}`);
+  }
+
+  return [...set.values()] as [T, T];
 }
 
 /**
@@ -98,6 +106,23 @@ export function areEqual<T>(a: Set<T>, b: Set<T>): boolean {
   }
 
   return true;
+}
+
+/**
+ * Returns a new map containing the entries whose keys are in the set,
+ * in the order they appear in the map.
+ */
+export function intersectMap<K, V>(set: Set<K>, map: Map<K, V>): Map<K, V> {
+  const result = new Map<K, V>();
+
+  for (const [k, v] of map) {
+    if (set.has(k)) {
+      result.set(k, v);
+    }
+  }
+
+  return result;
+  // return new Map([...map.entries()].filter(([k]) => set.has(k)));
 }
 
 /**
