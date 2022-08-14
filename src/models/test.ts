@@ -10,16 +10,15 @@ import {
   stringFromKnownSet,
   UNKNOWN,
 } from "./basics";
+import { BOARD } from "./board";
 import {
   printAllPossibles,
   printPossibleCounts,
   printPossibles,
-  // printPossibles,
   printValues,
 } from "./printers";
 import { Solutions, solutionsFromString } from "./solutions";
 import { createEmptySimpleState } from "./state";
-import { BOARD } from "./structure";
 
 import solveNakedPairs from "../solvers/solveNakedPairs";
 import solveNakedTriples from "../solvers/solveNakedTriples";
@@ -49,6 +48,11 @@ const EMPTY =
 // const full =
 //   "218396745 753284196 496157832 531672984 649831257 827549613 185763429 374928561 962415378";
 
+// const start =
+//   "254..3... .87....4. 9...2.... .3.7.4.12 ....9.4.7 ......5.. ....7...9 .2.....5. ....5637.";
+// const full =
+//   "254683791 687915243 913427865 538764912 162598437 479132586 345871629 726349158 891256374";
+
 //
 // ========== NEEDS INTERSECTIONS ========================================
 
@@ -76,10 +80,22 @@ const EMPTY =
 //
 // ========== NEEDS SINGLE'S CHAIN ========================================
 
+// const start =
+//   "..7.836.. .397.68.. 826419753 64.19.387 .8.367... .73.48.6. 39.87..26 7649..138 2.863.97.";
+// const full =
+//   "517283649 439756812 826419753 645192387 182367495 973548261 391874526 764925138 258631974";
+
+// const start =
+//   "5.....42. ...6.7.1. ........3 ..4..2..8 ....79... .1.5..... ...34.8.. .51.2.... .7......6";
+// const full =
+//   "568913427 342687915 197254683 734162598 685479132 219538764 926345871 851726349 473891256";
+
+// ========== NEEDS ??? ========================================
+
 const start =
-  "..7.836.. .397.68.. 826419753 64.19.387 .8.367... .73.48.6. 39.87..26 7649..138 2.863.97.";
+  "..8...... 2.7.5.9.. .....9.3. 5.9.7.3.. .4....... ...1....6 .8....2.. .3..4.... 4.27...1.";
 const full =
-  "517283649 439756812 826419753 645192387 182367495 973548261 391874526 764925138 258631974";
+  "398..7... 217.5.9.. 654..9.3. 529.7.3.1 146...... 8731....6 .8....2.. .3..4.... 4627...1.";
 
 // const state = createEmptySimpleState();
 // for (const [p, k] of [

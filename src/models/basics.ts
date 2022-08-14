@@ -205,6 +205,9 @@ export function valueFromString(char: string): Value {
   return "1" <= char && char <= "9" ? known(parseInt(char)) : UNKNOWN;
 }
 
+/**
+ * Returns a string form of a set of knowns.
+ */
 export function stringFromKnownSet(knowns: Set<Known>): string {
   return `( ${ALL_KNOWNS.map((k) =>
     knowns.has(k) ? k.toString() : MISSING

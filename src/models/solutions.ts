@@ -1,7 +1,7 @@
-import { shuffle } from "../utils/collections";
-
 import { ALL_POINTS, known, Known, UNKNOWN, valueFromString } from "./basics";
-import { BOARD, Cell } from "./structure";
+import { BOARD, Cell } from "./board";
+
+import { shuffle } from "../utils/collections";
 
 const LOG = false;
 

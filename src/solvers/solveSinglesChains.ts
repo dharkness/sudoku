@@ -2,7 +2,7 @@ import { ALL_KNOWNS } from "../models/basics";
 import { printCellPossibles } from "../models/printers";
 import { ReadableState } from "../models/state";
 import { Solutions } from "../models/solutions";
-import { BOARD, Cell } from "../models/structure";
+import { BOARD, Cell } from "../models/board";
 
 import {
   difference,

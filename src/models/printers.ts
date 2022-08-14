@@ -1,17 +1,6 @@
-import {
-  ALL_COORDS,
-  ALL_GROUPINGS,
-  ALL_KNOWNS,
-  delta,
-  getPoint,
-  Grouping,
-  Known,
-  pointGroupCoordsToString,
-  PointSet,
-  UNKNOWN,
-} from "./basics";
+import { ALL_COORDS, ALL_KNOWNS, getPoint, Known, UNKNOWN } from "./basics";
+import { BOARD, Cell, Group } from "./board";
 import { ReadableState } from "./state";
-import { BOARD, Cell, Group } from "./structure";
 
 const MISSING = "·";
 

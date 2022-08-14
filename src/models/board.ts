@@ -1,268 +1,464 @@
-/*
- * Defines the structure of a standard Sudoku board.
- */
+import {
+  ALL_COORDS,
+  ALL_POINTS,
+  coord,
+  Coord,
+  getPoint,
+  Grouping,
+  Known,
+  Point,
+  UNKNOWN,
+  Value,
+} from "./basics";
+import { ReadableState, WritableState } from "./state";
+
+import { difference, intersect } from "../utils/collections";
 
 /**
- * Identifies a row, column, or block (numbered left-to-right, top-to-bottom)
+ * Implemented by all trackers that manipulate their own state.
  */
-export type Coord = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+interface Stateful {
+  addEmptyState(state: WritableState): void;
+}
 
 /**
- * All valid coordinate values for iterating and generating other constructs.
- */
-export const ALL_COORDS: Coord[] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-
-/**
- * Returns the coordinate as the correct type if it is valid.
+ * Defines a single cell within the board.
  *
- * @throws {Error} If the coordinate is outside the board
+ * When it has one remaining possible known value (pencil mark), it adds it as the solution for itself.
+ * When it is set to a known value, it notifies its containing groups and all neighbors.
  */
-export function coord(value: number, type: string): Coord {
-  if (value < 0 || 8 < value) {
-    throw new Error(`Invalid ${type} (${value})`);
+export class Cell implements Stateful {
+  readonly point: Point;
+
+  constructor(point: Point) {
+    this.point = point;
   }
-  return value as Coord;
+
+  addEmptyState(state: WritableState): void {
+    state.addCell(this);
+  }
+
+  toString() {
+    return `Cell ${this.point.k}`;
+  }
+
+  static stringFromPoints(cells: Set<Cell>): string {
+    return (
+      "( " + [...cells.values()].map((cell) => cell.point.k).join(" ") + " )"
+    );
+  }
+
+  static stringFromGroupCoords(g: Grouping, cells: Set<Cell>): string {
+    const coords = new Set<Coord>(
+      Array.from(cells.values()).map((c) => c.point.i[g])
+    );
+    return ALL_COORDS.map((c) =>
+      coords.has(c) ? (c + 1).toString() : "."
+    ).join("");
+  }
 }
 
 /**
- * Identifies a single cell on the board.
+ * Generic container of cells within the board.
  */
-export type Point = {
-  c: Coord;
-  r: Coord;
-  b: Coord;
-  i: [Coord, Coord, Coord];
-  k: string;
-};
+export abstract class Container implements Stateful {
+  readonly name: string;
+  readonly cells: Set<Cell>;
 
-/**
- * All points indexed by their coordinates, row then column.
- */
-const pointsByRowCol: Point[][] = ALL_COORDS.reduce(
-  (itemRows, r) => [
-    ...itemRows,
-    ALL_COORDS.reduce((items, c) => {
-      const b = coord(3 * Math.floor(r / 3) + Math.floor(c / 3), "b");
-      return [
-        ...items,
-        {
-          r,
-          c,
-          b,
-          i: [c, r, coord(3 * (r % 3) + (c % 3), "bi")],
-          k: `${r + 1},${c + 1}`,
-        },
-      ];
-    }, [] as Point[]),
-  ],
-  [] as Point[][]
-);
+  constructor(name: string, cells?: Set<Cell>) {
+    this.name = name;
+    this.cells = cells ?? new Set<Cell>();
+  }
 
-export const ALL_POINTS: Point[] = ALL_COORDS.reduce(
-  (points, r) => [
-    ...points,
-    ...ALL_COORDS.reduce(
-      (points, c) => [...points, getPoint(r, c)],
-      [] as Point[]
-    ),
-  ],
-  [] as Point[]
-);
+  addCell(cell: Cell) {
+    this.cells.add(cell);
+  }
 
-/**
- * Returns the unique point instance for the given coordinates.
- */
-export function getPoint(r: Coord, c: Coord): Point {
-  return pointsByRowCol[r]![c]!;
+  addEmptyState(state: WritableState): void {
+    state.addContainer(this);
+  }
+
+  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
+    // override to perform actions
+  }
+
+  toString(): string {
+    return `${this.name} ${Cell.stringFromPoints(this.cells)}`;
+  }
+
+  onOneCellLeft(state: WritableState, known: Known, cell: Cell): void {
+    // override if necessary
+  }
+
+  onNoCellsLeft(state: WritableState, known: Known): void {
+    // override if necessary
+  }
 }
 
 /**
- * Returns a point relative to another.
- *
- * @throws {Error} If the new coordinates are outside the board
+ * Base class for rows, columns, and blocks.
  */
-function delta({ r, c }: Point, dc: number, dr: number): Point {
-  return getPoint(coord(r + dr, "r"), coord(c + dc, "c"));
-}
+export abstract class Group extends Container {
+  readonly grouping: Grouping;
+  readonly coord: Coord;
 
-/**
- * Returns a new list of points without any duplicates.
- */
-function uniquePoints(points: Point[]): Point[] {
-  return Array.from(new Set<Point>(points));
-}
-
-export enum Grouping {
-  ROW,
-  COLUMN,
-  BLOCK,
-}
-
-export const ALL_GROUPINGS: Grouping[] = [
-  Grouping.ROW,
-  Grouping.COLUMN,
-  Grouping.BLOCK,
-];
-
-/**
- * Returns a string containing nine slots, each showing the slot's coordinate
- * if any point in the set matches it or a period otherwise.
- */
-export function pointGroupCoordsToString(
-  g: Grouping,
-  points: Set<Point>
-): string {
-  const coords = new Set<Coord>(Array.from(points.values()).map((p) => p.i[g]));
-  return ALL_COORDS.map((c) => (coords.has(c) ? (c + 1).toString() : ".")).join(
-    ""
-  );
-}
-
-/**
- * Holds the points that make up one of the three group types.
- */
-abstract class Group {
-  grouping: Grouping;
-  coord: Coord;
-
-  topLeft: Point;
-  points: Point[];
-
-  protected constructor(grouping: Grouping, coord: Coord, points: Point[]) {
+  constructor(grouping: Grouping, coord: Coord) {
+    super(`${Grouping[grouping]} ${coord + 1}`);
     this.grouping = grouping;
     this.coord = coord;
-    this.topLeft = points[0]!;
-    this.points = points;
   }
-}
 
-/**
- * Represents a horizontal row of nine cells.
- */
-class Row extends Group {
-  constructor(r: Coord) {
-    super(
-      Grouping.ROW,
-      r,
-      ALL_COORDS.reduce(
-        (points: Point[], c: Coord) => [...points, getPoint(r, c)],
-        []
-      )
-    );
-  }
-}
-
-/**
- * Represents a vertical column of nine cells.
- */
-class Column extends Group {
-  constructor(c: Coord) {
-    super(
-      Grouping.COLUMN,
-      c,
-      ALL_COORDS.reduce(
-        (points: Point[], r: Coord) => [...points, getPoint(r, c)],
-        []
-      )
-    );
-  }
-}
-
-/**
- * Represents a typically-square block of nine cells.
- *
- * Non-standard boards may have different arrangements,
- * but hopefully they can be treated identically.
- */
-class Block extends Group {
-  /**
-   * Delta values as [dc, dr] from the top-left cell in a block that identify its cells.
-   * The resulting cells will be left-to-right, top-to-bottom.
-   */
-  static deltas: [number, number][] = [
-    [0, 0],
-    [1, 0],
-    [2, 0],
-    [0, 1],
-    [1, 1],
-    [2, 1],
-    [0, 2],
-    [1, 2],
-    [2, 2],
-  ];
-
-  constructor(b: Coord) {
-    const topLeft = getPoint(
-      coord(3 * Math.floor(b / 3), "r"),
-      coord(3 * (b % 3), "c")
-    );
-    super(
-      Grouping.BLOCK,
-      b,
-      Block.deltas.reduce(
-        (points: Point[], [dc, dr]) => [...points, delta(topLeft, dc, dr)],
-        []
-      )
-    );
-  }
-}
-
-/**
- * Identifies a single unique cell and every other structure it touches.
- */
-export class Cell {
-  point: Point;
-  row: Row;
-  column: Column;
-  block: Block;
-  neighbors: Point[];
-
-  constructor(point: Point, row: Row, column: Column, block: Block) {
-    this.point = point;
-    this.row = row;
-    this.column = column;
-    this.block = block;
-    this.neighbors = uniquePoints([
-      point,
-      ...this.row.points,
-      ...this.column.points,
-      ...this.block.points,
-    ]).slice(1);
-  }
-}
-
-/**
- * Provides access to the cells and related structures that make up a standard Sudoku board.
- */
-class Board {
-  rows: Row[];
-  columns: Column[];
-  blocks: Block[];
-
-  groups: Group[][]; // FIXME Change to Map<Grouping, Group>
-  cells: Map<Point, Cell>;
-
-  constructor() {
-    this.rows = ALL_COORDS.map((r) => new Row(r));
-    this.columns = ALL_COORDS.map((c) => new Column(c));
-    this.blocks = ALL_COORDS.map((b) => new Block(b));
-
-    this.groups = [this.rows, this.columns, this.blocks];
-    this.cells = new Map<Point, Cell>();
-    for (const r of ALL_COORDS) {
-      for (const c of ALL_COORDS) {
-        const point = getPoint(r, c);
-        this.cells.set(
-          point,
-          new Cell(
-            point,
-            this.rows[r]!,
-            this.columns[c]!,
-            this.blocks[point.b]!
-          )
-        );
+  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
+    const possibles = state.clearPossibleCells(this, known);
+    for (const neighbor of possibles) {
+      if (neighbor !== cell) {
+        state.addErasedPencil(neighbor, known);
       }
     }
+  }
+
+  onOneCellLeft(state: WritableState, known: Known, cell: Cell): void {
+    state.addSolvedKnown(cell, known);
+  }
+}
+
+/**
+ * Defines a single row within the board.
+ */
+class Row extends Group {
+  constructor(coord: Coord) {
+    super(Grouping.ROW, coord);
+  }
+}
+
+/**
+ * Defines a single column within the board.
+ */
+class Column extends Group {
+  constructor(coord: Coord) {
+    super(Grouping.COLUMN, coord);
+  }
+}
+
+/**
+ * Defines a single block within the board.
+ */
+class Block extends Group {
+  constructor(coord: Coord) {
+    super(Grouping.BLOCK, coord);
+  }
+}
+
+/**
+ * Tracks the cells in common between a block and a row or column.
+ */
+class Intersect extends Container {
+  private readonly parent: Intersection;
+
+  constructor(parent: Intersection, name: string, cells: Set<Cell>) {
+    super(name, cells);
+    this.parent = parent;
+  }
+
+  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
+    this.parent.clearPossibleCells(state, known);
+  }
+
+  onNoCellsLeft(state: WritableState, known: Known): void {
+    this.parent.clearPossibleCells(state, known);
+  }
+}
+
+/**
+ * Tracks the cells not in common between a block and a row or column.
+ */
+class Disjoint extends Container {
+  private readonly parent: Intersection;
+
+  constructor(parent: Intersection, name: string, cells: Set<Cell>) {
+    super(name, cells);
+    this.parent = parent;
+  }
+
+  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
+    this.parent.clearPossibleCells(state, known);
+  }
+
+  onNoCellsLeft(state: WritableState, known: Known): void {
+    this.parent.removePossibleKnownForOtherDisjoint(state, known, this);
+    this.parent.clearPossibleCells(state, known);
+  }
+}
+
+/**
+ * Models the intersection between a block and a row or column
+ * and the subsets of points not in the block, called disjoints.
+ *
+ * When either disjoint loses the last possible cell for a known,
+ * that known is removed as a possible from the other disjoint's cells
+ * since it must appear in the intersection.
+ *
+ * When this happens, or a known is set anywhere in the union,
+ * all of its containers is removed from the state.
+ *
+ * It does not cause any knowns to be solved by itself.
+ */
+class Intersection {
+  private readonly block: Block;
+  private readonly group: Group;
+
+  private readonly intersection: Container;
+  private readonly blockDisjoint: Container;
+  private readonly groupDisjoint: Container;
+
+  constructor(block: Block, group: Group) {
+    this.block = block;
+    this.group = group;
+
+    const intersection = intersect(block.cells, group.cells);
+    this.intersection = new Intersect(
+      this,
+      `Intersection ( ${this.block.name}, ${this.group.name} )`,
+      intersection
+    );
+    this.blockDisjoint = new Disjoint(
+      this,
+      `Block Disjoint ( ${this.block.name}, ${this.group.name} )`,
+      difference(block.cells, intersection)
+    );
+    this.groupDisjoint = new Disjoint(
+      this,
+      `Group Disjoint ( ${this.block.name}, ${this.group.name} )`,
+      difference(group.cells, intersection)
+    );
+  }
+
+  addEmptyState(state: WritableState): void {
+    this.intersection.addEmptyState(state);
+    this.blockDisjoint.addEmptyState(state);
+    this.groupDisjoint.addEmptyState(state);
+  }
+
+  removePossibleKnownForOtherDisjoint(
+    state: WritableState,
+    known: Known,
+    disjoint: Disjoint
+  ): void {
+    const other =
+      disjoint === this.blockDisjoint ? this.groupDisjoint : this.blockDisjoint;
+    for (const cell of other.cells) {
+      state.removePossibleKnown(cell, known);
+    }
+  }
+
+  clearPossibleCells(state: WritableState, known: Known): void {
+    state.clearPossibleCells(this.intersection, known);
+    state.clearPossibleCells(this.blockDisjoint, known);
+    state.clearPossibleCells(this.groupDisjoint, known);
+  }
+}
+
+/**
+ * Manages the various structures that make up the board.
+ */
+class Board {
+  private readonly cells = new Map<Point, Cell>();
+
+  readonly rows = new Map<Coord, Row>();
+  readonly columns = new Map<Coord, Column>();
+  readonly blocks = new Map<Coord, Block>();
+  readonly groups = new Map<Grouping, Map<Coord, Group>>([
+    [Grouping.ROW, this.rows],
+    [Grouping.COLUMN, this.columns],
+    [Grouping.BLOCK, this.blocks],
+  ]);
+
+  private readonly intersections = new Set<Intersection>();
+
+  private readonly statefuls = new Set<Stateful>();
+
+  constructor() {
+    this.createCells();
+    this.createGroups();
+    this.createIntersections();
+  }
+
+  private createCells() {
+    for (const c of ALL_COORDS) {
+      const row = new Row(c);
+      this.rows.set(c, row);
+      this.statefuls.add(row);
+
+      const column = new Column(c);
+      this.columns.set(c, column);
+      this.statefuls.add(column);
+
+      const block = new Block(c);
+      this.blocks.set(c, block);
+      this.statefuls.add(block);
+    }
+  }
+
+  private createGroups() {
+    for (const p of ALL_POINTS) {
+      const cell = new Cell(p);
+      this.cells.set(p, cell);
+
+      this.rows.get(p.r)!.addCell(cell);
+      this.columns.get(p.c)!.addCell(cell);
+      this.blocks.get(p.b)!.addCell(cell);
+
+      this.statefuls.add(cell);
+    }
+  }
+
+  private createIntersections() {
+    for (const [_, block] of this.blocks) {
+      this.intersections.add(
+        new Intersection(
+          block,
+          this.rows.get(coord(3 * Math.floor(block.coord / 3), "row"))!
+        )
+      );
+      this.intersections.add(
+        new Intersection(
+          block,
+          this.rows.get(coord(3 * Math.floor(block.coord / 3) + 1, "row"))!
+        )
+      );
+      this.intersections.add(
+        new Intersection(
+          block,
+          this.rows.get(coord(3 * Math.floor(block.coord / 3) + 2, "row"))!
+        )
+      );
+
+      this.intersections.add(
+        new Intersection(
+          block,
+          this.columns.get(coord(3 * (block.coord % 3), "column"))!
+        )
+      );
+      this.intersections.add(
+        new Intersection(
+          block,
+          this.columns.get(coord(3 * (block.coord % 3) + 1, "column"))!
+        )
+      );
+      this.intersections.add(
+        new Intersection(
+          block,
+          this.columns.get(coord(3 * (block.coord % 3) + 2, "column"))!
+        )
+      );
+    }
+  }
+
+  setupEmptyState(state: WritableState): void {
+    for (const [_, cell] of this.cells) {
+      cell.addEmptyState(state);
+    }
+    [this.rows, this.columns, this.blocks].forEach((groups) =>
+      groups.forEach((group) => group.addEmptyState(state))
+    );
+    for (const intersection of this.intersections) {
+      intersection.addEmptyState(state);
+    }
+  }
+
+  getCell(pointOrCell: Point | Cell): Cell {
+    return pointOrCell instanceof Cell
+      ? pointOrCell
+      : this.cells.get(pointOrCell)!;
+  }
+
+  isPossible(
+    state: ReadableState,
+    pointOrCell: Point | Cell,
+    known: Known
+  ): boolean {
+    return state.isPossibleKnown(this.getCell(pointOrCell), known);
+  }
+
+  getPossibles(state: ReadableState, pointOrCell: Point | Cell): Set<Known> {
+    return state.getPossibleKnowns(this.getCell(pointOrCell));
+  }
+
+  removePossible(
+    state: WritableState,
+    pointOrCell: Point | Cell,
+    known: Known
+  ): boolean {
+    return state.removePossibleKnown(this.getCell(pointOrCell), known);
+  }
+
+  getValue(state: ReadableState, pointOrCell: Point | Cell): Value {
+    return state.getValue(this.getCell(pointOrCell));
+  }
+
+  setKnown(
+    state: WritableState,
+    pointOrCell: Point | Cell,
+    known: Known
+  ): boolean {
+    return state.setKnown(this.getCell(pointOrCell), known);
+  }
+
+  toString(state: ReadableState): string {
+    return ALL_COORDS.map((r) =>
+      ALL_COORDS.map((c) => {
+        const value = state.getValue(this.cells.get(getPoint(r, c))!);
+        return value === UNKNOWN ? "." : value.toString();
+      }).join("")
+    ).join(" ");
+  }
+
+  validate(state: ReadableState): boolean {
+    let valid = true;
+
+    for (const [point, cell] of this.cells) {
+      const value = state.getValue(cell);
+      if (value === UNKNOWN) {
+        continue;
+      }
+
+      if (state.getPossibleKnowns(cell).size) {
+        console.error(
+          "INVALID",
+          cell.toString(),
+          "=",
+          value,
+          "with knowns",
+          state.getPossibleKnowns(cell)
+        );
+        valid = false;
+      }
+
+      [
+        this.rows.get(cell.point.r)!,
+        this.columns.get(cell.point.c)!,
+        this.blocks.get(cell.point.b)!,
+      ].forEach((group) => {
+        const possibles = state.getPossibleCells(group, value);
+        if (
+          possibles.size > 1 ||
+          !(possibles.size === 1 || !possibles.has(cell))
+        ) {
+          console.error(
+            "INVALID",
+            cell.toString(),
+            "=",
+            value,
+            group.toString(),
+            "has cells",
+            Cell.stringFromPoints(possibles)
+          );
+          valid = false;
+        }
+      });
+    }
+
+    return valid;
   }
 }
 

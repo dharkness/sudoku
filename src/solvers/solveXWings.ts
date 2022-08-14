@@ -2,7 +2,7 @@ import { ALL_KNOWNS, Coord, Grouping } from "../models/basics";
 import { printCellPossibles } from "../models/printers";
 import { Solutions } from "../models/solutions";
 import { ReadableState } from "../models/state";
-import { BOARD, Cell, Group } from "../models/structure";
+import { BOARD, Cell, Group } from "../models/board";
 
 import { difference } from "../utils/collections";
 

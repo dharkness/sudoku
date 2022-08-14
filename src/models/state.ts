@@ -1,4 +1,3 @@
-import { BOARD, Cell, Container } from "./structure";
 import {
   ALL_KNOWNS,
   Known,
@@ -6,7 +5,9 @@ import {
   UNKNOWN,
   Value,
 } from "./basics";
+import { BOARD, Cell, Container } from "./board";
 import { Solutions } from "./solutions";
+
 import { singleSetValue } from "../utils/collections";
 
 const LOG = false;

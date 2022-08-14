@@ -2,7 +2,7 @@ import { Known, stringFromKnownSet } from "../models/basics";
 import { printGroupPossibles } from "../models/printers";
 import { Solutions } from "../models/solutions";
 import { ReadableState } from "../models/state";
-import { BOARD, Cell } from "../models/structure";
+import { BOARD, Cell } from "../models/board";
 
 import { difference, union } from "../utils/collections";
 
