@@ -12,7 +12,9 @@ import {
 } from "./basics";
 import { ReadableState, WritableState } from "./state";
 
-import { difference, intersect } from "../utils/collections";
+import { difference, intersect, union } from "../utils/collections";
+
+const MISSING = "·";
 
 /**
  * Implemented by all trackers that manipulate their own state.
@@ -29,9 +31,46 @@ interface Stateful {
  */
 export class Cell implements Stateful {
   readonly point: Point;
+  readonly row: Row;
+  readonly column: Column;
+  readonly block: Block;
 
-  constructor(point: Point) {
+  /**
+   * All cells in this cell's row, column and block, excluding this cell.
+   */
+  readonly neighbors = new Set<Cell>();
+  /**
+   * For each cell, all cells seen by it and this cell,
+   * i.e. the neighbors they have in common.
+   */
+  readonly commonNeighbors = new Map<Cell, Set<Cell>>();
+
+  constructor(point: Point, row: Row, column: Column, block: Block) {
     this.point = point;
+    this.row = row;
+    this.column = column;
+    this.block = block;
+  }
+
+  fillNeighbors() {
+    for (const group of [this.block, this.row, this.column]) {
+      for (const c of group.cells) {
+        if (c !== this) {
+          this.neighbors.add(c);
+        }
+      }
+    }
+  }
+
+  fillCommonNeighbors(cells: Iterable<Cell>) {
+    for (const c of cells) {
+      this.commonNeighbors.set(
+        c,
+        this.neighbors.has(c)
+          ? intersect(this.neighbors, c.neighbors)
+          : new Set()
+      );
+    }
   }
 
   addEmptyState(state: WritableState): void {
@@ -53,7 +92,7 @@ export class Cell implements Stateful {
       Array.from(cells.values()).map((c) => c.point.i[g])
     );
     return ALL_COORDS.map((c) =>
-      coords.has(c) ? (c + 1).toString() : "."
+      coords.has(c) ? (c + 1).toString() : MISSING
     ).join("");
   }
 }
@@ -262,7 +301,7 @@ class Intersection {
  * Manages the various structures that make up the board.
  */
 class Board {
-  private readonly cells = new Map<Point, Cell>();
+  readonly cells = new Map<Point, Cell>();
 
   readonly rows = new Map<Coord, Row>();
   readonly columns = new Map<Coord, Column>();
@@ -278,12 +317,12 @@ class Board {
   private readonly statefuls = new Set<Stateful>();
 
   constructor() {
-    this.createCells();
     this.createGroups();
+    this.createCells();
     this.createIntersections();
   }
 
-  private createCells() {
+  private createGroups() {
     for (const c of ALL_COORDS) {
       const row = new Row(c);
       this.rows.set(c, row);
@@ -299,9 +338,14 @@ class Board {
     }
   }
 
-  private createGroups() {
+  private createCells() {
     for (const p of ALL_POINTS) {
-      const cell = new Cell(p);
+      const cell = new Cell(
+        p,
+        this.rows.get(p.r)!,
+        this.columns.get(p.c)!,
+        this.blocks.get(p.b)!
+      );
       this.cells.set(p, cell);
 
       this.rows.get(p.r)!.addCell(cell);
@@ -309,6 +353,14 @@ class Board {
       this.blocks.get(p.b)!.addCell(cell);
 
       this.statefuls.add(cell);
+    }
+
+    for (const [_, c] of this.cells) {
+      c.fillNeighbors();
+    }
+
+    for (const [_, c] of this.cells) {
+      c.fillCommonNeighbors(this.cells.values());
     }
   }
 
@@ -416,7 +468,7 @@ class Board {
   validate(state: ReadableState): boolean {
     let valid = true;
 
-    for (const [point, cell] of this.cells) {
+    for (const [_, cell] of this.cells) {
       const value = state.getValue(cell);
       if (value === UNKNOWN) {
         continue;
