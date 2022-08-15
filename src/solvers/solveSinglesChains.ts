@@ -26,7 +26,7 @@ type Graph = Map<Cell, Color>;
  *
  * TODO Switch cell/link for node/edge
  *
- * #xample: This shows a single's chain of 7 linking cells (58, 52, 61, 81).
+ * Example: This shows a single's chain of 7 linking cells (58, 52, 61, 81).
  *
  *     123456789
  *   1 ·········

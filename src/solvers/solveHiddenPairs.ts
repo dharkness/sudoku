@@ -12,7 +12,7 @@ const LOG = false;
  * Looks for hidden pairs to determine pencil marks to remove.
  * Removes other knowns from found cells.
  *
- * #xample: This shows a hidden pair of (1, 7) in cells (2, 6).
+ * Example: This shows a hidden pair of (1, 7) in cells (2, 6).
  *
  *      ↓   ↓
  *     123456789  ←-- cell group index

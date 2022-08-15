@@ -12,7 +12,7 @@ const LOG = false;
  * Looks for naked pairs to determine pencil marks to remove.
  * Removes found knowns from other cells.
  *
- * #xample: This shows a naked pair of (5, 6) in cells (4, 6).
+ * Example: This shows a naked pair of (5, 6) in cells (4, 6).
  *
  *        ↓ ↓
  *     123456789  ←-- cell group index

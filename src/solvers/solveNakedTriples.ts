@@ -12,7 +12,7 @@ const LOG = false;
  * Looks for naked triples to determine pencil marks to remove.
  * Removes found knowns from other cells.
  *
- * #xample: This shows a naked triple of (3, 7, 9) in cells (2, 6, 9).
+ * Example: This shows a naked triple of (3, 7, 9) in cells (2, 6, 9).
  *
  *      ↓   ↓  ↓
  *     123456789  ←-- cell group index

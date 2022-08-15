@@ -12,7 +12,7 @@ const LOG = false;
  * Looks for X-Wings in rows and columns to determine pencil marks to remove.
  * Removes found known from other cells in opposite row/column.
  *
- * #xample: This grid of 4-possibles shows an X-Wing in rows 2 and 5
+ * Example: This grid of 4-possibles shows an X-Wing in rows 2 and 5
  *
  *        ↓   ↓
  *     123456789
