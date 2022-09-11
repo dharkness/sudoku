@@ -55,7 +55,7 @@ export class SimpleState implements WritableState {
 
   private readonly possibleCells: Map<Container, Map<Known, Set<Cell>>>;
 
-  private solutions = new Solutions();
+  private solutions: Solutions;
 
   constructor(clone?: SimpleState) {
     if (clone) {
@@ -64,12 +64,14 @@ export class SimpleState implements WritableState {
       this.containers = clone.containers;
       this.possibleContainers = clone.possibleContainers;
       this.possibleCells = clone.possibleCells;
+      this.solutions = clone.solutions;
     } else {
       this.values = new Map<Cell, Value>();
       this.possibleKnowns = new Map<Cell, Set<Known>>();
       this.containers = new Map<Cell, Set<Container>>();
       this.possibleContainers = new Map<Cell, Map<Known, Set<Container>>>();
       this.possibleCells = new Map<Container, Map<Known, Set<Cell>>>();
+      this.solutions = new Solutions();
     }
   }
 

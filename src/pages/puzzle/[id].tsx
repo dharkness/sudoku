@@ -2,8 +2,9 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
 
-import SmallDotPuzzle from "../../components/SmallDotPuzzle";
 import { trpc } from "../../utils/trpc";
+
+import PlayPuzzle from "../../components/PlayPuzzle";
 
 const ViewPuzzle: NextPage = () => {
   const router = useRouter();
@@ -45,7 +46,7 @@ const ViewPuzzle: NextPage = () => {
         </h1>
 
         <main className="mt-5">
-          <SmallDotPuzzle puzzle={puzzle} size={200} digits />
+          <PlayPuzzle puzzle={puzzle} />
           <div className="text-slate-500">
             Created on {puzzle.createdAt.toLocaleString()}
           </div>
