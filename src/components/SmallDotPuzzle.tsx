@@ -14,22 +14,20 @@ const SmallDotPuzzle = ({
   const rows = puzzle.start.split(" ");
 
   return (
-    <table
-      className="table-fixed border border-collapse border-black text-center"
-      style={{ width: size, height: size }}
-    >
+    <table className="table-fixed border border-collapse border-black text-center">
       <tbody>
-        {rows.map((row, y) => (
+        {rows.map((row, r) => (
           <tr
-            key={y}
-            className={y % 3 === 2 ? "border-b border-slate-500" : ""}
+            key={r}
+            className={r % 3 === 2 ? "border-b border-slate-500" : ""}
           >
-            {row.split("").map((num, x) => (
+            {row.split("").map((num, c) => (
               <td
-                key={x}
+                key={c}
                 className={`mx-auto ${num === "." ? "" : "bg-black"} ${
-                  x % 3 === 2 ? "border-r border-slate-500" : ""
+                  c % 3 === 2 ? "border-r border-slate-500" : ""
                 }`}
+                style={{ width: size, height: size }}
               >
                 {digits && num !== "." ? num : ""}
               </td>
