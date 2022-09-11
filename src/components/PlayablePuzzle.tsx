@@ -16,16 +16,19 @@ import { WritableState } from "../models/state";
 
 import SelectableCell from "./SelectableCell";
 import { printAllPossibles } from "../models/printers";
+import { singleSetValue } from "../utils/collections";
 
 type EditablePuzzleProps = {
   state: WritableState;
   setCell: (point: Point, value: Value) => void;
+  removePossible: (point: Point, known: Known) => void;
   size: number;
 };
 
 const PlayablePuzzle = ({
   state,
   setCell,
+  removePossible,
   size,
 }: EditablePuzzleProps): JSX.Element => {
   const [selected, setSelected] = useState<Point>();
@@ -33,16 +36,42 @@ const PlayablePuzzle = ({
   printAllPossibles(state);
 
   useEventListener("keydown", (event: KeyboardEvent) => {
-    if (event.isComposing || event.keyCode === 229) {
+    if (
+      event.ctrlKey ||
+      event.altKey ||
+      event.isComposing ||
+      event.keyCode === 229
+    ) {
       return;
     }
 
     const key = event.key;
+
+    switch (key) {
+      case "u":
+      case "Home":
+        setSelected(getPoint(coord(0, "row"), coord(0, "col")));
+        event.preventDefault();
+        return;
+      case "o":
+      case "End":
+        setSelected(getPoint(coord(8, "row"), coord(8, "col")));
+        event.preventDefault();
+        return;
+    }
+
     if (selected) {
-      if ("1" <= key && key <= "9") {
+      if (key === " " || key === "Spacebar") {
+        const possibles = BOARD.getPossibles(state, selected);
+        if (possibles.size === 1) {
+          setCell(selected, singleSetValue(possibles));
+        }
+      } else if ("1" <= key && key <= "9") {
         setCell(selected, known(key.charCodeAt(0) - ZERO_CODE));
-      } else if (key in NUMBER_KEYS) {
-        setCell(selected, NUMBER_KEYS[key]!);
+      } else if (key in SET_KNOWN_KEYS) {
+        setCell(selected, SET_KNOWN_KEYS[key]!);
+      } else if (key in REMOVE_POSSIBLE_KEYS) {
+        removePossible(selected, REMOVE_POSSIBLE_KEYS[key]!);
       } else if (["Backspace", "Delete", "Clear"].includes(key)) {
         // TODO how to clear?
       } else {
@@ -71,23 +100,15 @@ const PlayablePuzzle = ({
           case "l":
           case "Right":
           case "ArrowRight":
-            if (selected.r < 8) {
+            if (selected.c < 8) {
               setSelected(getPoint(selected.r, coord(selected.c + 1, "col")));
             }
             break;
+          default:
+            console.log("ignoring keydown", event);
+            return;
         }
       }
-    }
-
-    switch (key) {
-      case "u":
-      case "Home":
-        setSelected(getPoint(coord(0, "row"), coord(0, "col")));
-        break;
-      case "o":
-      case "End":
-        setSelected(getPoint(coord(8, "row"), coord(8, "col")));
-        break;
     }
 
     event.preventDefault();
@@ -127,7 +148,7 @@ const PlayablePuzzle = ({
 
 const ZERO_CODE = "0".charCodeAt(0);
 
-const NUMBER_KEYS: { [key: string]: Known } = {
+const SET_KNOWN_KEYS: { [key: string]: Known } = {
   w: 1,
   e: 2,
   r: 3,
@@ -137,6 +158,18 @@ const NUMBER_KEYS: { [key: string]: Known } = {
   x: 7,
   c: 8,
   v: 9,
+};
+
+const REMOVE_POSSIBLE_KEYS: { [key: string]: Known } = {
+  W: 1,
+  E: 2,
+  R: 3,
+  S: 4,
+  D: 5,
+  F: 6,
+  X: 7,
+  C: 8,
+  V: 9,
 };
 
 export default PlayablePuzzle;

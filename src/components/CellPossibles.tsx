@@ -1,7 +1,5 @@
 import { Known, known } from "../models/basics";
 
-const PENCIL = "·";
-
 type CellPencilMarksProps = {
   possibles: Set<Known>;
 };
@@ -19,7 +17,7 @@ const CellPossibles = ({ possibles }: CellPencilMarksProps): JSX.Element => {
                 className="mx-auto"
                 style={{ width: "33%", height: "33%" }}
               >
-                {possibles.has(known(k)) ? PENCIL : ""}
+                {possibles.has(known(k)) ? k : ""}
               </td>
             );
           })}

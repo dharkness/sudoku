@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 
-import { Point, UNKNOWN, Value } from "../models/basics";
+import { Known, Point, UNKNOWN, Value } from "../models/basics";
 import { BOARD } from "../models/board";
 import { Puzzle } from "../models/puzzle";
 import { createEmptySimpleState, SimpleState } from "../models/state";
@@ -53,7 +53,35 @@ const PlayPuzzle = ({ puzzle }: PlayPuzzleProps): JSX.Element => {
     }
   }, []);
 
-  return <PlayablePuzzle state={state} setCell={setCell} size={80} />;
+  const removePossible = useCallback((point: Point, known: Known) => {
+    if (known !== UNKNOWN) {
+      setState((state) => {
+        if (!BOARD.isPossible(state, point, known)) {
+          return state;
+        }
+
+        const clone = new SimpleState(state);
+        BOARD.removePossible(clone, point, known);
+
+        const solved = state.getSolved();
+        state.clearSolved();
+        solved.forEachErasedPencil((cell, known) =>
+          BOARD.removePossible(state, cell, known)
+        );
+
+        return clone;
+      });
+    }
+  }, []);
+
+  return (
+    <PlayablePuzzle
+      state={state}
+      setCell={setCell}
+      removePossible={removePossible}
+      size={80}
+    />
+  );
 };
 
 export default PlayPuzzle;
