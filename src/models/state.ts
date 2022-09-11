@@ -47,18 +47,31 @@ export interface WritableState extends ReadableState {
 }
 
 export class SimpleState implements WritableState {
-  private readonly values = new Map<Cell, Value>();
-  private readonly possibleKnowns = new Map<Cell, Set<Known>>();
+  private readonly values: Map<Cell, Value>;
+  private readonly possibleKnowns: Map<Cell, Set<Known>>;
 
-  private readonly containers = new Map<Cell, Set<Container>>();
-  private readonly possibleContainers = new Map<
-    Cell,
-    Map<Known, Set<Container>>
-  >();
+  private readonly containers: Map<Cell, Set<Container>>;
+  private readonly possibleContainers: Map<Cell, Map<Known, Set<Container>>>;
 
-  private readonly possibleCells = new Map<Container, Map<Known, Set<Cell>>>();
+  private readonly possibleCells: Map<Container, Map<Known, Set<Cell>>>;
 
   private solutions = new Solutions();
+
+  constructor(clone?: SimpleState) {
+    if (clone) {
+      this.values = clone.values;
+      this.possibleKnowns = clone.possibleKnowns;
+      this.containers = clone.containers;
+      this.possibleContainers = clone.possibleContainers;
+      this.possibleCells = clone.possibleCells;
+    } else {
+      this.values = new Map<Cell, Value>();
+      this.possibleKnowns = new Map<Cell, Set<Known>>();
+      this.containers = new Map<Cell, Set<Container>>();
+      this.possibleContainers = new Map<Cell, Map<Known, Set<Container>>>();
+      this.possibleCells = new Map<Container, Map<Known, Set<Cell>>>();
+    }
+  }
 
   addCell(cell: Cell): void {
     this.values.set(cell, UNKNOWN);
@@ -389,7 +402,7 @@ class ChangeCellValueError extends Error {
 /**
  * Returns a new empty, writable state.
  */
-export function createEmptySimpleState(): WritableState {
+export function createEmptySimpleState(): SimpleState {
   const state = new SimpleState();
   BOARD.setupEmptyState(state);
   return state;
