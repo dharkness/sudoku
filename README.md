@@ -19,9 +19,21 @@ but feel free to explore and scavenge any code you find useful.
   - group possible cells hold index sets instead of point sets for performance?
 - Play
   - UI
+    - number panel to lock highlight value
+      - alt-# to toggle?
+      - l-then-# too? multi-key combos may be fun
     - undo/redo
-    - show clear errors
+      - z/y to apply
+    - show errors
+      - currently block setting cell to non-possible
+      - incorrectly set cell
+      - incorrectly removed possible
+      - solutions that make puzzle impossible (good for creating new puzzles)
+      - easier to show banner when making errors given the model
     - inspect/apply solvers
+      - list of solvers
+      - highlight available
+      - button to apply
 - Create
   - manual partial puzzles
   - random puzzles
