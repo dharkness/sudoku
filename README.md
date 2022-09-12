@@ -21,7 +21,6 @@ but feel free to explore and scavenge any code you find useful.
   - UI
     - undo/redo
     - show clear errors
-    - highlight knowns/possibles when solved cell is selected
     - inspect/apply solvers
 - Create
   - manual partial puzzles

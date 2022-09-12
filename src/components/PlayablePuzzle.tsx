@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import useEventListener from "@use-it/event-listener";
 
@@ -10,12 +10,12 @@ import {
   Point,
   coord,
   Known,
+  UNKNOWN,
 } from "../models/basics";
 import { BOARD } from "../models/board";
 import { WritableState } from "../models/state";
 
 import SelectableCell from "./SelectableCell";
-import { printAllPossibles } from "../models/printers";
 import { singleSetValue } from "../utils/collections";
 
 type EditablePuzzleProps = {
@@ -33,9 +33,21 @@ const PlayablePuzzle = ({
 }: EditablePuzzleProps): JSX.Element => {
   const [selected, setSelected] = useState<Point>();
 
-  printAllPossibles(state);
+  const [highlight, singleton] = useMemo(() => {
+    if (!selected) {
+      return [UNKNOWN, UNKNOWN];
+    }
+
+    const highlight = BOARD.getValue(state, selected);
+    const possibles = BOARD.getPossibles(state, selected);
+    const singleton =
+      possibles.size === 1 ? singleSetValue(possibles) : UNKNOWN;
+
+    return [highlight, singleton];
+  }, [state, selected]);
 
   useEventListener("keydown", (event: KeyboardEvent) => {
+    // noinspection JSDeprecatedSymbols
     if (
       event.ctrlKey ||
       event.altKey ||
@@ -62,9 +74,8 @@ const PlayablePuzzle = ({
 
     if (selected) {
       if (key === " " || key === "Spacebar") {
-        const possibles = BOARD.getPossibles(state, selected);
-        if (possibles.size === 1) {
-          setCell(selected, singleSetValue(possibles));
+        if (singleton !== UNKNOWN) {
+          setCell(selected, singleton);
         }
       } else if ("1" <= key && key <= "9") {
         setCell(selected, known(key.charCodeAt(0) - ZERO_CODE));
@@ -131,6 +142,7 @@ const PlayablePuzzle = ({
                   key={c}
                   point={point}
                   value={BOARD.getValue(state, point)}
+                  highlight={highlight}
                   selected={selected === point}
                   onSelect={() => setSelected(point)}
                   size={size}
