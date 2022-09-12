@@ -1,3 +1,5 @@
+// noinspection JSUnusedGlobalSymbols
+
 /**
  * Shuffles the given array in-place and returns it for convenience.
  */
@@ -106,6 +108,30 @@ export function areEqual<T>(a: Set<T>, b: Set<T>): boolean {
   }
 
   return true;
+}
+
+/**
+ * Returns a new map containing the same keys mapped to clones of the same values.
+ *
+ * TODO Add cloneKey?
+ */
+export function deepCloneMap<K, V>(map: Map<K, V>, cloneValue: (v: V) => V) {
+  return new Map([...map.entries()].map(([k, v]) => [k, cloneValue(v)]));
+}
+
+/**
+ * Returns a new map containing the same keys mapped to clones of the same sets,
+ * possibly cloning each sets' items.
+ *
+ * TODO Add cloneKey?
+ */
+export function deepCloneMapOfSets<K, V>(
+  map: Map<K, Set<V>>,
+  cloneValue?: (v: V) => V
+) {
+  return deepCloneMap(map, (set) =>
+    cloneValue ? new Set([...set].map(cloneValue)) : new Set(set)
+  );
 }
 
 /**

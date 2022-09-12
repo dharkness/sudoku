@@ -8,7 +8,11 @@ import {
 import { BOARD, Cell, Container } from "./board";
 import { Solutions } from "./solutions";
 
-import { singleSetValue } from "../utils/collections";
+import {
+  deepCloneMap,
+  deepCloneMapOfSets,
+  singleSetValue,
+} from "../utils/collections";
 
 const LOG = false;
 
@@ -47,6 +51,8 @@ export interface WritableState extends ReadableState {
 }
 
 export class SimpleState implements WritableState {
+  public readonly step: number;
+
   private readonly values: Map<Cell, Value>;
   private readonly possibleKnowns: Map<Cell, Set<Known>>;
 
@@ -59,13 +65,21 @@ export class SimpleState implements WritableState {
 
   constructor(clone?: SimpleState) {
     if (clone) {
-      this.values = clone.values;
-      this.possibleKnowns = clone.possibleKnowns;
-      this.containers = clone.containers;
-      this.possibleContainers = clone.possibleContainers;
-      this.possibleCells = clone.possibleCells;
-      this.solutions = clone.solutions;
+      this.step = clone.step + 1;
+      this.values = new Map(clone.values);
+      this.possibleKnowns = deepCloneMapOfSets(clone.possibleKnowns);
+      this.containers = deepCloneMapOfSets(clone.containers);
+      this.possibleContainers = deepCloneMap(
+        clone.possibleContainers,
+        deepCloneMapOfSets
+      );
+      this.possibleCells = deepCloneMap(
+        clone.possibleCells,
+        deepCloneMapOfSets
+      );
+      this.solutions = new Solutions();
     } else {
+      this.step = 1;
       this.values = new Map<Cell, Value>();
       this.possibleKnowns = new Map<Cell, Set<Known>>();
       this.containers = new Map<Cell, Set<Container>>();

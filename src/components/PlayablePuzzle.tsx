@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import useEventListener from "@use-it/event-listener";
 
 import {
-  Value,
   ALL_COORDS,
   getPoint,
   known,
@@ -20,7 +19,7 @@ import { singleSetValue } from "../utils/collections";
 
 type EditablePuzzleProps = {
   state: WritableState;
-  setCell: (point: Point, value: Value) => void;
+  setCell: (point: Point, known: Known) => void;
   removePossible: (point: Point, known: Known) => void;
   size: number;
 };

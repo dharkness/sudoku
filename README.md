@@ -24,6 +24,9 @@ but feel free to explore and scavenge any code you find useful.
       - l-then-# too? multi-key combos may be fun
     - undo/redo
       - z/y to apply
+      - store selected cell with steps
+        - difficult since PlayPuzzle doesn't manage selected cell
+        - clumsy that PlayablePuzzle calls functions to dispatch changes
     - show errors
       - currently block setting cell to non-possible
       - incorrectly set cell

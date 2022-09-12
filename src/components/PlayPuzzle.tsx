@@ -1,87 +1,86 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 
-import { Known, Point, UNKNOWN, Value } from "../models/basics";
-import { BOARD } from "../models/board";
+import { Known, Point } from "../models/basics";
 import { Puzzle } from "../models/puzzle";
-import { createEmptySimpleState, SimpleState } from "../models/state";
-import { solutionsFromString } from "../models/solutions";
 
 import PlayablePuzzle from "./PlayablePuzzle";
+import usePlayPuzzleReducer from "./usePlayPuzzleReducer";
 
 type PlayPuzzleProps = {
   puzzle: Puzzle;
 };
 
 const PlayPuzzle = ({ puzzle }: PlayPuzzleProps): JSX.Element => {
-  const [state, setState] = useState<SimpleState>(() => {
-    const state = createEmptySimpleState();
-    const knowns = solutionsFromString(puzzle.start).randomizedSolvedKnowns();
+  const [{ steps, step }, dispatch] = usePlayPuzzleReducer(puzzle.start);
+  const current = steps[step];
 
-    for (const [cell, known] of knowns) {
-      BOARD.setKnown(state, cell, known);
-    }
+  const setCell = useCallback(
+    (point: Point, known: Known) =>
+      dispatch({ type: "set", point, known: known }),
+    [dispatch]
+  );
 
-    const solved = state.getSolved();
-    state.clearSolved();
-    solved.forEachErasedPencil((cell, known) =>
-      BOARD.removePossible(state, cell, known)
-    );
+  const removePossible = useCallback(
+    (point: Point, known: Known) =>
+      dispatch({ type: "remove", point, known: known }),
+    [dispatch]
+  );
 
-    return state;
-  });
+  const undo = useCallback(() => dispatch({ type: "undo" }), [dispatch]);
+  const redo = useCallback(() => dispatch({ type: "redo" }), [dispatch]);
+  const reset = useCallback(() => dispatch({ type: "reset" }), [dispatch]);
 
-  const setCell = useCallback((point: Point, value: Value) => {
-    if (value === UNKNOWN) {
-      // TODO
-    } else {
-      setState((state) => {
-        if (!BOARD.isPossible(state, point, value)) {
-          return state;
-        }
+  const cantUndo = step === 0;
+  const cantRedo = step >= steps.length - 1;
 
-        const clone = new SimpleState(state);
-        BOARD.setKnown(clone, point, value);
-
-        const solved = state.getSolved();
-        state.clearSolved();
-        solved.forEachErasedPencil((cell, known) =>
-          BOARD.removePossible(state, cell, known)
-        );
-
-        return clone;
-      });
-    }
-  }, []);
-
-  const removePossible = useCallback((point: Point, known: Known) => {
-    if (known !== UNKNOWN) {
-      setState((state) => {
-        if (!BOARD.isPossible(state, point, known)) {
-          return state;
-        }
-
-        const clone = new SimpleState(state);
-        BOARD.removePossible(clone, point, known);
-
-        const solved = state.getSolved();
-        state.clearSolved();
-        solved.forEachErasedPencil((cell, known) =>
-          BOARD.removePossible(state, cell, known)
-        );
-
-        return clone;
-      });
-    }
-  }, []);
+  console.log(current);
+  if (!current) {
+    return <div>An internal error occurred</div>;
+  }
 
   return (
-    <PlayablePuzzle
-      state={state}
-      setCell={setCell}
-      removePossible={removePossible}
-      size={80}
-    />
+    <div className="flex flex-row gap-10">
+      <div>
+        <PlayablePuzzle
+          state={current}
+          setCell={setCell}
+          removePossible={removePossible}
+          size={80}
+        />
+      </div>
+      <div className="flex flex-col gap-10">
+        <button
+          type="button"
+          disabled={cantUndo}
+          onClick={undo}
+          className={cantUndo ? disabled : enabled}
+        >
+          Undo
+        </button>
+        <button
+          type="button"
+          disabled={cantRedo}
+          onClick={redo}
+          className={cantRedo ? disabled : enabled}
+        >
+          Redo
+        </button>
+        <button
+          type="button"
+          disabled={cantUndo}
+          onClick={reset}
+          className={cantUndo ? disabled : enabled}
+        >
+          Reset
+        </button>
+      </div>
+    </div>
   );
 };
+
+const enabled =
+  "px-6 py-2 text-lg text-blue-100 transition-colors duration-300 bg-blue-500 rounded-full shadow-xl hover:bg-blue-600 shadow-blue-400/30";
+const disabled =
+  "px-6 py-2 text-lg bg-slate-500 rounded-full shadow-xl shadow-slate-400/30";
 
 export default PlayPuzzle;
