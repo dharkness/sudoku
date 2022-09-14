@@ -12,7 +12,7 @@ import {
 } from "./basics";
 import { ReadableState, WritableState } from "./state";
 
-import { difference, intersect, union } from "../utils/collections";
+import { difference, intersect } from "../utils/collections";
 
 const MISSING = "·";
 
@@ -22,6 +22,8 @@ const MISSING = "·";
 interface Stateful {
   addEmptyState(state: WritableState): void;
 }
+
+// ---------- CELLS ------------------------------------------------------------------------------------------
 
 /**
  * Defines a single cell within the board.
@@ -104,7 +106,7 @@ export abstract class Container implements Stateful {
   readonly name: string;
   readonly cells: Set<Cell>;
 
-  constructor(name: string, cells?: Set<Cell>) {
+  protected constructor(name: string, cells?: Set<Cell>) {
     this.name = name;
     this.cells = cells ?? new Set<Cell>();
   }
@@ -134,6 +136,8 @@ export abstract class Container implements Stateful {
   }
 }
 
+// ---------- GROUPS ------------------------------------------------------------------------------------------
+
 /**
  * Base class for rows, columns, and blocks.
  */
@@ -141,7 +145,7 @@ export abstract class Group extends Container {
   readonly grouping: Grouping;
   readonly coord: Coord;
 
-  constructor(grouping: Grouping, coord: Coord) {
+  protected constructor(grouping: Grouping, coord: Coord) {
     super(`${Grouping[grouping]} ${coord + 1}`);
     this.grouping = grouping;
     this.coord = coord;
@@ -188,46 +192,7 @@ class Block extends Group {
   }
 }
 
-/**
- * Tracks the cells in common between a block and a row or column.
- */
-class Intersect extends Container {
-  private readonly parent: Intersection;
-
-  constructor(parent: Intersection, name: string, cells: Set<Cell>) {
-    super(name, cells);
-    this.parent = parent;
-  }
-
-  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
-    this.parent.clearPossibleCells(state, known);
-  }
-
-  onNoCellsLeft(state: WritableState, known: Known): void {
-    this.parent.clearPossibleCells(state, known);
-  }
-}
-
-/**
- * Tracks the cells not in common between a block and a row or column.
- */
-class Disjoint extends Container {
-  private readonly parent: Intersection;
-
-  constructor(parent: Intersection, name: string, cells: Set<Cell>) {
-    super(name, cells);
-    this.parent = parent;
-  }
-
-  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
-    this.parent.clearPossibleCells(state, known);
-  }
-
-  onNoCellsLeft(state: WritableState, known: Known): void {
-    this.parent.removePossibleKnownForOtherDisjoint(state, known, this);
-    this.parent.clearPossibleCells(state, known);
-  }
-}
+// ---------- INTERSECTIONS ------------------------------------------------------------------------------------------
 
 /**
  * Models the intersection between a block and a row or column
@@ -296,6 +261,49 @@ class Intersection {
     state.clearPossibleCells(this.groupDisjoint, known);
   }
 }
+
+/**
+ * Tracks the cells in common between a block and a row or column.
+ */
+class Intersect extends Container {
+  private readonly parent: Intersection;
+
+  constructor(parent: Intersection, name: string, cells: Set<Cell>) {
+    super(name, cells);
+    this.parent = parent;
+  }
+
+  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
+    this.parent.clearPossibleCells(state, known);
+  }
+
+  onNoCellsLeft(state: WritableState, known: Known): void {
+    this.parent.clearPossibleCells(state, known);
+  }
+}
+
+/**
+ * Tracks the cells not in common between a block and a row or column.
+ */
+class Disjoint extends Container {
+  private readonly parent: Intersection;
+
+  constructor(parent: Intersection, name: string, cells: Set<Cell>) {
+    super(name, cells);
+    this.parent = parent;
+  }
+
+  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
+    this.parent.clearPossibleCells(state, known);
+  }
+
+  onNoCellsLeft(state: WritableState, known: Known): void {
+    this.parent.removePossibleKnownForOtherDisjoint(state, known, this);
+    this.parent.clearPossibleCells(state, known);
+  }
+}
+
+// ---------- BOARD ------------------------------------------------------------------------------------------
 
 /**
  * Manages the various structures that make up the board.
