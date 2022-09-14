@@ -45,6 +45,8 @@ const PlayPuzzle = ({ puzzle }: PlayPuzzleProps): JSX.Element => {
           state={current}
           setCell={setCell}
           removePossible={removePossible}
+          undo={undo}
+          redo={redo}
           size={80}
         />
       </div>

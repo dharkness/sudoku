@@ -21,6 +21,8 @@ type EditablePuzzleProps = {
   state: WritableState;
   setCell: (point: Point, known: Known) => void;
   removePossible: (point: Point, known: Known) => void;
+  undo: () => void;
+  redo: () => void;
   size: number;
 };
 
@@ -28,6 +30,8 @@ const PlayablePuzzle = ({
   state,
   setCell,
   removePossible,
+  undo,
+  redo,
   size,
 }: EditablePuzzleProps): JSX.Element => {
   const [selected, setSelected] = useState<Point>();
@@ -67,6 +71,14 @@ const PlayablePuzzle = ({
       case "o":
       case "End":
         setSelected(getPoint(coord(8, "row"), coord(8, "col")));
+        event.preventDefault();
+        return;
+      case "z":
+        undo();
+        event.preventDefault();
+        return;
+      case "y":
+        redo();
         event.preventDefault();
         return;
     }
