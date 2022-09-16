@@ -1,60 +1,34 @@
-import { useCallback } from "react";
-
-import { Known, Point } from "../models/basics";
 import { Puzzle } from "../models/puzzle";
 
+import usePlayPuzzleActions from "./usePlayPuzzleActions";
+
 import PlayablePuzzle from "./PlayablePuzzle";
-import usePlayPuzzleReducer from "./usePlayPuzzleReducer";
 
 type PlayPuzzleProps = {
   puzzle: Puzzle;
 };
 
 const PlayPuzzle = ({ puzzle }: PlayPuzzleProps): JSX.Element => {
-  const [{ steps, step }, dispatch] = usePlayPuzzleReducer(puzzle.start);
-  const current = steps[step];
+  const actions = usePlayPuzzleActions(puzzle.start);
+  const current = actions.current;
 
-  const setCell = useCallback(
-    (point: Point, known: Known) =>
-      dispatch({ type: "set", point, known: known }),
-    [dispatch]
-  );
-
-  const removePossible = useCallback(
-    (point: Point, known: Known) =>
-      dispatch({ type: "remove", point, known: known }),
-    [dispatch]
-  );
-
-  const undo = useCallback(() => dispatch({ type: "undo" }), [dispatch]);
-  const redo = useCallback(() => dispatch({ type: "redo" }), [dispatch]);
-  const reset = useCallback(() => dispatch({ type: "reset" }), [dispatch]);
-
-  const cantUndo = step === 0;
-  const cantRedo = step >= steps.length - 1;
-
-  console.log(current);
   if (!current) {
     return <div>An internal error occurred</div>;
   }
 
+  const cantUndo = actions.step === 0;
+  const cantRedo = actions.step >= actions.steps - 1;
+
   return (
     <div className="flex flex-row gap-10">
       <div>
-        <PlayablePuzzle
-          state={current}
-          setCell={setCell}
-          removePossible={removePossible}
-          undo={undo}
-          redo={redo}
-          size={80}
-        />
+        <PlayablePuzzle actions={actions} size={80} />
       </div>
       <div className="flex flex-col gap-10">
         <button
           type="button"
           disabled={cantUndo}
-          onClick={undo}
+          onClick={actions.undo}
           className={cantUndo ? disabled : enabled}
         >
           Undo
@@ -62,7 +36,7 @@ const PlayPuzzle = ({ puzzle }: PlayPuzzleProps): JSX.Element => {
         <button
           type="button"
           disabled={cantRedo}
-          onClick={redo}
+          onClick={actions.redo}
           className={cantRedo ? disabled : enabled}
         >
           Redo
@@ -70,7 +44,7 @@ const PlayPuzzle = ({ puzzle }: PlayPuzzleProps): JSX.Element => {
         <button
           type="button"
           disabled={cantUndo}
-          onClick={reset}
+          onClick={actions.reset}
           className={cantUndo ? disabled : enabled}
         >
           Reset

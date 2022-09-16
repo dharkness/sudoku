@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import useEventListener from "@use-it/event-listener";
 
@@ -6,79 +6,53 @@ import {
   ALL_COORDS,
   getPoint,
   known,
-  Point,
   coord,
   Known,
   UNKNOWN,
 } from "../models/basics";
 import { BOARD } from "../models/board";
-import { WritableState } from "../models/state";
 
-import SelectableCell from "./SelectableCell";
 import { singleSetValue } from "../utils/collections";
 
+import { PuzzleActions } from "./usePlayPuzzleActions";
+
+import SelectableCell from "./SelectableCell";
+
 type EditablePuzzleProps = {
-  state: WritableState;
-  setCell: (point: Point, known: Known) => void;
-  removePossible: (point: Point, known: Known) => void;
-  undo: () => void;
-  redo: () => void;
+  actions: PuzzleActions;
   size: number;
 };
 
 const PlayablePuzzle = ({
-  state,
-  setCell,
-  removePossible,
-  undo,
-  redo,
+  actions,
   size,
 }: EditablePuzzleProps): JSX.Element => {
-  const [selected, setSelected] = useState<Point>();
-
-  const [highlight, singleton] = useMemo(() => {
+  const { current, selected } = actions;
+  const singleton = useMemo(() => {
+    const { current, selected } = actions;
     if (!selected) {
-      return [UNKNOWN, UNKNOWN];
+      return UNKNOWN;
     }
 
-    const highlight = BOARD.getValue(state, selected);
-    const possibles = BOARD.getPossibles(state, selected);
-    const singleton =
-      possibles.size === 1 ? singleSetValue(possibles) : UNKNOWN;
-
-    return [highlight, singleton];
-  }, [state, selected]);
+    const possibles = BOARD.getPossibles(current, selected);
+    return possibles.size === 1 ? singleSetValue(possibles) : UNKNOWN;
+  }, [actions]);
 
   useEventListener("keydown", (event: KeyboardEvent) => {
     // noinspection JSDeprecatedSymbols
-    if (
-      event.ctrlKey ||
-      event.altKey ||
-      event.isComposing ||
-      event.keyCode === 229
-    ) {
+    if (event.altKey || event.isComposing || event.keyCode === 229) {
       return;
     }
 
-    const key = event.key;
+    const { key, ctrlKey } = event;
 
     switch (key) {
-      case "u":
-      case "Home":
-        setSelected(getPoint(coord(0, "row"), coord(0, "col")));
-        event.preventDefault();
-        return;
-      case "o":
-      case "End":
-        setSelected(getPoint(coord(8, "row"), coord(8, "col")));
-        event.preventDefault();
-        return;
       case "z":
-        undo();
+        actions.undo();
         event.preventDefault();
         return;
       case "y":
-        redo();
+        actions.redo();
         event.preventDefault();
         return;
     }
@@ -86,50 +60,94 @@ const PlayablePuzzle = ({
     if (selected) {
       if (key === " " || key === "Spacebar") {
         if (singleton !== UNKNOWN) {
-          setCell(selected, singleton);
+          actions.setCell(singleton);
         }
-      } else if ("1" <= key && key <= "9") {
-        setCell(selected, known(key.charCodeAt(0) - ZERO_CODE));
-      } else if (key in SET_KNOWN_KEYS) {
-        setCell(selected, SET_KNOWN_KEYS[key]!);
-      } else if (key in REMOVE_POSSIBLE_KEYS) {
-        removePossible(selected, REMOVE_POSSIBLE_KEYS[key]!);
-      } else if (["Backspace", "Delete", "Clear"].includes(key)) {
+      } else if (!ctrlKey && "1" <= key && key <= "9") {
+        actions.setCell(known(key.charCodeAt(0) - ZERO_CODE));
+      } else if (!ctrlKey && key in SET_KNOWN_KEYS) {
+        actions.setCell(SET_KNOWN_KEYS[key]!);
+      } else if (!ctrlKey && key in REMOVE_POSSIBLE_KEYS) {
+        actions.removePossible(REMOVE_POSSIBLE_KEYS[key]!);
+      } else if (!ctrlKey && ["Backspace", "Delete", "Clear"].includes(key)) {
         // TODO how to clear?
       } else {
         switch (key) {
+          case "u":
+          case "Home":
+            actions.select(getPoint(ctrlKey ? 0 : selected.r, 0));
+            event.preventDefault();
+            return;
+          case "o":
+          case "End":
+            actions.select(getPoint(ctrlKey ? 8 : selected.r, 8));
+            event.preventDefault();
+            return;
+
+          case "y":
+          case "PageUp":
+            actions.select(getPoint(0, selected.c));
+            event.preventDefault();
+            return;
+          case "h":
+          case "PageDown":
+            actions.select(getPoint(8, selected.c));
+            event.preventDefault();
+            return;
+
           case "i":
           case "Up":
           case "ArrowUp":
             if (selected.r > 0) {
-              setSelected(getPoint(coord(selected.r - 1, "row"), selected.c));
+              actions.select(
+                getPoint(ctrlKey ? 0 : coord(selected.r - 1, "row"), selected.c)
+              );
             }
             break;
           case "k":
           case "Down":
           case "ArrowDown":
             if (selected.r < 8) {
-              setSelected(getPoint(coord(selected.r + 1, "row"), selected.c));
+              actions.select(
+                getPoint(ctrlKey ? 8 : coord(selected.r + 1, "row"), selected.c)
+              );
             }
             break;
           case "j":
           case "Left":
           case "ArrowLeft":
             if (selected.c > 0) {
-              setSelected(getPoint(selected.r, coord(selected.c - 1, "col")));
+              actions.select(
+                getPoint(selected.r, ctrlKey ? 0 : coord(selected.c - 1, "col"))
+              );
             }
             break;
           case "l":
           case "Right":
           case "ArrowRight":
             if (selected.c < 8) {
-              setSelected(getPoint(selected.r, coord(selected.c + 1, "col")));
+              actions.select(
+                getPoint(selected.r, ctrlKey ? 8 : coord(selected.c + 1, "col"))
+              );
             }
             break;
+
           default:
             console.log("ignoring keydown", event);
             return;
         }
+      }
+    } else {
+      switch (key) {
+        case "u":
+        case "Home":
+          actions.select(getPoint(0, 0));
+          event.preventDefault();
+          return;
+        case "o":
+        case "End":
+          actions.select(getPoint(8, 8));
+          event.preventDefault();
+          return;
       }
     }
 
@@ -137,7 +155,7 @@ const PlayablePuzzle = ({
   });
 
   return (
-    <table className="table-fixed border border-collapse border-black text-center">
+    <table className="table-fixed border border-collapse border-black text-center cursor-pointer">
       <tbody>
         {ALL_COORDS.map((r) => (
           <tr
@@ -152,13 +170,13 @@ const PlayablePuzzle = ({
                 <SelectableCell
                   key={c}
                   point={point}
-                  value={BOARD.getValue(state, point)}
-                  highlight={highlight}
+                  value={BOARD.getValue(current, point)}
+                  highlight={actions.highlighted}
                   selected={selected === point}
-                  onSelect={() => setSelected(point)}
+                  onSelect={() => actions.select(point)}
                   size={size}
                   className={""}
-                  possibles={BOARD.getPossibles(state, point)}
+                  possibles={BOARD.getPossibles(current, point)}
                 />
               );
             })}
