@@ -1,13 +1,13 @@
-import { Known, known, Value } from "../models/basics";
+import { Known, known, Value } from "../../models/basics";
 
 type CellPencilMarksProps = {
   possibles: Set<Known>;
-  highlight: Value;
+  highlighted: Value;
 };
 
 const CellPossibles = ({
   possibles,
-  highlight,
+  highlighted,
 }: CellPencilMarksProps): JSX.Element => {
   return (
     <table className="h-full w-full">
@@ -20,7 +20,7 @@ const CellPossibles = ({
               <td
                 key={k}
                 className={`mx-auto ${
-                  possible && k === highlight && "bg-emerald-50"
+                  possible && k === highlighted && "bg-emerald-50"
                 }`}
                 style={{ width: "33%", height: "33%" }}
               >

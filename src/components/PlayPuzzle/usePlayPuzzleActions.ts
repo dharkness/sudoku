@@ -1,20 +1,26 @@
 import { useMemo, useReducer } from "react";
 
-import { Known, Point, UNKNOWN, Value } from "../models/basics";
-import { BOARD, Cell } from "../models/board";
-import { solutionsFromString } from "../models/solutions";
+import { Known, Point, UNKNOWN, Value } from "../../models/basics";
+import { BOARD, Cell } from "../../models/board";
+import { solutionsFromString } from "../../models/solutions";
 import {
   createEmptySimpleState,
   ReadableState,
   SimpleState,
-} from "../models/state";
+} from "../../models/state";
+import { singleSetValue } from "../../utils/collections";
 
 export type PuzzleActions = {
   current: ReadableState;
   steps: number;
   step: number;
+
   selected: Point | null;
-  highlighted: Value | null;
+  highlighted: Value;
+  singleton: Value;
+
+  getValue: (point: Point) => Value;
+  getPossibles: (point: Point) => Set<Known>;
 
   select: (point: Point) => void;
   setCell: (known: Known) => void;
@@ -56,25 +62,32 @@ export default function usePlayPuzzleReducer(start?: string): PuzzleActions {
 
   const [state, dispatch] = useReducer<Reducer>(reducer, initial);
 
-  return useMemo<PuzzleActions>(
-    () =>
-      ({
-        ...state,
+  return useMemo<PuzzleActions>(() => {
+    const current = state.steps[state.step]!.state;
+    const selected = state.selected;
+    const possibles = selected ? BOARD.getPossibles(current, selected) : null;
 
-        current: state.steps[state.step]!.state,
-        steps: state.steps.length,
+    return {
+      ...state,
 
-        select: (point: Point) => dispatch({ type: "select", point }),
-        setCell: (known: Known) => dispatch({ type: "set", known: known }),
-        removePossible: (known: Known) =>
-          dispatch({ type: "remove", known: known }),
+      current,
+      steps: state.steps.length,
+      highlighted: selected ? BOARD.getValue(current, selected) : UNKNOWN,
+      singleton: possibles?.size === 1 ? singleSetValue(possibles) : UNKNOWN,
 
-        undo: () => dispatch({ type: "undo" }),
-        redo: () => dispatch({ type: "redo" }),
-        reset: () => dispatch({ type: "reset" }),
-      } as PuzzleActions),
-    [state]
-  );
+      getValue: (point: Point) => BOARD.getValue(current, point),
+      getPossibles: (point: Point) => BOARD.getPossibles(current, point),
+
+      select: (point: Point) => dispatch({ type: "select", point }),
+      setCell: (known: Known) => dispatch({ type: "set", known: known }),
+      removePossible: (known: Known) =>
+        dispatch({ type: "remove", known: known }),
+
+      undo: () => dispatch({ type: "undo" }),
+      redo: () => dispatch({ type: "redo" }),
+      reset: () => dispatch({ type: "reset" }),
+    } as PuzzleActions;
+  }, [state]);
 }
 
 type State = {
@@ -82,7 +95,7 @@ type State = {
   step: number;
 
   selected: Point | null;
-  highlighted: Value | null;
+  highlighted: Value;
 };
 
 type StepNode = {
@@ -101,14 +114,13 @@ type Action =
 type Reducer = (state: State, action: Action) => State;
 
 const reducer: Reducer = (state: State, action: Action) => {
-  const { steps, step, selected } = state;
+  const { step, selected } = state;
 
   switch (action.type) {
     case "select":
       return {
         ...state,
         selected: action.point,
-        highlighted: BOARD.getValue(steps[step]!.state, action.point),
       };
 
     case "set":
@@ -126,11 +138,13 @@ const reducer: Reducer = (state: State, action: Action) => {
         const clone = new SimpleState(state);
         BOARD.setKnown(clone, selected, known);
 
-        const solved = state.getSolved();
-        state.clearSolved();
-        solved.forEachErasedPencil((cell: Cell, known: Known) =>
-          BOARD.removePossible(state, cell, known)
-        );
+        let solved;
+        while (!(solved = clone.getSolved()).isEmpty()) {
+          clone.clearSolved();
+          solved.forEachErasedPencil((cell: Cell, known: Known) =>
+            BOARD.removePossible(clone, cell, known)
+          );
+        }
 
         return clone;
       });
@@ -150,11 +164,13 @@ const reducer: Reducer = (state: State, action: Action) => {
         const clone = new SimpleState(state);
         BOARD.removePossible(clone, selected, known);
 
-        const solved = state.getSolved();
-        state.clearSolved();
-        solved.forEachErasedPencil((cell, known) =>
-          BOARD.removePossible(state, cell, known)
-        );
+        let solved;
+        while (!(solved = clone.getSolved()).isEmpty()) {
+          clone.clearSolved();
+          solved.forEachErasedPencil((cell: Cell, known: Known) =>
+            BOARD.removePossible(clone, cell, known)
+          );
+        }
 
         return clone;
       });
@@ -174,7 +190,7 @@ function addStep(
   state: State,
   apply: (state: SimpleState) => SimpleState
 ): State {
-  const { steps, step } = state;
+  const { steps, step, selected } = state;
   const current = steps[step]?.state;
 
   if (!current) {
@@ -189,10 +205,7 @@ function addStep(
 
   return {
     ...state,
-    steps: [
-      ...steps.slice(0, step + 1),
-      { state: applied, selected: state.selected },
-    ],
+    steps: [...steps.slice(0, step + 1), { state: applied, selected }],
     step: step + 1,
   };
 }
@@ -202,13 +215,9 @@ function setStep(state: State, step: number, select: number): State {
     return state;
   }
 
-  const current = state.steps[step]!.state;
-  const selected = state.steps[select]?.selected || null;
-
   return {
     ...state,
     step,
-    selected,
-    highlighted: selected ? BOARD.getValue(current, selected) : UNKNOWN,
+    selected: state.steps[select]?.selected || null,
   };
 }

@@ -1,42 +1,11 @@
-import { useMemo } from "react";
-
 import useEventListener from "@use-it/event-listener";
 
-import {
-  ALL_COORDS,
-  getPoint,
-  known,
-  coord,
-  Known,
-  UNKNOWN,
-} from "../models/basics";
-import { BOARD } from "../models/board";
-
-import { singleSetValue } from "../utils/collections";
+import { coord, getPoint, Known, known, UNKNOWN } from "../../models/basics";
 
 import { PuzzleActions } from "./usePlayPuzzleActions";
 
-import SelectableCell from "./SelectableCell";
-
-type EditablePuzzleProps = {
-  actions: PuzzleActions;
-  size: number;
-};
-
-const PlayablePuzzle = ({
-  actions,
-  size,
-}: EditablePuzzleProps): JSX.Element => {
-  const { current, selected } = actions;
-  const singleton = useMemo(() => {
-    const { current, selected } = actions;
-    if (!selected) {
-      return UNKNOWN;
-    }
-
-    const possibles = BOARD.getPossibles(current, selected);
-    return possibles.size === 1 ? singleSetValue(possibles) : UNKNOWN;
-  }, [actions]);
+export default function usePlayPuzzleKeys(actions: PuzzleActions) {
+  const { selected, singleton } = actions;
 
   useEventListener("keydown", (event: KeyboardEvent) => {
     // noinspection JSDeprecatedSymbols
@@ -153,39 +122,7 @@ const PlayablePuzzle = ({
 
     event.preventDefault();
   });
-
-  return (
-    <table className="table-fixed border border-collapse border-black text-center cursor-pointer">
-      <tbody>
-        {ALL_COORDS.map((r) => (
-          <tr
-            key={r}
-            className={`border-b ${
-              r % 3 === 2 ? "border-black" : "border-slate-300"
-            }`}
-          >
-            {ALL_COORDS.map((c) => {
-              const point = getPoint(r, c);
-              return (
-                <SelectableCell
-                  key={c}
-                  point={point}
-                  value={BOARD.getValue(current, point)}
-                  highlight={actions.highlighted}
-                  selected={selected === point}
-                  onSelect={() => actions.select(point)}
-                  size={size}
-                  className={""}
-                  possibles={BOARD.getPossibles(current, point)}
-                />
-              );
-            })}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-};
+}
 
 const ZERO_CODE = "0".charCodeAt(0);
 
@@ -212,5 +149,3 @@ const REMOVE_POSSIBLE_KEYS: { [key: string]: Known } = {
   C: 8,
   V: 9,
 };
-
-export default PlayablePuzzle;

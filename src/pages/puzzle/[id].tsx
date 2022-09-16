@@ -46,7 +46,7 @@ const ViewPuzzle: NextPage = () => {
         </h1>
 
         <main className="mt-5">
-          <PlayPuzzle puzzle={puzzle} />
+          <PlayPuzzle start={puzzle.start} />
           <div className="text-slate-500">
             Created on {puzzle.createdAt.toLocaleString()}
           </div>

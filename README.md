@@ -69,7 +69,6 @@ but feel free to explore and scavenge any code you find useful.
       - list of solvers
       - highlight available
       - button to apply
-    - clean up props, maybe an object in context to hold functions?
 
 - Create
   - manual partial puzzles

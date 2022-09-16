@@ -1,6 +1,6 @@
 import clsx from "clsx";
 
-import { Point, Value, Known, UNKNOWN } from "../models/basics";
+import { Point, Value, Known, UNKNOWN } from "../../models/basics";
 
 import CellPossibles from "./CellPossibles";
 
@@ -8,7 +8,7 @@ type SelectableCellProps = {
   point: Point;
   value: Value;
   possibles: Set<Known>;
-  highlight: Value;
+  highlighted: Value;
 
   selected: boolean;
   onSelect: () => void;
@@ -21,7 +21,7 @@ const SelectableCell = ({
   point,
   value,
   possibles,
-  highlight,
+  highlighted,
   selected,
   onSelect,
   className,
@@ -32,10 +32,10 @@ const SelectableCell = ({
     "mx-auto",
     selected
       ? "bg-sky-400"
-      : highlight !== UNKNOWN
-      ? highlight === value
+      : highlighted !== UNKNOWN
+      ? highlighted === value
         ? "bg-sky-900"
-        : possibles.has(highlight)
+        : possibles.has(highlighted)
         ? "bg-emerald-50"
         : null
       : null,
@@ -50,7 +50,7 @@ const SelectableCell = ({
       onClick={onSelect}
     >
       {value === UNKNOWN ? (
-        <CellPossibles possibles={possibles} highlight={highlight} />
+        <CellPossibles possibles={possibles} highlighted={highlighted} />
       ) : (
         <span style={{ fontSize: "2em" }}>{value}</span>
       )}
