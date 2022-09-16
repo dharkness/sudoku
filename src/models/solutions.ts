@@ -19,8 +19,8 @@ export class SolvedKnowns {
     return this.knowns.size;
   }
 
-  forEach(callback: (Known: Known, cell: Cell) => void): void {
-    this.knowns.forEach(callback);
+  forEach(callback: (cell: Cell, Known: Known) => void): void {
+    this.knowns.forEach((known: Known, cell: Cell) => callback(cell, known));
   }
 
   ordered(): [Cell, Known][] {
@@ -135,7 +135,7 @@ export class Solutions {
     return this.knowns.isEmpty() && this.pencils.isEmpty();
   }
 
-  forEachSolvedKnown(callback: (Known: Known, cell: Cell) => void): void {
+  forEachSolvedKnown(callback: (cell: Cell, Known: Known) => void): void {
     this.knowns.forEach(callback);
   }
 

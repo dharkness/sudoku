@@ -2,7 +2,7 @@ import { useMemo, useReducer } from "react";
 
 import { Known, Point, UNKNOWN, Value } from "../../models/basics";
 import { BOARD, Cell } from "../../models/board";
-import { solutionsFromString } from "../../models/solutions";
+import { Solutions, solutionsFromString } from "../../models/solutions";
 import {
   createEmptySimpleState,
   ReadableState,
@@ -25,6 +25,7 @@ export type PuzzleActions = {
   select: (point: Point) => void;
   setCell: (known: Known) => void;
   removePossible: (known: Known) => void;
+  applySolutions: (solutions: Solutions) => void;
 
   undo: () => void;
   redo: () => void;
@@ -82,6 +83,8 @@ export default function usePlayPuzzleReducer(start?: string): PuzzleActions {
       setCell: (known: Known) => dispatch({ type: "set", known: known }),
       removePossible: (known: Known) =>
         dispatch({ type: "remove", known: known }),
+      applySolutions: (solutions: Solutions) =>
+        dispatch({ type: "apply", solutions }),
 
       undo: () => dispatch({ type: "undo" }),
       redo: () => dispatch({ type: "redo" }),
@@ -107,6 +110,7 @@ type Action =
   | { type: "select"; point: Point }
   | { type: "set"; known: Known }
   | { type: "remove"; known: Known }
+  | { type: "apply"; solutions: Solutions }
   | { type: "undo" }
   | { type: "redo" }
   | { type: "reset" };
@@ -163,6 +167,29 @@ const reducer: Reducer = (state: State, action: Action) => {
 
         const clone = new SimpleState(state);
         BOARD.removePossible(clone, selected, known);
+
+        let solved;
+        while (!(solved = clone.getSolved()).isEmpty()) {
+          clone.clearSolved();
+          solved.forEachErasedPencil((cell: Cell, known: Known) =>
+            BOARD.removePossible(clone, cell, known)
+          );
+        }
+
+        return clone;
+      });
+
+    case "apply":
+      return addStep(state, (state: SimpleState) => {
+        const { solutions } = action;
+        const clone = new SimpleState(state);
+
+        solutions.forEachSolvedKnown((cell: Cell, known: Known) =>
+          BOARD.setKnown(clone, cell, known)
+        );
+        solutions.forEachErasedPencil((cell: Cell, known: Known) =>
+          BOARD.removePossible(clone, cell, known)
+        );
 
         let solved;
         while (!(solved = clone.getSolved()).isEmpty()) {

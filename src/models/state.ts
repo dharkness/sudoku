@@ -219,9 +219,9 @@ export class SimpleState implements WritableState {
         );
       return false;
     }
-    if (possibles.size === 1 && !this.isSolved(cell)) {
-      throw new RemoveLastCellPossibleValueError(cell, known);
-    }
+    // if (possibles.size === 1 && !this.isSolved(cell)) {
+    //   throw new RemoveLastCellPossibleValueError(cell, known);
+    // }
 
     // remove possible known from cell
     const remaining = new Set(possibles);
@@ -366,9 +366,9 @@ export class SimpleState implements WritableState {
     if (!possibles.has(known)) {
       return;
     }
-    if (possibles.size === 1) {
-      throw new RemoveLastCellPossibleValueError(cell, known);
-    }
+    // if (possibles.size === 1) {
+    //   throw new RemoveLastCellPossibleValueError(cell, known);
+    // }
 
     this.solutions.addErasedPencil(cell, known);
   }

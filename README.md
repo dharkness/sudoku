@@ -65,10 +65,6 @@ but feel free to explore and scavenge any code you find useful.
       - incorrectly removed possible
       - solutions that make puzzle impossible (good for creating new puzzles)
       - easier to show banner when making errors given the model
-    - inspect/apply solvers
-      - list of solvers
-      - highlight available
-      - button to apply
 
 - Create
   - manual partial puzzles

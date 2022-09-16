@@ -120,7 +120,9 @@ export default function usePlayPuzzleKeys(actions: PuzzleActions) {
       }
     }
 
-    event.preventDefault();
+    if (!ctrlKey) {
+      event.preventDefault();
+    }
   });
 }
 

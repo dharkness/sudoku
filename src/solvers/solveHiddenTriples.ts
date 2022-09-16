@@ -6,7 +6,7 @@ import { BOARD, Cell } from "../models/board";
 
 import { difference, union } from "../utils/collections";
 
-const LOG = true;
+const LOG = false;
 
 /**
  * Looks for hidden triples to determine pencil marks to remove.
