@@ -5,17 +5,39 @@ import { coord, getPoint, Known, known, UNKNOWN } from "../../models/basics";
 import { PuzzleActions } from "./usePlayPuzzleActions";
 
 export default function usePlayPuzzleKeys(actions: PuzzleActions) {
-  const { selected, singleton } = actions;
+  const { locked, selected, singleton } = actions;
 
   useEventListener("keydown", (event: KeyboardEvent) => {
     // noinspection JSDeprecatedSymbols
-    if (event.altKey || event.isComposing || event.keyCode === 229) {
+    if (event.isComposing || event.keyCode === 229) {
       return;
     }
 
-    const { key, ctrlKey } = event;
+    const { altKey, ctrlKey, key } = event;
+
+    if (altKey) {
+      if (key === "0") {
+        actions.highlight(UNKNOWN);
+      } else if ("1" <= key && key <= "9") {
+        const k = known(key.charCodeAt(0) - ZERO_CODE);
+        console.log(k, "=", locked);
+        actions.highlight(k === locked ? UNKNOWN : k);
+      } else if (key in SET_KNOWN_KEYS) {
+        const k = SET_KNOWN_KEYS[key]!;
+        actions.highlight(k === locked ? UNKNOWN : k);
+      } else {
+        return;
+      }
+
+      event.preventDefault();
+      return;
+    }
 
     switch (key) {
+      case "q":
+        actions.reset();
+        event.preventDefault();
+        return;
       case "z":
         actions.undo();
         event.preventDefault();

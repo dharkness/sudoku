@@ -56,9 +56,6 @@ but feel free to explore and scavenge any code you find useful.
 
 - Play
   - UI
-    - number panel to lock highlight value
-      - alt-# to toggle?
-      - l-then-# too? multi-key combos may be fun
     - show errors
       - currently block setting cell to non-possible
       - incorrectly set cell

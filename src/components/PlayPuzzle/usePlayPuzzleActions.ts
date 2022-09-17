@@ -16,6 +16,7 @@ export type PuzzleActions = {
   step: number;
 
   selected: Point | null;
+  locked: Value;
   highlighted: Value;
   singleton: Value;
 
@@ -23,6 +24,7 @@ export type PuzzleActions = {
   getValue: (point: Point) => Value;
   getPossibles: (point: Point) => Set<Known>;
 
+  highlight: (value: Value) => void;
   select: (point: Point) => void;
   setCell: (known: Known) => void;
   removePossible: (known: Known) => void;
@@ -58,7 +60,7 @@ export default function usePlayPuzzleReducer(start?: string): PuzzleActions {
       steps: [{ state, selected: null }],
       step: 0,
       selected: null,
-      highlighted: null,
+      locked: UNKNOWN,
     } as State;
   }, [start]);
 
@@ -68,6 +70,7 @@ export default function usePlayPuzzleReducer(start?: string): PuzzleActions {
     const initial = state.steps[0]!.state;
     const current = state.steps[state.step]!.state;
     const selected = state.selected;
+    const locked = state.locked;
     const possibles = selected ? BOARD.getPossibles(current, selected) : null;
 
     return {
@@ -76,13 +79,15 @@ export default function usePlayPuzzleReducer(start?: string): PuzzleActions {
       current,
       steps: state.steps.length,
 
-      highlighted: selected ? BOARD.getValue(current, selected) : UNKNOWN,
+      highlighted:
+        locked || (selected ? BOARD.getValue(current, selected) : UNKNOWN),
       singleton: possibles?.size === 1 ? singleSetValue(possibles) : UNKNOWN,
 
       getInitialValue: (point: Point) => BOARD.getValue(initial, point),
       getValue: (point: Point) => BOARD.getValue(current, point),
       getPossibles: (point: Point) => BOARD.getPossibles(current, point),
 
+      highlight: (value: Value) => dispatch({ type: "highlight", value }),
       select: (point: Point) => dispatch({ type: "select", point }),
       setCell: (known: Known) => dispatch({ type: "set", known: known }),
       removePossible: (known: Known) =>
@@ -102,7 +107,7 @@ type State = {
   step: number;
 
   selected: Point | null;
-  highlighted: Value;
+  locked: Value;
 };
 
 type StepNode = {
@@ -111,6 +116,7 @@ type StepNode = {
 };
 
 type Action =
+  | { type: "highlight"; value: Value }
   | { type: "select"; point: Point }
   | { type: "set"; known: Known }
   | { type: "remove"; known: Known }
@@ -125,6 +131,12 @@ const reducer: Reducer = (state: State, action: Action) => {
   const { step, selected } = state;
 
   switch (action.type) {
+    case "highlight":
+      return {
+        ...state,
+        locked: action.value,
+      };
+
     case "select":
       return {
         ...state,

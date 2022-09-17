@@ -4,6 +4,7 @@ import usePlayPuzzleKeys from "./usePlayPuzzleKeys";
 import HistoryPanel from "./HistoryPanel";
 import PuzzlePanel from "./PuzzlePanel";
 import SolverPanel from "./SolverPanel";
+import KnownPanel from "./KnownPanel";
 
 type PlayPuzzleProps = {
   start?: string;
@@ -21,6 +22,7 @@ const PlayPuzzle = ({ start }: PlayPuzzleProps): JSX.Element => {
   return (
     <div className="flex flex-row gap-10">
       <PuzzlePanel actions={actions} size={80} />
+      <KnownPanel actions={actions} />
       <HistoryPanel actions={actions} />
       <SolverPanel actions={actions} />
     </div>

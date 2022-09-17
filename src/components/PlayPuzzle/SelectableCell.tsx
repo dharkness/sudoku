@@ -62,7 +62,7 @@ const SelectableCell = ({
       {value === UNKNOWN ? (
         <CellPossibles
           possibles={possibles}
-          highlighted={highlighted}
+          highlighted={selected ? UNKNOWN : highlighted}
           pencilDot
         />
       ) : (
