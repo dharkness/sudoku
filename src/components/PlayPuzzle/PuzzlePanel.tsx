@@ -11,7 +11,7 @@ type PuzzlePanelProps = {
 
 const PuzzlePanel = ({ actions, size }: PuzzlePanelProps): JSX.Element => {
   return (
-    <table className="table-fixed border border-collapse border-black text-center cursor-pointer">
+    <table className="table-fixed border border-collapse border-black text-center select-none cursor-pointer">
       <tbody>
         {ALL_COORDS.map((r) => (
           <tr
@@ -26,6 +26,7 @@ const PuzzlePanel = ({ actions, size }: PuzzlePanelProps): JSX.Element => {
                 <SelectableCell
                   key={c}
                   point={point}
+                  initial={actions.getInitialValue(point)}
                   value={actions.getValue(point)}
                   highlighted={actions.highlighted}
                   selected={actions.selected === point}
