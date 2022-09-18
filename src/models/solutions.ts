@@ -188,10 +188,17 @@ export class Solutions {
  * "7..1....9 .2.3..7.. 4.9...... .6.8..2.. ......... .7...1.5. .....49.. .46..5..2 .1...68.."
  */
 export function solutionsFromString(values: string): Solutions {
+  if (![81, 89].includes(values.length)) {
+    throw new Error(
+      `Puzzle string length ${values.length} must be 81 or 89 characters`
+    );
+  }
+
   const solutions = new Solutions();
+  const width = values.length === 81 ? 9 : 10;
 
   for (const p of ALL_POINTS) {
-    const value = valueFromString(values.charAt(10 * p.r + p.c));
+    const value = valueFromString(values.charAt(width * p.r + p.c));
     if (value !== UNKNOWN) {
       solutions.addSolvedKnown(BOARD.getCell(p), value);
     }
