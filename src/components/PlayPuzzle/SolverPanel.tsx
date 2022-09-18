@@ -60,7 +60,7 @@ const buttons = {
   hiddenPairs: "Hidden Pairs",
   hiddenTriples: "Hidden Triples",
   xWings: "X-Wings",
-  singlesChains: "Single's Chains",
+  singlesChains: "Singles Chains",
   bruteForce: "Brute Force",
 };
 

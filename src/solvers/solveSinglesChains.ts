@@ -26,7 +26,7 @@ type Graph = Map<Cell, Color>;
  *
  * TODO Switch cell/link for node/edge
  *
- * Example: This shows a single's chain of 7 linking cells (58, 52, 61, 81).
+ * Example: This shows a singles chain of 7 linking cells (58, 52, 61, 81).
  *
  *     123456789
  *   1 ·········
@@ -178,7 +178,7 @@ export default function solveSinglesChains(
           LOG && printCellPossibles(state, k);
           LOG &&
             console.info(
-              "SOLVE SINGLE'S CHAIN",
+              "SOLVE SINGLES CHAIN",
               c.toString(),
               "x",
               k,
