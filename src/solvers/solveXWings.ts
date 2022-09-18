@@ -96,7 +96,7 @@ export default function solveXWings(
             continue;
           }
 
-          printCellPossibles(state, k);
+          LOG && printCellPossibles(state, k);
           LOG &&
             console.info(
               "SOLVE X-WING for",
