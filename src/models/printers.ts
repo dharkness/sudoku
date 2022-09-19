@@ -21,17 +21,15 @@ export function printValues(state: ReadableState) {
 }
 
 /**
- * Prints a grid of cells with the number of possible values or a period.
+ * Prints a grid of cells with the number of candidates.
  */
-export function printPossibleCounts(state: ReadableState) {
-  console.log("  ", 123456789, "POSSIBLE COUNTS");
+export function printCandidateCounts(state: ReadableState) {
+  console.log("  ", 123456789, "CANDIDATE COUNTS");
   ALL_COORDS.forEach((r) =>
     console.log(
       r + 1,
       ALL_COORDS.reduce((cells: string[], c) => {
-        const count = state.getPossibleKnownsCount(
-          BOARD.getCell(getPoint(r, c))
-        );
+        const count = state.getCandidateCount(BOARD.getCell(getPoint(r, c)));
         return [...cells, count ? count.toString() : MISSING];
       }, []).join("")
     )
@@ -39,9 +37,9 @@ export function printPossibleCounts(state: ReadableState) {
 }
 
 /**
- * Prints a grid of cells, with each cell showing its possibles
+ * Prints a grid of cells, with each cell showing its candidates.
  */
-export function printAllPossibles(
+export function printAllCandidates(
   state: ReadableState,
   showKnowns: boolean = false
 ) {
@@ -67,9 +65,9 @@ export function printAllPossibles(
           (i) => (lines[4 * r + i]![1] += `${value}${value}${value}`)
         );
       } else {
-        const knowns = state.getPossibleKnowns(cell);
+        const candidates = state.getCandidates(cell);
         for (const k of ALL_KNOWNS) {
-          lines[4 * r + Math.floor((k - 1) / 3)]![1] += knowns.has(k)
+          lines[4 * r + Math.floor((k - 1) / 3)]![1] += candidates.has(k)
             ? k.toString()
             : MISSING;
         }
@@ -103,40 +101,40 @@ export function printAllPossibles(
   lines.forEach((line) => console.log(line[0], line[1]));
 }
 
-export function printPossibles(state: ReadableState, known: Known) {
-  printCellPossibles(state, known);
-  printRowPossibles(state, known);
-  printColumnPossibles(state, known);
-  printBlockPossibles(state, known);
+export function printCandidates(state: ReadableState, known: Known) {
+  printCellCandidates(state, known);
+  printRowCandidates(state, known);
+  printColumnCandidates(state, known);
+  printBlockCandidates(state, known);
 }
 
-export function printRowPossibles(state: ReadableState, known: Known) {
-  console.log("  ", 123456789, "ROW POSSIBLES FOR", known);
+export function printRowCandidates(state: ReadableState, known: Known) {
+  console.log("  ", 123456789, "ROW CANDIDATES FOR", known);
   for (const [r, row] of BOARD.rows) {
-    const cells = state.getPossibleCells(row, known);
+    const cells = state.getCandidateCells(row, known);
     console.log(r + 1, Cell.stringFromGroupCoords(0, cells));
   }
 }
 
-export function printCellPossibles(state: ReadableState, known: Known) {
-  console.log("  ", 123456789, "POSSIBLES FOR", known);
+export function printCellCandidates(state: ReadableState, known: Known) {
+  console.log("  ", 123456789, "CANDIDATES FOR", known);
   ALL_COORDS.forEach((r) =>
     console.log(
       r + 1,
       ALL_COORDS.reduce((cells: string[], c) => {
-        const possible = state.isPossibleKnown(
+        const candidate = state.isCandidate(
           BOARD.getCell(getPoint(r, c)),
           known
         );
-        return [...cells, possible ? known.toString() : MISSING];
+        return [...cells, candidate ? known.toString() : MISSING];
       }, []).join("")
     )
   );
 }
-export function printColumnPossibles(state: ReadableState, known: Known) {
+export function printColumnCandidates(state: ReadableState, known: Known) {
   const lines = Array.from(Array(9), () => "");
   for (const [c, column] of BOARD.columns) {
-    const cells = state.getPossibleCells(column, known);
+    const cells = state.getCandidateCells(column, known);
     for (const r of ALL_COORDS) {
       lines[r] += cells.has(BOARD.getCell(getPoint(r, c)))
         ? (r + 1).toString()
@@ -144,14 +142,14 @@ export function printColumnPossibles(state: ReadableState, known: Known) {
     }
   }
 
-  console.log("  ", 123456789, "COLUMN POSSIBLES FOR", known);
+  console.log("  ", 123456789, "COLUMN CANDIDATES FOR", known);
   lines.forEach((line, r) => console.log(r + 1, line));
 }
 
-export function printBlockPossibles(state: ReadableState, known: Known) {
+export function printBlockCandidates(state: ReadableState, known: Known) {
   const lines = Array.from(Array(9), () => "");
   for (const [b, block] of BOARD.blocks) {
-    const cells = state.getPossibleCells(block, known);
+    const cells = state.getCandidateCells(block, known);
     block.cells.forEach(
       (cell) =>
         (lines[3 * Math.floor(b / 3) + (cell.point.r % 3)] += cells.has(cell)
@@ -160,11 +158,11 @@ export function printBlockPossibles(state: ReadableState, known: Known) {
     );
   }
 
-  console.log("  ", 123456789, "BLOCK POSSIBLES FOR", known);
+  console.log("  ", 123456789, "BLOCK CANDIDATES FOR", known);
   lines.forEach((line, r) => console.log(r + 1, line));
 }
 
-export function printGroupPossibles(
+export function printGroupCandidates(
   state: ReadableState,
   group: Group,
   description?: string
@@ -172,14 +170,14 @@ export function printGroupPossibles(
   const lines = ["", "", "", "", "", "", "", "", ""];
   for (const cell of group.cells) {
     for (const k of ALL_KNOWNS) {
-      lines[k - 1]! += state.isPossibleKnown(cell, k) ? k.toString() : MISSING;
+      lines[k - 1]! += state.isCandidate(cell, k) ? k.toString() : MISSING;
     }
   }
 
   console.log(
     "  ",
     123456789,
-    description || "POSSIBLE KNOWNS FOR",
+    description || "CANDIDATES FOR",
     group.toString()
   );
   lines.forEach((line, r) => console.log(r + 1, line));

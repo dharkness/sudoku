@@ -1,5 +1,5 @@
 import { ALL_KNOWNS, Known, stringFromKnownSet } from "../models/basics";
-import { printGroupPossibles } from "../models/printers";
+import { printGroupCandidates } from "../models/printers";
 import { Solutions } from "../models/solutions";
 import { ReadableState } from "../models/state";
 import { BOARD, Cell } from "../models/board";
@@ -16,7 +16,7 @@ const LOG = false;
  *
  *     ↓  ↓ ↓
  *     123456789  ←-- cell group index
- *   1 ·········    | cell possibles
+ *   1 ·········    | cell candidates
  *   2 ···2·2222    |
  *   3 ·········    ↓
  * → 4 ···4·4···
@@ -38,7 +38,7 @@ export default function solveHiddenTriples(
     for (const [_, group] of groups) {
       const triples = new Map(
         ALL_KNOWNS.map(
-          (k) => [k, state.getPossibleCells(group, k)] as [Known, Set<Cell>]
+          (k) => [k, state.getCandidateCells(group, k)] as [Known, Set<Cell>]
         ).filter(([_, cells]) => 2 <= cells.size && cells.size <= 3)
       );
       if (triples.size < 3) {
@@ -61,7 +61,7 @@ export default function solveHiddenTriples(
             const triple = new Set([k1, k2, k3]);
             const erase = new Map<Cell, Set<Known>>();
             for (const cell of cs1cs2cs3) {
-              const diff = difference(state.getPossibleKnowns(cell), triple);
+              const diff = difference(state.getCandidates(cell), triple);
               if (diff.size) {
                 erase.set(cell, diff);
               }
@@ -77,7 +77,7 @@ export default function solveHiddenTriples(
               continue;
             }
 
-            LOG && printGroupPossibles(state, group);
+            LOG && printGroupCandidates(state, group);
             LOG &&
               console.info(
                 "SOLVE HIDDEN TRIPLE",

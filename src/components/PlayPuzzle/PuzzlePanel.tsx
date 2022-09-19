@@ -32,7 +32,7 @@ const PuzzlePanel = ({ actions, size }: PuzzlePanelProps): JSX.Element => {
                   selected={actions.selected === point}
                   onSelect={() => actions.select(point)}
                   size={size}
-                  possibles={actions.getPossibles(point)}
+                  candidates={actions.getCandidates(point)}
                 />
               );
             })}

@@ -7,7 +7,7 @@ import { Known, UNKNOWN } from "../models/basics";
 const LOG = false;
 
 /**
- * Looks for cells with a single possible value to solve.
+ * Looks for cells with a single candidate to solve.
  */
 export default function solveBruteForce(
   state: ReadableState,
@@ -32,13 +32,13 @@ function step(
   const value = BOARD.getValue(state, cell);
 
   if (value === UNKNOWN) {
-    const possibles = BOARD.getPossibles(state, cell);
+    const candidates = BOARD.getCandidates(state, cell);
 
-    if (!possibles.size || (!rest.length && possibles.size > 1)) {
+    if (!candidates.size || (!rest.length && candidates.size > 1)) {
       return false;
     }
 
-    for (const k of possibles) {
+    for (const k of candidates) {
       const clone = new SimpleState(state);
 
       LOG && console.info("SOLVE BRUTE FORCE", cell.point.k, "try", k);
@@ -52,14 +52,14 @@ function step(
         solved.forEachErasedPencil((cell: Cell, known: Known) => {
           if (
             BOARD.getValue(clone, cell) === UNKNOWN &&
-            BOARD.isPossible(clone, cell, known)
+            BOARD.isCandidate(clone, cell, known)
           ) {
-            BOARD.removePossible(clone, cell, known);
+            BOARD.removeCandidate(clone, cell, known);
           }
         });
         solved.forEachSolvedKnown((cell: Cell, known: Known) => {
           if (BOARD.getValue(clone, cell) === UNKNOWN) {
-            if (BOARD.isPossible(clone, cell, known)) {
+            if (BOARD.isCandidate(clone, cell, known)) {
               BOARD.setKnown(clone, cell, known);
             } else {
               error = true;
@@ -110,7 +110,7 @@ function areRemainingCellsValid(state: SimpleState, rest: Cell[]): boolean {
   for (const c of rest) {
     if (
       BOARD.getValue(state, c) === UNKNOWN &&
-      !BOARD.getPossibles(state, c).size
+      !BOARD.getCandidates(state, c).size
     ) {
       return false;
     }

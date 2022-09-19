@@ -12,9 +12,9 @@ import {
 } from "./basics";
 import { BOARD } from "./board";
 import {
-  printAllPossibles,
-  printPossibleCounts,
-  printPossibles,
+  printAllCandidates,
+  printCandidateCounts,
+  printCandidates,
   printValues,
 } from "./printers";
 import { Solutions, solutionsFromString } from "./solutions";
@@ -110,7 +110,7 @@ const full =
 //   BOARD.setKnown(state, p, k);
 // }
 // printValues(state);
-// printAllPossibles(state);
+// printAllCandidates(state);
 // solveNakeds(state, 2);
 
 const state = createEmptySimpleState();
@@ -136,22 +136,22 @@ while (!stop && (knowns.length || pencils.length)) {
   // apply all erased pencil marks
   while (!stop && pencils.length) {
     const [cell, known] = pencils.shift()!;
-    if (!state.isPossibleKnown(cell, known)) {
+    if (!state.isCandidate(cell, known)) {
       continue;
     }
 
     console.log("");
     console.log("erasing", cell.toString(), "=>", known);
-    BOARD.removePossible(state, cell, known);
-    // printAllPossibles(state);
+    BOARD.removeCandidate(state, cell, known);
+    // printAllCandidates(state);
 
     const test = BOARD.toString(state);
     if (!BOARD.validate(state) || !isCorrectSoFar(test, full)) {
       console.log("");
       printValues(state);
       console.log("");
-      printAllPossibles(state);
-      printPossibles(state, known);
+      printAllCandidates(state);
+      printCandidates(state, known);
       console.error("STOPPED");
       stop = true;
       break;
@@ -181,7 +181,7 @@ while (!stop && (knowns.length || pencils.length)) {
 
     const test = BOARD.toString(state);
     if (!BOARD.validate(state) || !isCorrectSoFar(test, full)) {
-      printPossibles(state, known);
+      printCandidates(state, known);
       console.error("STOPPED");
       stop = true;
       break;
@@ -200,22 +200,22 @@ while (!stop && (knowns.length || pencils.length)) {
   // apply all erased pencil marks
   while (!stop && pencils.length) {
     const [cell, known] = pencils.shift()!;
-    if (!state.isPossibleKnown(cell, known)) {
+    if (!state.isCandidate(cell, known)) {
       continue;
     }
 
     console.log("");
     console.log("erasing", cell.toString(), "=>", known);
-    BOARD.removePossible(state, cell, known);
-    // printAllPossibles(state);
+    BOARD.removeCandidate(state, cell, known);
+    // printAllCandidates(state);
 
     const test = BOARD.toString(state);
     if (!BOARD.validate(state) || !isCorrectSoFar(test, full)) {
       console.log("");
       printValues(state);
       console.log("");
-      printAllPossibles(state);
-      printPossibles(state, known);
+      printAllCandidates(state);
+      printCandidates(state, known);
       console.error("STOPPED");
       stop = true;
       break;
@@ -233,15 +233,15 @@ while (!stop && (knowns.length || pencils.length)) {
 
   console.log(" ");
   printValues(state);
-  printAllPossibles(state);
-  // printPossibleCounts(state);
-  // ALL_KNOWNS.forEach((k) => printPossibles(state, k));
+  printAllCandidates(state);
+  // printCandidateCounts(state);
+  // ALL_KNOWNS.forEach((k) => printCandidates(state, k));
   // break;
 }
 
 console.log("");
-printAllPossibles(state);
-// printPossibles(state, 5);
+printAllCandidates(state);
+// printCandidates(state, 5);
 BOARD.validate(state);
 // console.log(state);
 

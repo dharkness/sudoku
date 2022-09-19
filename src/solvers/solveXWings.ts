@@ -1,5 +1,5 @@
 import { ALL_KNOWNS, Coord, Grouping } from "../models/basics";
-import { printCellPossibles } from "../models/printers";
+import { printCellCandidates } from "../models/printers";
 import { Solutions } from "../models/solutions";
 import { ReadableState } from "../models/state";
 import { BOARD, Cell, Group } from "../models/board";
@@ -12,7 +12,7 @@ const LOG = false;
  * Looks for X-Wings in rows and columns to determine pencil marks to remove.
  * Removes found known from other cells in opposite row/column.
  *
- * Example: This grid of 4-possibles shows an X-Wing in rows 2 and 5
+ * Example: This grid of cells having 4 as a candidate shows an X-Wing in rows 2 and 5
  *
  *        ↓   ↓
  *     123456789
@@ -38,7 +38,7 @@ export default function solveXWings(
   for (const [g1, groups1, g2, groups2] of iterations) {
     for (const k of ALL_KNOWNS) {
       for (const [i1, group1] of groups1) {
-        const cells1 = state.getPossibleCells(group1, k);
+        const cells1 = state.getCandidateCells(group1, k);
         if (cells1.size !== 2) {
           continue;
         }
@@ -48,7 +48,7 @@ export default function solveXWings(
             continue;
           }
 
-          const cells2 = state.getPossibleCells(group2, k);
+          const cells2 = state.getCandidateCells(group2, k);
           if (cells2.size !== 2) {
             continue;
           }
@@ -69,7 +69,7 @@ export default function solveXWings(
             groups2.get(cell12!.point.i[g1])!,
           ]) {
             const diff = difference(
-              state.getPossibleCells(otherGroup, k),
+              state.getCandidateCells(otherGroup, k),
               xwing
             );
             if (diff.size) {
@@ -96,7 +96,7 @@ export default function solveXWings(
             continue;
           }
 
-          LOG && printCellPossibles(state, k);
+          LOG && printCellCandidates(state, k);
           LOG &&
             console.info(
               "SOLVE X-WING for",

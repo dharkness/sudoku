@@ -1,3 +1,5 @@
+// noinspection JSUnusedLocalSymbols
+
 import {
   ALL_KNOWNS,
   Known,
@@ -21,12 +23,12 @@ export interface ReadableState {
   isSolved(cell?: Cell): boolean;
   getValue(cell: Cell): Value;
 
-  getPossibleKnownsCount(cell: Cell): number;
-  isPossibleKnown(cell: Cell, known: Known): boolean;
-  getPossibleKnowns(cell: Cell): Set<Known>;
+  getCandidateCount(cell: Cell): number;
+  isCandidate(cell: Cell, known: Known): boolean;
+  getCandidates(cell: Cell): Set<Known>;
 
-  getPossibleCells(container: Container, known: Known): Set<Cell>;
-  getPossibleCellsByKnown(container: Container): Map<Known, Set<Cell>>;
+  getCandidateCells(container: Container, known: Known): Set<Cell>;
+  getCandidateCellsByKnown(container: Container): Map<Known, Set<Cell>>;
 }
 
 export interface WritableState extends ReadableState {
@@ -34,12 +36,12 @@ export interface WritableState extends ReadableState {
   addContainer(container: Container): void;
 
   setKnown(cell: Cell, known: Known): boolean;
-  removePossibleKnown(
+  removeCandidate(
     cell: Cell,
     known: Known,
-    triggerLastPossibleKnown?: boolean
+    triggerLastCandidate?: boolean
   ): boolean;
-  clearPossibleCells(container: Container, known: Known): Set<Cell>;
+  clearCandidateCells(container: Container, known: Known): Set<Cell>;
 
   // FACTOR Move safety checks to Solutions
   getSolved(): Solutions;
@@ -54,12 +56,12 @@ export class SimpleState implements WritableState {
   public readonly step: number;
 
   private readonly values: Map<Cell, Value>;
-  private readonly possibleKnowns: Map<Cell, Set<Known>>;
+  private readonly candidates: Map<Cell, Set<Known>>;
 
   private readonly containers: Map<Cell, Set<Container>>;
-  private readonly possibleContainers: Map<Cell, Map<Known, Set<Container>>>;
+  private readonly candidateContainers: Map<Cell, Map<Known, Set<Container>>>;
 
-  private readonly possibleCells: Map<Container, Map<Known, Set<Cell>>>;
+  private readonly candidateCells: Map<Container, Map<Known, Set<Cell>>>;
 
   private solutions: Solutions;
 
@@ -67,33 +69,33 @@ export class SimpleState implements WritableState {
     if (clone) {
       this.step = clone.step + 1;
       this.values = new Map(clone.values);
-      this.possibleKnowns = deepCloneMapOfSets(clone.possibleKnowns);
+      this.candidates = deepCloneMapOfSets(clone.candidates);
       this.containers = deepCloneMapOfSets(clone.containers);
-      this.possibleContainers = deepCloneMap(
-        clone.possibleContainers,
+      this.candidateContainers = deepCloneMap(
+        clone.candidateContainers,
         deepCloneMapOfSets
       );
-      this.possibleCells = deepCloneMap(
-        clone.possibleCells,
+      this.candidateCells = deepCloneMap(
+        clone.candidateCells,
         deepCloneMapOfSets
       );
       this.solutions = new Solutions();
     } else {
       this.step = 1;
       this.values = new Map<Cell, Value>();
-      this.possibleKnowns = new Map<Cell, Set<Known>>();
+      this.candidates = new Map<Cell, Set<Known>>();
       this.containers = new Map<Cell, Set<Container>>();
-      this.possibleContainers = new Map<Cell, Map<Known, Set<Container>>>();
-      this.possibleCells = new Map<Container, Map<Known, Set<Cell>>>();
+      this.candidateContainers = new Map<Cell, Map<Known, Set<Container>>>();
+      this.candidateCells = new Map<Container, Map<Known, Set<Cell>>>();
       this.solutions = new Solutions();
     }
   }
 
   addCell(cell: Cell): void {
     this.values.set(cell, UNKNOWN);
-    this.possibleKnowns.set(cell, new Set(ALL_KNOWNS));
+    this.candidates.set(cell, new Set(ALL_KNOWNS));
     this.containers.set(cell, new Set());
-    this.possibleContainers.set(
+    this.candidateContainers.set(
       cell,
       new Map(ALL_KNOWNS.map((k) => [k, new Set()]))
     );
@@ -103,10 +105,10 @@ export class SimpleState implements WritableState {
     for (const c of container.cells) {
       this.containers.get(c)!.add(container);
       for (const k of ALL_KNOWNS) {
-        this.possibleContainers.get(c)!.get(k)!.add(container);
+        this.candidateContainers.get(c)!.get(k)!.add(container);
       }
     }
-    this.possibleCells.set(
+    this.candidateCells.set(
       container,
       new Map(ALL_KNOWNS.map((k) => [k, new Set(container.cells)]))
     );
@@ -150,12 +152,12 @@ export class SimpleState implements WritableState {
       throw new ChangeCellValueError(cell, current, known);
     }
 
-    const possibles = this.getPossibleKnowns(cell);
-    if (!possibles.has(known)) {
-      throw new CellValueNotPossibleError(cell, known, possibles);
+    const candidates = this.getCandidates(cell);
+    if (!candidates.has(known)) {
+      throw new NotCandidateError(cell, known, candidates);
     }
 
-    const remaining = new Set(possibles);
+    const remaining = new Set(candidates);
     remaining.delete(known);
     LOG &&
       console.info(
@@ -167,47 +169,47 @@ export class SimpleState implements WritableState {
         stringFromKnownSet(remaining)
       );
     this.values.set(cell, known);
-    this.possibleKnowns.set(cell, remaining);
+    this.candidates.set(cell, remaining);
 
     // for every container of this cell
-    //   remove known as possible from cell
-    //   collect possible cells into set to remove as possible, i.e. neighbors
+    //   remove candidate from cell
+    //   collect candidate cells into set to remove as candidate, i.e. neighbors
     //     Groups return cells; Intersections return none
-    const containers = [...this.possibleContainers.get(cell)!.get(known)!];
+    const containers = [...this.candidateContainers.get(cell)!.get(known)!];
     for (const container of containers) {
       container.onSetKnown(this, cell, known);
     }
 
     // for every remaining known in cell
-    //   remove possible known
+    //   remove candidates
     for (const k of [...remaining]) {
-      this.removePossibleKnown(cell, k, false);
+      this.removeCandidate(cell, k, false);
     }
 
     return true;
   }
 
-  // ========== POSSIBLE CELL KNOWNS ========================================
+  // ========== CANDIDATES ========================================
 
-  getPossibleKnownsCount(cell: Cell): number {
-    return this.possibleKnowns.get(cell)!.size;
+  getCandidateCount(cell: Cell): number {
+    return this.candidates.get(cell)!.size;
   }
 
-  isPossibleKnown(cell: Cell, known: Known): boolean {
-    return this.possibleKnowns.get(cell)!.has(known);
+  isCandidate(cell: Cell, known: Known): boolean {
+    return this.candidates.get(cell)!.has(known);
   }
 
-  getPossibleKnowns(cell: Cell): Set<Known> {
-    return this.possibleKnowns.get(cell)!;
+  getCandidates(cell: Cell): Set<Known> {
+    return this.candidates.get(cell)!;
   }
 
-  removePossibleKnown(
+  removeCandidate(
     cell: Cell,
     known: Known,
-    triggerLastPossibleKnown: boolean = true
+    triggerLastCandidate: boolean = true
   ): boolean {
-    const possibles = this.getPossibleKnowns(cell);
-    if (!possibles.has(known)) {
+    const candidates = this.getCandidates(cell);
+    if (!candidates.has(known)) {
       LOG &&
         console.warn(
           "STATE erase",
@@ -215,18 +217,18 @@ export class SimpleState implements WritableState {
           "from",
           cell.toString(),
           "not in",
-          stringFromKnownSet(possibles)
+          stringFromKnownSet(candidates)
         );
       return false;
     }
-    // if (possibles.size === 1 && !this.isSolved(cell)) {
-    //   throw new RemoveLastCellPossibleValueError(cell, known);
+    // if (candidates.size === 1 && !this.isSolved(cell)) {
+    //   throw new RemoveLastCandidateError(cell, known);
     // }
 
-    // remove possible known from cell
-    const remaining = new Set(possibles);
+    // remove candidate from cell
+    const remaining = new Set(candidates);
     remaining.delete(known);
-    this.possibleKnowns.set(cell, remaining);
+    this.candidates.set(cell, remaining);
 
     LOG &&
       console.info(
@@ -238,16 +240,16 @@ export class SimpleState implements WritableState {
         stringFromKnownSet(remaining)
       );
 
-    // solve cell if only one possible known remaining
-    if (triggerLastPossibleKnown && remaining.size === 1) {
+    // solve cell if only one candidate remaining
+    if (triggerLastCandidate && remaining.size === 1) {
       this.addSolvedKnown(cell, singleSetValue(remaining));
     }
 
-    // remove possible cell from its containers
-    const containers = [...this.possibleContainers.get(cell)!.get(known)!];
+    // remove candidate cell from its containers
+    const containers = [...this.candidateContainers.get(cell)!.get(known)!];
     for (const container of containers) {
-      const possibles = this.possibleCells.get(container)!.get(known)!;
-      if (!possibles.has(cell)) {
+      const candidateCells = this.candidateCells.get(container)!.get(known)!;
+      if (!candidateCells.has(cell)) {
         LOG &&
           console.warn(
             "STATE remove",
@@ -256,15 +258,15 @@ export class SimpleState implements WritableState {
             known,
             cell.toString(),
             "not in",
-            Cell.stringFromPoints(possibles)
+            Cell.stringFromPoints(candidateCells)
           );
         continue;
       }
 
       // remove cell from container
-      const remaining = new Set(possibles);
+      const remaining = new Set(candidateCells);
       remaining.delete(cell);
-      this.possibleCells.get(container)!.set(known, remaining);
+      this.candidateCells.get(container)!.set(known, remaining);
 
       LOG &&
         console.info(
@@ -278,7 +280,7 @@ export class SimpleState implements WritableState {
           Cell.stringFromPoints(remaining)
         );
 
-      // notify container when zero or one possible cell remains
+      // notify container when zero or one candidate cell remains
       switch (remaining.size) {
         case 1:
           container.onOneCellLeft(this, known, singleSetValue(remaining));
@@ -293,18 +295,18 @@ export class SimpleState implements WritableState {
     return true;
   }
 
-  // ========== POSSIBLE CONTAINER CELLS ========================================
+  // ========== CANDIDATE CELLS ========================================
 
-  getPossibleCells(container: Container, known: Known): Set<Cell> {
-    return this.possibleCells.get(container)!.get(known)!;
+  getCandidateCells(container: Container, known: Known): Set<Cell> {
+    return this.candidateCells.get(container)!.get(known)!;
   }
 
-  getPossibleCellsByKnown(container: Container): Map<Known, Set<Cell>> {
-    return this.possibleCells.get(container)!;
+  getCandidateCellsByKnown(container: Container): Map<Known, Set<Cell>> {
+    return this.candidateCells.get(container)!;
   }
 
-  clearPossibleCells(container: Container, known: Known): Set<Cell> {
-    const knowns = this.possibleCells.get(container)!;
+  clearCandidateCells(container: Container, known: Known): Set<Cell> {
+    const knowns = this.candidateCells.get(container)!;
     const cells = knowns.get(known)!;
 
     LOG &&
@@ -322,7 +324,7 @@ export class SimpleState implements WritableState {
 
     // remove the container from each cell
     for (const cell of cells) {
-      this.possibleContainers.get(cell)!.get(known)!.delete(container);
+      this.candidateContainers.get(cell)!.get(known)!.delete(container);
     }
 
     return cells;
@@ -343,12 +345,8 @@ export class SimpleState implements WritableState {
       return;
     }
 
-    if (!this.isPossibleKnown(cell, known)) {
-      throw new CellValueNotPossibleError(
-        cell,
-        known,
-        this.getPossibleKnowns(cell)
-      );
+    if (!this.isCandidate(cell, known)) {
+      throw new NotCandidateError(cell, known, this.getCandidates(cell));
     }
 
     this.solutions.addSolvedKnown(cell, known);
@@ -362,12 +360,12 @@ export class SimpleState implements WritableState {
     if (this.isSolved(cell)) {
       return;
     }
-    const possibles = this.getPossibleKnowns(cell);
-    if (!possibles.has(known)) {
+    const candidates = this.getCandidates(cell);
+    if (!candidates.has(known)) {
       return;
     }
-    // if (possibles.size === 1) {
-    //   throw new RemoveLastCellPossibleValueError(cell, known);
+    // if (candidates.size === 1) {
+    //   throw new RemoveLastCandidateError(cell, known);
     // }
 
     this.solutions.addErasedPencil(cell, known);
@@ -383,26 +381,24 @@ export class SimpleState implements WritableState {
 }
 
 /**
- * Thrown when attempting to set a cell to a value that is not possible.
+ * Thrown when attempting to set a cell to a value that is not a candidate.
  */
-class CellValueNotPossibleError extends Error {
-  constructor(cell: Cell, to: Known, possibles: Set<Known>) {
+class NotCandidateError extends Error {
+  constructor(cell: Cell, to: Known, candidatess: Set<Known>) {
     super(
       `Cannot set ${cell.toString()} to ${to} not in ${stringFromKnownSet(
-        possibles
+        candidatess
       )}`
     );
   }
 }
 
 /**
- * Thrown when attempting to remove a cell's last possible value.
+ * Thrown when attempting to remove a cell's last candidate.
  */
-class RemoveLastCellPossibleValueError extends Error {
-  constructor(cell: Cell, possible: Known) {
-    super(
-      `Cannot remove last possible value ${possible} from ${cell.toString()}`
-    );
+class RemoveLastCandidateError extends Error {
+  constructor(cell: Cell, candidate: Known) {
+    super(`Cannot remove last candidate ${candidate} from ${cell.toString()}`);
   }
 }
 

@@ -35,31 +35,34 @@ but feel free to explore and scavenge any code you find useful.
 - A `Puzzle` holds the complete solution of all eighty-one cells
   along with the subset of starting values given to the player.
 
-- The `State` tracks the possible and known values of a puzzle in play.
+- The `State` tracks the candidate and solved values of a puzzle in play.
 
   - Each `Cell` holds a single solution `Value`: either `Unknown` (empty)
     or `Known` once it has been solved.
 
-  - While a cell is unsolved, it tracks the set of `possibles`, all values
+  - While a cell is unsolved, it tracks the set of `candidates`, all values
     that the cell could take as a solution given the values of its neighbors.
     They are often called _pencil marks_ since players typically mark up the
     paper with a pencil while solving a physical puzzle.
 
-  - When a cell becomes solved, its value is removed from the set of possibles
+  - When a cell becomes solved, its value is removed from the set of candidates
     for each of its neighbors.
 
 
 ## Next Steps
 
 - Model
-  - group possible cells hold index sets instead of point sets for performance?
+  - group candidate cells hold index sets instead of point sets for performance?
+  - refactor
+    - rename State (solved cells and candidates) to Board, Positions
+    - rename Board (if State becomes Board) to Sudoku, Layout, Game
 
 - Play
   - UI
     - show errors
-      - currently block setting cell to non-possible
-      - incorrectly set cell
-      - incorrectly removed possible
+      - note that we currently block setting cell to non-candidate
+      - incorrectly solved cell
+      - incorrectly removed candidate
       - solutions that make puzzle impossible (good for creating new puzzles)
       - easier to show banner when making errors given the model
 

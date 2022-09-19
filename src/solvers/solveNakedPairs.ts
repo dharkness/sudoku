@@ -1,5 +1,5 @@
 import { Known, stringFromKnownSet } from "../models/basics";
-import { printGroupPossibles } from "../models/printers";
+import { printGroupCandidates } from "../models/printers";
 import { Solutions } from "../models/solutions";
 import { ReadableState } from "../models/state";
 import { BOARD, Cell } from "../models/board";
@@ -16,7 +16,7 @@ const LOG = false;
  *
  *        ↓ ↓
  *     123456789  ←-- cell group index
- *   1 ··1·····1    | cell possibles
+ *   1 ··1·····1    | cell candidates
  *   2 ··2·····2    |
  *   3 ·········    ↓
  *   4 ·········
@@ -35,8 +35,7 @@ export default function solveNakedPairs(
       const pairs = new Map(
         [...group.cells.values()]
           .map(
-            (cell) =>
-              [cell, state.getPossibleKnowns(cell)] as [Cell, Set<Known>]
+            (cell) => [cell, state.getCandidates(cell)] as [Cell, Set<Known>]
           )
           .filter(([_, knowns]) => knowns.size === 2)
       );
@@ -54,7 +53,7 @@ export default function solveNakedPairs(
           const pair = new Set([c1, c2]);
           const erase = new Map<Known, Set<Cell>>();
           for (const k of ks1ks2) {
-            const diff = difference(state.getPossibleCells(group, k), pair);
+            const diff = difference(state.getCandidateCells(group, k), pair);
             if (diff.size) {
               erase.set(k, diff);
             }
@@ -71,7 +70,7 @@ export default function solveNakedPairs(
             continue;
           }
 
-          LOG && printGroupPossibles(state, group);
+          LOG && printGroupCandidates(state, group);
           LOG &&
             console.info(
               "SOLVE NAKED PAIR",

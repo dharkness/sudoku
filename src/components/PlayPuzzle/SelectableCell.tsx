@@ -2,13 +2,13 @@ import clsx from "clsx";
 
 import { Point, Value, Known, UNKNOWN } from "../../models/basics";
 
-import CellPossibles from "./CellPossibles";
+import CellCandidates from "./CellCandidates";
 
 type SelectableCellProps = {
   point: Point;
   initial: Value;
   value: Value;
-  possibles: Set<Known>;
+  candidates: Set<Known>;
 
   highlighted: Value;
   selected: boolean;
@@ -22,7 +22,7 @@ const SelectableCell = ({
   point,
   initial,
   value,
-  possibles,
+  candidates,
   highlighted,
   selected,
   onSelect,
@@ -45,7 +45,7 @@ const SelectableCell = ({
       ? solvedBackgroundColor
       : highlighted === value
       ? "bg-sky-900"
-      : possibles.has(highlighted)
+      : candidates.has(highlighted)
       ? "bg-emerald-50"
       : solvedBackgroundColor,
     initial !== UNKNOWN && "text-red-400",
@@ -60,10 +60,10 @@ const SelectableCell = ({
       onClick={onSelect}
     >
       {value === UNKNOWN ? (
-        <CellPossibles
-          possibles={possibles}
+        <CellCandidates
+          candidates={candidates}
           highlighted={selected ? UNKNOWN : highlighted}
-          pencilDot
+          showNumber
         />
       ) : (
         <span style={{ fontSize: "2em" }}>{value}</span>

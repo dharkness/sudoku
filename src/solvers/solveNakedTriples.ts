@@ -1,5 +1,5 @@
 import { Known, stringFromKnownSet } from "../models/basics";
-import { printGroupPossibles } from "../models/printers";
+import { printGroupCandidates } from "../models/printers";
 import { Solutions } from "../models/solutions";
 import { ReadableState } from "../models/state";
 import { BOARD, Cell } from "../models/board";
@@ -16,7 +16,7 @@ const LOG = false;
  *
  *      ↓   ↓  ↓
  *     123456789  ←-- cell group index
- *   1 ·········    | cell possibles
+ *   1 ·········    | cell candidates
  *   2 ·········    |
  * → 3 ·3···3··3    ↓
  *   4 ·········
@@ -35,8 +35,7 @@ export default function solveNakedTriples(
       const triples = new Map(
         [...group.cells.values()]
           .map(
-            (cell) =>
-              [cell, state.getPossibleKnowns(cell)] as [Cell, Set<Known>]
+            (cell) => [cell, state.getCandidates(cell)] as [Cell, Set<Known>]
           )
           .filter(([_, knowns]) => 2 <= knowns.size && knowns.size <= 3)
       );
@@ -63,7 +62,10 @@ export default function solveNakedTriples(
             const triple = new Set([c1, c2, c3]);
             const erase = new Map<Known, Set<Cell>>();
             for (const k of ks1ks2ks3) {
-              const diff = difference(state.getPossibleCells(group, k), triple);
+              const diff = difference(
+                state.getCandidateCells(group, k),
+                triple
+              );
               if (diff.size) {
                 erase.set(k, diff);
               }
@@ -80,7 +82,7 @@ export default function solveNakedTriples(
               continue;
             }
 
-            LOG && printGroupPossibles(state, group);
+            LOG && printGroupCandidates(state, group);
             LOG &&
               console.info(
                 "SOLVE NAKED TRIPLE",

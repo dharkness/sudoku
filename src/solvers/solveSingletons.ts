@@ -7,17 +7,17 @@ import { singleSetValue } from "../utils/collections";
 const LOG = false;
 
 /**
- * Looks for cells with a single possible value to solve.
+ * Looks for cells with a single candidate to solve.
  */
 export default function solveSingletons(
   state: ReadableState,
   solutions: Solutions
 ): void {
   for (const [_, cell] of BOARD.cells) {
-    const possibles = BOARD.getPossibles(state, cell);
+    const candidates = BOARD.getCandidates(state, cell);
 
-    if (possibles.size === 1) {
-      const solution = singleSetValue(possibles);
+    if (candidates.size === 1) {
+      const solution = singleSetValue(candidates);
 
       LOG && console.info("SOLVE SINGLETON", cell.point.k, "=>", solution);
 

@@ -57,8 +57,8 @@ export default function usePlayPuzzleKeys(actions: PuzzleActions) {
         actions.setCell(known(key.charCodeAt(0) - ZERO_CODE));
       } else if (!ctrlKey && key in SET_KNOWN_KEYS) {
         actions.setCell(SET_KNOWN_KEYS[key]!);
-      } else if (!ctrlKey && key in REMOVE_POSSIBLE_KEYS) {
-        actions.removePossible(REMOVE_POSSIBLE_KEYS[key]!);
+      } else if (!ctrlKey && key in REMOVE_CANDIDATE_KEYS) {
+        actions.removeCandidate(REMOVE_CANDIDATE_KEYS[key]!);
       } else if (!ctrlKey && ["Backspace", "Delete", "Clear"].includes(key)) {
         // TODO how to clear?
       } else {
@@ -162,7 +162,7 @@ const SET_KNOWN_KEYS: { [key: string]: Known } = {
   v: 9,
 };
 
-const REMOVE_POSSIBLE_KEYS: { [key: string]: Known } = {
+const REMOVE_CANDIDATE_KEYS: { [key: string]: Known } = {
   W: 1,
   E: 2,
   R: 3,

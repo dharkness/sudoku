@@ -1,5 +1,5 @@
 import { ALL_KNOWNS, Known, stringFromKnownSet } from "../models/basics";
-import { printGroupPossibles } from "../models/printers";
+import { printGroupCandidates } from "../models/printers";
 import { Solutions } from "../models/solutions";
 import { ReadableState } from "../models/state";
 import { BOARD, Cell } from "../models/board";
@@ -9,14 +9,14 @@ import { difference, union } from "../utils/collections";
 const LOG = false;
 
 /**
- * Looks for hidden pairs to determine pencil marks to remove.
+ * Looks for hidden pairs to determine candidates to remove.
  * Removes other knowns from found cells.
  *
  * Example: This shows a hidden pair of (1, 7) in cells (2, 6).
  *
  *      ↓   ↓
  *     123456789  ←-- cell group index
- * → 1 ·1···1···    | cell possibles
+ * → 1 ·1···1···    | cell candidates
  *   2 ·········    |
  *   3 ·········    ↓
  *   4 ··4···4·4
@@ -37,7 +37,7 @@ export default function solveHiddenPairs(
     for (const [_, group] of groups) {
       const pairs = new Map(
         ALL_KNOWNS.map(
-          (k) => [k, state.getPossibleCells(group, k)] as [Known, Set<Cell>]
+          (k) => [k, state.getCandidateCells(group, k)] as [Known, Set<Cell>]
         ).filter(([_, cells]) => cells.size === 2)
       );
       if (pairs.size < 2) {
@@ -54,7 +54,7 @@ export default function solveHiddenPairs(
           const pair = new Set([k1, k2]);
           const erase = new Map<Cell, Set<Known>>();
           for (const cell of cs1cs2) {
-            const diff = difference(state.getPossibleKnowns(cell), pair);
+            const diff = difference(state.getCandidates(cell), pair);
             if (diff.size) {
               erase.set(cell, diff);
             }
@@ -70,7 +70,7 @@ export default function solveHiddenPairs(
             continue;
           }
 
-          LOG && printGroupPossibles(state, group);
+          LOG && printGroupCandidates(state, group);
           LOG &&
             console.info(
               "SOLVE HIDDEN PAIR",

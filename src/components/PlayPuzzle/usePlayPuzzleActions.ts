@@ -22,12 +22,12 @@ export type PuzzleActions = {
 
   getInitialValue: (point: Point) => Value;
   getValue: (point: Point) => Value;
-  getPossibles: (point: Point) => Set<Known>;
+  getCandidates: (point: Point) => Set<Known>;
 
   highlight: (value: Value) => void;
   select: (point: Point) => void;
   setCell: (known: Known) => void;
-  removePossible: (known: Known) => void;
+  removeCandidate: (known: Known) => void;
   applySolutions: (solutions: Solutions) => void;
 
   undo: () => void;
@@ -52,7 +52,7 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
       const solved = state.getSolved();
       state.clearSolved();
       solved.forEachErasedPencil((cell, known) =>
-        BOARD.removePossible(state, cell, known)
+        BOARD.removeCandidate(state, cell, known)
       );
     }
 
@@ -72,10 +72,10 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
     const current = steps[step]!.state;
 
     const value = selected ? BOARD.getValue(current, selected) : UNKNOWN;
-    const possibles = selected ? BOARD.getPossibles(current, selected) : null;
+    const candidates = selected ? BOARD.getCandidates(current, selected) : null;
 
     const singleton =
-      possibles?.size === 1 ? singleSetValue(possibles) : UNKNOWN;
+      candidates?.size === 1 ? singleSetValue(candidates) : UNKNOWN;
     const highlighted = locked || value || singleton;
 
     return {
@@ -90,12 +90,12 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
 
       getInitialValue: (point: Point) => BOARD.getValue(initial, point),
       getValue: (point: Point) => BOARD.getValue(current, point),
-      getPossibles: (point: Point) => BOARD.getPossibles(current, point),
+      getCandidates: (point: Point) => BOARD.getCandidates(current, point),
 
       highlight: (value: Value) => dispatch({ type: "highlight", value }),
       select: (point: Point) => dispatch({ type: "select", point }),
       setCell: (known: Known) => dispatch({ type: "set", known: known }),
-      removePossible: (known: Known) =>
+      removeCandidate: (known: Known) =>
         dispatch({ type: "remove", known: known }),
       applySolutions: (solutions: Solutions) =>
         dispatch({ type: "apply", solutions }),
@@ -156,7 +156,7 @@ const reducer: Reducer = (state: State, action: Action) => {
       return addStep(state, (state: SimpleState) => {
         const { known } = action;
 
-        if (!BOARD.isPossible(state, selected, known)) {
+        if (!BOARD.isCandidate(state, selected, known)) {
           return state;
         }
 
@@ -167,7 +167,7 @@ const reducer: Reducer = (state: State, action: Action) => {
         while (!(solved = clone.getSolved()).isEmpty()) {
           clone.clearSolved();
           solved.forEachErasedPencil((cell: Cell, known: Known) =>
-            BOARD.removePossible(clone, cell, known)
+            BOARD.removeCandidate(clone, cell, known)
           );
         }
 
@@ -182,18 +182,18 @@ const reducer: Reducer = (state: State, action: Action) => {
       return addStep(state, (state: SimpleState) => {
         const { known } = action;
 
-        if (!BOARD.isPossible(state, selected, known)) {
+        if (!BOARD.isCandidate(state, selected, known)) {
           return state;
         }
 
         const clone = new SimpleState(state);
-        BOARD.removePossible(clone, selected, known);
+        BOARD.removeCandidate(clone, selected, known);
 
         let solved;
         while (!(solved = clone.getSolved()).isEmpty()) {
           clone.clearSolved();
           solved.forEachErasedPencil((cell: Cell, known: Known) =>
-            BOARD.removePossible(clone, cell, known)
+            BOARD.removeCandidate(clone, cell, known)
           );
         }
 
@@ -209,14 +209,14 @@ const reducer: Reducer = (state: State, action: Action) => {
           BOARD.setKnown(clone, cell, known)
         );
         solutions.forEachErasedPencil((cell: Cell, known: Known) =>
-          BOARD.removePossible(clone, cell, known)
+          BOARD.removeCandidate(clone, cell, known)
         );
 
         let solved;
         while (!(solved = clone.getSolved()).isEmpty()) {
           clone.clearSolved();
           solved.forEachErasedPencil((cell: Cell, known: Known) =>
-            BOARD.removePossible(clone, cell, known)
+            BOARD.removeCandidate(clone, cell, known)
           );
         }
 

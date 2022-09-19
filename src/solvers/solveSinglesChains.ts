@@ -1,5 +1,5 @@
 import { ALL_KNOWNS } from "../models/basics";
-import { printCellPossibles } from "../models/printers";
+import { printCellCandidates } from "../models/printers";
 import { ReadableState } from "../models/state";
 import { Solutions } from "../models/solutions";
 import { BOARD, Cell } from "../models/board";
@@ -44,7 +44,7 @@ export default function solveSinglesChains(
   solutions: Solutions
 ): void {
   // for each group,
-  //   if two possible cells,
+  //   if two candidate cells,
   //     add new or to existing graph
   //   else
   //     add each cell to map of sets containing other "seen" cells
@@ -56,7 +56,7 @@ export default function solveSinglesChains(
   //
   // at end, check each cell not in a graph if it sees any graphs
   //   intersectMap(seen(cell), graph)
-  //     if map contains both colors, remove cell as possible
+  //     if map contains both colors, remove cell as candidate
 
   for (const k of ALL_KNOWNS) {
     const free = new Map<Cell, Seen>();
@@ -64,7 +64,7 @@ export default function solveSinglesChains(
 
     for (const [_, groups] of BOARD.groups) {
       for (const [_, group] of groups) {
-        const cells = state.getPossibleCells(group, k);
+        const cells = state.getCandidateCells(group, k);
 
         if (cells.size === 2) {
           LOG && console.info("edge", k, Cell.stringFromPoints(cells));
@@ -175,7 +175,7 @@ export default function solveSinglesChains(
         const sees = intersectMap(f, g);
         const unique = new Set(sees.values());
         if (unique.size === 2) {
-          LOG && printCellPossibles(state, k);
+          LOG && printCellCandidates(state, k);
           LOG &&
             console.info(
               "SOLVE SINGLES CHAIN",

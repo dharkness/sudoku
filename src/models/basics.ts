@@ -177,7 +177,7 @@ export function pointGroupCoordsToString(
 // ========== VALUES ============================================================ //
 
 /**
- * Identifies a value to track known and possible values.
+ * Identifies a value to track known and candidate values.
  */
 export type Known = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 

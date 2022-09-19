@@ -28,7 +28,7 @@ interface Stateful {
 /**
  * Defines a single cell within the board.
  *
- * When it has one remaining possible known value (pencil mark), it adds it as the solution for itself.
+ * When it has one remaining candidate, it adds it as the solution for itself.
  * When it is set to a known value, it notifies its containing groups and all neighbors.
  */
 export class Cell implements Stateful {
@@ -152,8 +152,8 @@ export abstract class Group extends Container {
   }
 
   onSetKnown(state: WritableState, cell: Cell, known: Known): void {
-    const possibles = state.clearPossibleCells(this, known);
-    for (const neighbor of possibles) {
+    const candidateCells = state.clearCandidateCells(this, known);
+    for (const neighbor of candidateCells) {
       if (neighbor !== cell) {
         state.addErasedPencil(neighbor, known);
       }
@@ -198,8 +198,8 @@ class Block extends Group {
  * Models the intersection between a block and a row or column
  * and the subsets of points not in the block, called disjoints.
  *
- * When either disjoint loses the last possible cell for a known,
- * that known is removed as a possible from the other disjoint's cells
+ * When either disjoint loses the last cell for a candidate,
+ * that known is removed as a candidate from the other disjoint's cells
  * since it must appear in the intersection.
  *
  * When this happens, or a known is set anywhere in the union,
@@ -243,7 +243,7 @@ class Intersection {
     this.groupDisjoint.addEmptyState(state);
   }
 
-  removePossibleKnownForOtherDisjoint(
+  removeCandidateFromOtherDisjoint(
     state: WritableState,
     known: Known,
     disjoint: Disjoint
@@ -251,14 +251,14 @@ class Intersection {
     const other =
       disjoint === this.blockDisjoint ? this.groupDisjoint : this.blockDisjoint;
     for (const cell of other.cells) {
-      state.removePossibleKnown(cell, known);
+      state.removeCandidate(cell, known);
     }
   }
 
-  clearPossibleCells(state: WritableState, known: Known): void {
-    state.clearPossibleCells(this.intersection, known);
-    state.clearPossibleCells(this.blockDisjoint, known);
-    state.clearPossibleCells(this.groupDisjoint, known);
+  clearCandidateCells(state: WritableState, known: Known): void {
+    state.clearCandidateCells(this.intersection, known);
+    state.clearCandidateCells(this.blockDisjoint, known);
+    state.clearCandidateCells(this.groupDisjoint, known);
   }
 }
 
@@ -274,11 +274,11 @@ class Intersect extends Container {
   }
 
   onSetKnown(state: WritableState, cell: Cell, known: Known): void {
-    this.parent.clearPossibleCells(state, known);
+    this.parent.clearCandidateCells(state, known);
   }
 
   onNoCellsLeft(state: WritableState, known: Known): void {
-    this.parent.clearPossibleCells(state, known);
+    this.parent.clearCandidateCells(state, known);
   }
 }
 
@@ -294,12 +294,12 @@ class Disjoint extends Container {
   }
 
   onSetKnown(state: WritableState, cell: Cell, known: Known): void {
-    this.parent.clearPossibleCells(state, known);
+    this.parent.clearCandidateCells(state, known);
   }
 
   onNoCellsLeft(state: WritableState, known: Known): void {
-    this.parent.removePossibleKnownForOtherDisjoint(state, known, this);
-    this.parent.clearPossibleCells(state, known);
+    this.parent.removeCandidateFromOtherDisjoint(state, known, this);
+    this.parent.clearCandidateCells(state, known);
   }
 }
 
@@ -432,24 +432,24 @@ class Board {
       : this.cells.get(pointOrCell)!;
   }
 
-  isPossible(
+  isCandidate(
     state: ReadableState,
     pointOrCell: Point | Cell,
     known: Known
   ): boolean {
-    return state.isPossibleKnown(this.getCell(pointOrCell), known);
+    return state.isCandidate(this.getCell(pointOrCell), known);
   }
 
-  getPossibles(state: ReadableState, pointOrCell: Point | Cell): Set<Known> {
-    return state.getPossibleKnowns(this.getCell(pointOrCell));
+  getCandidates(state: ReadableState, pointOrCell: Point | Cell): Set<Known> {
+    return state.getCandidates(this.getCell(pointOrCell));
   }
 
-  removePossible(
+  removeCandidate(
     state: WritableState,
     pointOrCell: Point | Cell,
     known: Known
   ): boolean {
-    return state.removePossibleKnown(this.getCell(pointOrCell), known);
+    return state.removeCandidate(this.getCell(pointOrCell), known);
   }
 
   getValue(state: ReadableState, pointOrCell: Point | Cell): Value {
@@ -482,14 +482,14 @@ class Board {
         continue;
       }
 
-      if (state.getPossibleKnowns(cell).size) {
+      if (state.getCandidates(cell).size) {
         console.error(
           "INVALID",
           cell.toString(),
           "=",
           value,
           "with knowns",
-          state.getPossibleKnowns(cell)
+          state.getCandidates(cell)
         );
         valid = false;
       }
@@ -499,10 +499,10 @@ class Board {
         this.columns.get(cell.point.c)!,
         this.blocks.get(cell.point.b)!,
       ].forEach((group) => {
-        const possibles = state.getPossibleCells(group, value);
+        const candidateCells = state.getCandidateCells(group, value);
         if (
-          possibles.size > 1 ||
-          !(possibles.size === 1 || !possibles.has(cell))
+          candidateCells.size > 1 ||
+          !(candidateCells.size === 1 || !candidateCells.has(cell))
         ) {
           console.error(
             "INVALID",
@@ -511,7 +511,7 @@ class Board {
             value,
             group.toString(),
             "has cells",
-            Cell.stringFromPoints(possibles)
+            Cell.stringFromPoints(candidateCells)
           );
           valid = false;
         }
