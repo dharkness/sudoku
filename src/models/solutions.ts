@@ -1,5 +1,6 @@
-import { ALL_POINTS, known, Known, UNKNOWN, valueFromString } from "./basics";
+import { ALL_POINTS, Known, UNKNOWN, valueFromString } from "./basics";
 import { BOARD, Cell } from "./board";
+import { WritableState } from "./state";
 
 import { shuffle } from "../utils/collections";
 
@@ -180,8 +181,8 @@ export class Solutions {
  * Parses solutions from a partial or full puzzle string.
  *
  * Each row should contain the values for each cell, a digit for a solved cell
- * and any character (typically a period) for an unknown cell,
- * and rows should be separated by any single character (typically a space).
+ * and any character (typically a period) for an unknown cell.
+ * Rows may optionally be separated by any single character (typically a space).
  *
  * For example:
  *
@@ -205,4 +206,90 @@ export function solutionsFromString(values: string): Solutions {
   }
 
   return solutions;
+}
+
+// how to support clearing knowns and adding candidates
+
+enum Strategy {
+  ManualSetValue, // cell, known -> set cell to known
+  ManualRemoveCandidate, // cell, value -> remove candidate from cell
+
+  NakedSingle, // cell, candidate -> set cell to candidate; remove candidate from neighbors
+  HiddenSingle, // cell, candidate, group(s) -> set cell to candidate
+
+  PointingPair, // cells, candidate, intersection (follows from cells) -> cells; remove candidate from cells
+  PointingTriple, // same ^
+  BoxLineReduction, // same ^ in other direction
+
+  NakedPair, // 2 cells, 2 candidates, 1 group -> cells; remove both candidates from other cells in group
+  NakedTriple, // same ^ but with 3 cells and candidates
+  HiddenPair, // 2 cells, 2 candidates, 1 group -> remove other candidates from the cells
+  HiddenTriple, // same ^ but with 3 cells and candidates
+
+  XWing, // 4 cells, 1 candidate; 1 direction (row or column) -> cells; remove candidate from other cells in given direction
+  SinglesChain, // cells, 1 candidate -> cells; remove candidate from cells
+
+  BruteForce, // cell, candidate -> set cell to candidate
+}
+
+/**
+ * Captures the strategy, clues (knowns and candidates), and the resulting changes
+ * to make to the board as a result.
+ *
+ * Captures the player's moves as well to create a uniform interface.
+ */
+class Move {
+  readonly strategy: Strategy;
+  readonly clues = new Map<Cell, Set<Known>>();
+
+  readonly sets = new Map<Cell, Known>();
+  readonly marks = new Map<Cell, Set<Known>>();
+
+  constructor(strategy: Strategy) {
+    this.strategy = strategy;
+  }
+
+  addClue(cell: Cell, known: Known) {
+    if (this.clues.has(cell)) {
+      this.clues.get(cell)!.add(known);
+    } else {
+      this.clues.set(cell, new Set([known]));
+    }
+  }
+
+  addSet(cell: Cell, known: Known) {
+    this.sets.set(cell, known);
+  }
+
+  addMark(cell: Cell, known: Known) {
+    if (this.marks.has(cell)) {
+      this.marks.get(cell)!.add(known);
+    } else {
+      this.marks.set(cell, new Set([known]));
+    }
+  }
+
+  // FACTOR Move to WritableState, treating this as a pure data holder?
+  apply(state: WritableState) {
+    for (const [cell, known] of this.sets) {
+      if (!state.isSolved(cell) && state.isCandidate(cell, known)) {
+        state.setKnown(cell, known);
+      }
+    }
+
+    for (const [cell, candidates] of this.marks) {
+      if (!state.isSolved(cell)) {
+        for (const candidate of candidates) {
+          if (state.isCandidate(cell, candidate)) {
+            state.removeCandidate(cell, candidate);
+          }
+        }
+      }
+    }
+  }
+
+  // highlight on hover over solver and history buttons
+  // - list of cell/known-set tuples used to detect the solution
+  // - list of cell/value tuples being set
+  // - list of cell/known-set tuples of candidates to mark
 }

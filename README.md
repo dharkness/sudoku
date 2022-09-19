@@ -37,7 +37,7 @@ but feel free to explore and scavenge any code you find useful.
 
 - The `State` tracks the candidate and solved values of a puzzle in play.
 
-  - Each `Cell` holds a single solution `Value`: either `Unknown` (empty)
+  - Each `Cell` holds a single `Value`: either `Unknown` (empty)
     or `Known` once it has been solved.
 
   - While a cell is unsolved, it tracks the set of `candidates`, all values
@@ -45,11 +45,16 @@ but feel free to explore and scavenge any code you find useful.
     They are often called _pencil marks_ since players typically mark up the
     paper with a pencil while solving a physical puzzle.
 
-  - When a cell becomes solved, its value is removed from the set of candidates
+  - When a cell is solved, its value is removed from the set of candidates
     for each of its neighbors.
 
 
 ## Next Steps
+
+- Documentation
+  - Home page
+  - How to play
+  - Key binding popup card
 
 - Model
   - group candidate cells hold index sets instead of point sets for performance?
@@ -65,6 +70,22 @@ but feel free to explore and scavenge any code you find useful.
       - incorrectly removed candidate
       - solutions that make puzzle impossible (good for creating new puzzles)
       - easier to show banner when making errors given the model
+    - solvers
+      - model Solution (Move?): strategy, set/mark, point, value?
+      - move internal logic to solvers
+        - actual solvers that inspect or set/erase functions take a listener on a Solutions instance?
+          create Solutions in Board and return from setValue/removeCandidate
+        - tracking candidates
+          - naked singles (cell with only 1 candidate)
+          - hidden singles (group with a candidate appearing in only 1 cell)
+        - intersections
+          - pointing pairs/triples
+          - box/line reduction
+      - checkbox to automatically apply each strategy
+      - show/apply each solution separately; highlight cells on hover; animate on apply
+      - new solvers
+        - Finned and Sashimi X-Wings
+          https://www.sudokuonline.io/tips/sudoku-x-wing
 
 - Create
   - manual partial puzzles
