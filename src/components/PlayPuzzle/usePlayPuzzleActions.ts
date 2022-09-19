@@ -38,7 +38,7 @@ export type PuzzleActions = {
 /**
  * Manages the puzzle state and undo/redo history and provides actions.
  */
-export default function usePlayPuzzleReducer(start?: string): PuzzleActions {
+export default function usePlayPuzzleActions(start?: string): PuzzleActions {
   const initialState = useMemo<State>(() => {
     const state = createEmptySimpleState();
 
@@ -67,21 +67,26 @@ export default function usePlayPuzzleReducer(start?: string): PuzzleActions {
   const [state, dispatch] = useReducer<Reducer>(reducer, initialState);
 
   return useMemo<PuzzleActions>(() => {
-    const initial = state.steps[0]!.state;
-    const current = state.steps[state.step]!.state;
-    const selected = state.selected;
-    const locked = state.locked;
+    const { locked, selected, step, steps } = state;
+    const initial = steps[0]!.state;
+    const current = steps[step]!.state;
+
+    const value = selected ? BOARD.getValue(current, selected) : UNKNOWN;
     const possibles = selected ? BOARD.getPossibles(current, selected) : null;
 
+    const singleton =
+      possibles?.size === 1 ? singleSetValue(possibles) : UNKNOWN;
+    const highlighted = locked || value || singleton;
+
     return {
-      ...state,
-
       current,
-      steps: state.steps.length,
+      step,
+      steps: steps.length,
 
-      highlighted:
-        locked || (selected ? BOARD.getValue(current, selected) : UNKNOWN),
-      singleton: possibles?.size === 1 ? singleSetValue(possibles) : UNKNOWN,
+      selected,
+      locked,
+      highlighted,
+      singleton,
 
       getInitialValue: (point: Point) => BOARD.getValue(initial, point),
       getValue: (point: Point) => BOARD.getValue(current, point),
