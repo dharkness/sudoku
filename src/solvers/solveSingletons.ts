@@ -1,5 +1,5 @@
 import { BOARD } from "../models/board";
-import { Solutions } from "../models/solutions";
+import { Move, Solutions, Strategy } from "../models/solutions";
 import { ReadableState } from "../models/state";
 
 import { singleSetValue } from "../utils/collections";
@@ -9,19 +9,24 @@ const LOG = false;
 /**
  * Looks for cells with a single candidate to solve.
  */
-export default function solveSingletons(
-  state: ReadableState,
-  solutions: Solutions
-): void {
+export default function solveSingletons(state: ReadableState): Move[] {
+  const moves: Move[] = [];
+
   for (const [_, cell] of BOARD.cells) {
     const candidates = BOARD.getCandidates(state, cell);
 
     if (candidates.size === 1) {
-      const solution = singleSetValue(candidates);
+      const candidate = singleSetValue(candidates);
 
-      LOG && console.info("SOLVE SINGLETON", cell.point.k, "=>", solution);
+      moves.push(
+        new Move(Strategy.NakedSingle)
+          .clue(cell, candidate)
+          .set(cell, candidate)
+      );
 
-      solutions.addSolvedKnown(cell, solution);
+      LOG && console.info("SOLVE SINGLETON", cell.point.k, "=>", candidate);
     }
   }
+
+  return moves;
 }

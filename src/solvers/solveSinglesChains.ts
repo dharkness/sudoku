@@ -1,8 +1,8 @@
 import { ALL_KNOWNS } from "../models/basics";
+import { BOARD, Cell } from "../models/board";
 import { printCellCandidates } from "../models/printers";
 import { ReadableState } from "../models/state";
-import { Solutions } from "../models/solutions";
-import { BOARD, Cell } from "../models/board";
+import { Move, Strategy } from "../models/solutions";
 
 import {
   difference,
@@ -39,10 +39,9 @@ type Graph = Map<Cell, Color>;
  *   8 7······7·  ←-- remove 7 from cell 88
  *   9 ·········
  */
-export default function solveSinglesChains(
-  state: ReadableState,
-  solutions: Solutions
-): void {
+export default function solveSinglesChains(state: ReadableState): Move[] {
+  const moves: Move[] = [];
+
   // for each group,
   //   if two candidate cells,
   //     add new or to existing graph
@@ -171,10 +170,13 @@ export default function solveSinglesChains(
 
     // check graphs against every free's seen
     for (const g of new Set(graphs.values())) {
+      const move = new Move(Strategy.SinglesChain).clue(g.keys(), k);
+
       for (const [c, f] of free) {
         const sees = intersectMap(f, g);
         const unique = new Set(sees.values());
         if (unique.size === 2) {
+          move.mark(c, k);
           LOG && printCellCandidates(state, k);
           LOG &&
             console.info(
@@ -185,11 +187,19 @@ export default function solveSinglesChains(
               "sees",
               Cell.stringFromPoints(new Set(sees.keys()))
             );
-          solutions.addErasedPencil(c, k);
         }
+      }
+
+      if (!move.isEmpty()) {
+        moves.push(move);
       }
     }
   }
+
+  for (const m of moves) {
+    LOG && m.log();
+  }
+  return moves;
 }
 
 class LinkedCellsHaveSameColorError extends Error {

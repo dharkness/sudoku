@@ -64,6 +64,9 @@ but feel free to explore and scavenge any code you find useful.
 
 - Play
   - UI
+    - known panel
+      - highlight hovered known in puzzle panel
+      - dim solved knowns
     - show errors
       - note that we currently block setting cell to non-candidate
       - incorrectly solved cell
@@ -71,7 +74,6 @@ but feel free to explore and scavenge any code you find useful.
       - solutions that make puzzle impossible (good for creating new puzzles)
       - easier to show banner when making errors given the model
     - solvers
-      - model Solution (Move?): strategy, set/mark, point, value?
       - move internal logic to solvers
         - actual solvers that inspect or set/erase functions take a listener on a Solutions instance?
           create Solutions in Board and return from setValue/removeCandidate

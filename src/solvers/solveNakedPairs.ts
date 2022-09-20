@@ -1,8 +1,8 @@
 import { Known, stringFromKnownSet } from "../models/basics";
-import { printGroupCandidates } from "../models/printers";
-import { Solutions } from "../models/solutions";
-import { ReadableState } from "../models/state";
 import { BOARD, Cell } from "../models/board";
+import { printGroupCandidates } from "../models/printers";
+import { Move, Strategy } from "../models/solutions";
+import { ReadableState } from "../models/state";
 
 import { difference, union } from "../utils/collections";
 
@@ -26,10 +26,9 @@ const LOG = false;
  *   8 ·········
  *   9 ·········
  */
-export default function solveNakedPairs(
-  state: ReadableState,
-  solutions: Solutions
-): void {
+export default function solveNakedPairs(state: ReadableState): Move[] {
+  const moves: Move[] = [];
+
   for (const [g, groups] of BOARD.groups) {
     for (const [_, group] of groups) {
       const pairs = new Map(
@@ -45,20 +44,30 @@ export default function solveNakedPairs(
 
       for (const [c1, ks1] of pairs) {
         for (const [c2, ks2] of pairs) {
+          if (c2.point.i[g] <= c1.point.i[g]) {
+            continue;
+          }
+
           const ks1ks2 = union(ks1, ks2);
-          if (c2.point.i[g] <= c1.point.i[g] || ks1ks2.size !== 2) {
+          if (ks1ks2.size !== 2) {
             continue;
           }
 
           const pair = new Set([c1, c2]);
           const erase = new Map<Known, Set<Cell>>();
+          const move = new Move(Strategy.NakedPair)
+            .group(group)
+            .clue(pair, ks1ks2);
+
           for (const k of ks1ks2) {
             const diff = difference(state.getCandidateCells(group, k), pair);
             if (diff.size) {
               erase.set(k, diff);
+              move.mark(diff, k);
             }
           }
-          if (!erase.size) {
+
+          if (move.isEmpty()) {
             LOG &&
               console.info(
                 "empty naked pair",
@@ -84,14 +93,13 @@ export default function solveNakedPairs(
                 Cell.stringFromPoints(cells),
               ])
             );
+          // LOG && move.log();
 
-          for (const [k, cells] of erase) {
-            for (const cell of cells) {
-              solutions.addErasedPencil(cell, k);
-            }
-          }
+          moves.push(move);
         }
       }
     }
   }
+
+  return moves;
 }

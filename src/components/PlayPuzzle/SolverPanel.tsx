@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { Solutions } from "../../models/solutions";
+import { Move } from "../../models/solutions";
 import solvers from "../../solvers";
 
 import { PuzzleActions } from "./usePlayPuzzleActions";
@@ -13,7 +13,7 @@ type Solution = {
   key: string;
   label: string;
   disabled: boolean;
-  solutions: Solutions;
+  moves: Move[];
 };
 
 const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
@@ -27,23 +27,21 @@ const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
           return null;
         }
 
-        const solutions = new Solutions();
+        const moves = solve(current);
 
-        solve(current, solutions);
-
-        return { key, label, disabled: solutions.isEmpty(), solutions };
+        return { key, label, disabled: !moves.length, moves };
       })
       .filter(Boolean) as Solution[];
   }, [current]);
 
   return (
     <div className="flex flex-col gap-10">
-      {solutions.map(({ key, label, disabled, solutions }) => (
+      {solutions.map(({ key, label, disabled, moves }) => (
         <button
           key={key}
           type="button"
           disabled={disabled}
-          onClick={() => actions.applySolutions(solutions)}
+          onClick={() => actions.applyMoves(moves)}
           className={disabled ? disabledClasses : enabledClasses}
         >
           {label}

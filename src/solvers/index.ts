@@ -1,5 +1,5 @@
+import { Move } from "../models/solutions";
 import { ReadableState } from "../models/state";
-import { Solutions } from "../models/solutions";
 
 import singletons from "./solveSingletons";
 import nakedPairs from "./solveNakedPairs";
@@ -10,7 +10,7 @@ import xWings from "./solveXWings";
 import singlesChains from "./solveSinglesChains";
 import bruteForce from "./solveBruteForce";
 
-type Solver = (state: ReadableState, solutions: Solutions) => void;
+type Solver = (state: ReadableState) => Move[];
 
 export default {
   singletons,

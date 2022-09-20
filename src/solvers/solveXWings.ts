@@ -1,8 +1,8 @@
 import { ALL_KNOWNS, Coord, Grouping } from "../models/basics";
-import { printCellCandidates } from "../models/printers";
-import { Solutions } from "../models/solutions";
-import { ReadableState } from "../models/state";
 import { BOARD, Cell, Group } from "../models/board";
+import { printCellCandidates } from "../models/printers";
+import { Move, Strategy } from "../models/solutions";
+import { ReadableState } from "../models/state";
 
 import { difference } from "../utils/collections";
 
@@ -26,10 +26,9 @@ const LOG = false;
  *   8 ·······4·  ←-- remove 4 from cell 88
  *   9 ·········
  */
-export default function solveXWings(
-  state: ReadableState,
-  solutions: Solutions
-): void {
+export default function solveXWings(state: ReadableState): Move[] {
+  const moves: Move[] = [];
+
   const iterations = [
     [Grouping.ROW, BOARD.rows, Grouping.COLUMN, BOARD.columns],
     [Grouping.COLUMN, BOARD.columns, Grouping.ROW, BOARD.rows],
@@ -62,8 +61,13 @@ export default function solveXWings(
             continue;
           }
 
-          const xwing = new Set([cell11, cell12, cell21, cell22]);
+          const xwing = new Set([cell11, cell12, cell21, cell22] as Cell[]);
           const erase = new Set<Cell>();
+          const move = new Move(Strategy.XWing)
+            .group(group1)
+            .group(group2)
+            .clue(xwing, k);
+
           for (const otherGroup of [
             groups2.get(cell11!.point.i[g1])!,
             groups2.get(cell12!.point.i[g1])!,
@@ -76,9 +80,11 @@ export default function solveXWings(
               for (const cell of diff) {
                 erase.add(cell!);
               }
+              move.mark(diff, k);
             }
           }
-          if (!erase.size) {
+
+          if (move.isEmpty()) {
             LOG &&
               console.info(
                 "empty X-Wing for",
@@ -113,12 +119,13 @@ export default function solveXWings(
               "erase",
               Cell.stringFromPoints(erase)
             );
+          // LOG && move.log();
 
-          for (const cell of erase) {
-            solutions.addErasedPencil(cell, k);
-          }
+          moves.push(move);
         }
       }
     }
   }
+
+  return moves;
 }

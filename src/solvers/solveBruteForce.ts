@@ -1,25 +1,33 @@
-import { BOARD, Cell } from "../models/board";
-import { Solutions } from "../models/solutions";
-import { ReadableState, SimpleState } from "../models/state";
-
 import { Known, UNKNOWN } from "../models/basics";
+import { BOARD, Cell } from "../models/board";
+import { Move, Solutions, Strategy } from "../models/solutions";
+import { ReadableState, SimpleState } from "../models/state";
 
 const LOG = false;
 
 /**
  * Looks for cells with a single candidate to solve.
  */
-export default function solveBruteForce(
-  state: ReadableState,
-  solutions: Solutions
-): void {
+export default function solveBruteForce(state: ReadableState): Move[] {
   const cells = [...BOARD.cells.values()]
     .filter((cell) => BOARD.getValue(state, cell) === UNKNOWN)
     .sort((a, b) => a.point.k.localeCompare(b.point.k));
-
-  if (cells.length) {
-    step(state as SimpleState, cells, solutions);
+  if (!cells.length) {
+    return [];
   }
+
+  const solutions = new Solutions();
+  step(state as SimpleState, cells, solutions);
+  if (solutions.isEmpty()) {
+    return [];
+  }
+
+  const move = new Move(Strategy.BruteForce);
+  solutions.forEachSolvedKnown((cell: Cell, known: Known) =>
+    move.set(cell, known)
+  );
+
+  return [move];
 }
 
 function step(

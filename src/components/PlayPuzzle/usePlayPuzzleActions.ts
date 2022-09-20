@@ -2,7 +2,7 @@ import { useMemo, useReducer } from "react";
 
 import { Known, Point, UNKNOWN, Value } from "../../models/basics";
 import { BOARD, Cell } from "../../models/board";
-import { Solutions, solutionsFromString } from "../../models/solutions";
+import { Move, solutionsFromString } from "../../models/solutions";
 import {
   createEmptySimpleState,
   ReadableState,
@@ -28,7 +28,7 @@ export type PuzzleActions = {
   select: (point: Point) => void;
   setCell: (known: Known) => void;
   removeCandidate: (known: Known) => void;
-  applySolutions: (solutions: Solutions) => void;
+  applyMoves: (moves: Move[]) => void;
 
   undo: () => void;
   redo: () => void;
@@ -97,8 +97,7 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
       setCell: (known: Known) => dispatch({ type: "set", known: known }),
       removeCandidate: (known: Known) =>
         dispatch({ type: "remove", known: known }),
-      applySolutions: (solutions: Solutions) =>
-        dispatch({ type: "apply", solutions }),
+      applyMoves: (moves: Move[]) => dispatch({ type: "apply", moves }),
 
       undo: () => dispatch({ type: "undo" }),
       redo: () => dispatch({ type: "redo" }),
@@ -125,7 +124,7 @@ type Action =
   | { type: "select"; point: Point }
   | { type: "set"; known: Known }
   | { type: "remove"; known: Known }
-  | { type: "apply"; solutions: Solutions }
+  | { type: "apply"; moves: Move[] }
   | { type: "undo" }
   | { type: "redo" }
   | { type: "reset" };
@@ -202,15 +201,10 @@ const reducer: Reducer = (state: State, action: Action) => {
 
     case "apply":
       return addStep(state, (state: SimpleState) => {
-        const { solutions } = action;
+        const { moves } = action;
         const clone = new SimpleState(state);
 
-        solutions.forEachSolvedKnown((cell: Cell, known: Known) =>
-          BOARD.setKnown(clone, cell, known)
-        );
-        solutions.forEachErasedPencil((cell: Cell, known: Known) =>
-          BOARD.removeCandidate(clone, cell, known)
-        );
+        moves.forEach((move) => move.apply(clone));
 
         let solved;
         while (!(solved = clone.getSolved()).isEmpty()) {

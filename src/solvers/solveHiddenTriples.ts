@@ -1,8 +1,8 @@
 import { ALL_KNOWNS, Known, stringFromKnownSet } from "../models/basics";
-import { printGroupCandidates } from "../models/printers";
-import { Solutions } from "../models/solutions";
-import { ReadableState } from "../models/state";
 import { BOARD, Cell } from "../models/board";
+import { printGroupCandidates } from "../models/printers";
+import { Move, Strategy } from "../models/solutions";
+import { ReadableState } from "../models/state";
 
 import { difference, union } from "../utils/collections";
 
@@ -30,10 +30,9 @@ const LOG = false;
  *     |  remove 2 and 6 from cell 4
  *     remove 6 from cell 1
  */
-export default function solveHiddenTriples(
-  state: ReadableState,
-  solutions: Solutions
-): void {
+export default function solveHiddenTriples(state: ReadableState): Move[] {
+  const moves: Move[] = [];
+
   for (const [_, groups] of BOARD.groups) {
     for (const [_, group] of groups) {
       const triples = new Map(
@@ -47,26 +46,46 @@ export default function solveHiddenTriples(
 
       for (const [k1, cs1] of triples) {
         for (const [k2, cs2] of triples) {
+          if (k2 <= k1) {
+            continue;
+          }
+
           const cs1cs2 = union(cs1, cs2);
-          if (k2 <= k1 || ![2, 3].includes(cs1cs2.size)) {
+          if (cs1cs2.size < 3) {
+            // ignore hidden pair
             continue;
           }
 
           for (const [k3, cs3] of triples) {
+            if (k3 <= k2) {
+              continue;
+            }
+
+            if (union(cs1, cs3).size < 3 || union(cs2, cs3).size < 3) {
+              // ignore naked pair
+              continue;
+            }
+
             const cs1cs2cs3 = union(cs1cs2, cs3);
-            if (k3 <= k2 || ![2, 3].includes(cs1cs2cs3.size)) {
+            if (cs1cs2cs3.size !== 3) {
               continue;
             }
 
             const triple = new Set([k1, k2, k3]);
             const erase = new Map<Cell, Set<Known>>();
+            const move = new Move(Strategy.HiddenTriple)
+              .group(group)
+              .clue(cs1cs2cs3, triple);
+
             for (const cell of cs1cs2cs3) {
               const diff = difference(state.getCandidates(cell), triple);
               if (diff.size) {
                 erase.set(cell, diff);
+                move.mark(cell, diff);
               }
             }
-            if (!erase.size) {
+
+            if (move.isEmpty()) {
               LOG &&
                 console.info(
                   "empty hidden triple",
@@ -90,15 +109,14 @@ export default function solveHiddenTriples(
                   stringFromKnownSet(knowns),
                 ])
               );
+            // LOG && move.log();
 
-            for (const [cell, knowns] of erase) {
-              for (const k of knowns) {
-                solutions.addErasedPencil(cell, k);
-              }
-            }
+            moves.push(move);
           }
         }
       }
     }
   }
+
+  return moves;
 }

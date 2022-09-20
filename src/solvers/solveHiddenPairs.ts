@@ -1,8 +1,8 @@
 import { ALL_KNOWNS, Known, stringFromKnownSet } from "../models/basics";
-import { printGroupCandidates } from "../models/printers";
-import { Solutions } from "../models/solutions";
-import { ReadableState } from "../models/state";
 import { BOARD, Cell } from "../models/board";
+import { printGroupCandidates } from "../models/printers";
+import { Move, Strategy } from "../models/solutions";
+import { ReadableState } from "../models/state";
 
 import { difference, union } from "../utils/collections";
 
@@ -29,10 +29,9 @@ const LOG = false;
  *      |   remove 5, 8, 9 from cell 6
  *      remove 8 from cell 2
  */
-export default function solveHiddenPairs(
-  state: ReadableState,
-  solutions: Solutions
-): void {
+export default function solveHiddenPairs(state: ReadableState): Move[] {
+  const moves: Move[] = [];
+
   for (const [_, groups] of BOARD.groups) {
     for (const [_, group] of groups) {
       const pairs = new Map(
@@ -46,20 +45,30 @@ export default function solveHiddenPairs(
 
       for (const [k1, cs1] of pairs) {
         for (const [k2, cs2] of pairs) {
+          if (k2 <= k1) {
+            continue;
+          }
+
           const cs1cs2 = union(cs1, cs2);
-          if (k2 <= k1 || cs1cs2.size !== 2) {
+          if (cs1cs2.size !== 2) {
             continue;
           }
 
           const pair = new Set([k1, k2]);
           const erase = new Map<Cell, Set<Known>>();
+          const move = new Move(Strategy.HiddenPair)
+            .group(group)
+            .clue(cs1cs2, pair);
+
           for (const cell of cs1cs2) {
             const diff = difference(state.getCandidates(cell), pair);
             if (diff.size) {
               erase.set(cell, diff);
+              move.mark(cell, diff);
             }
           }
-          if (!erase.size) {
+
+          if (move.isEmpty()) {
             LOG &&
               console.info(
                 "empty hidden pair",
@@ -83,14 +92,13 @@ export default function solveHiddenPairs(
                 stringFromKnownSet(knowns),
               ])
             );
+          // LOG && move.log();
 
-          for (const [cell, knowns] of erase) {
-            for (const k of knowns) {
-              solutions.addErasedPencil(cell, k);
-            }
-          }
+          moves.push(move);
         }
       }
     }
   }
+
+  return moves;
 }

@@ -1,8 +1,18 @@
-import { ALL_POINTS, Known, UNKNOWN, valueFromString } from "./basics";
-import { BOARD, Cell } from "./board";
+import {
+  ALL_POINTS,
+  Known,
+  stringFromKnownSet,
+  UNKNOWN,
+  valueFromString,
+} from "./basics";
+import { BOARD, Cell, Group } from "./board";
 import { WritableState } from "./state";
 
-import { shuffle } from "../utils/collections";
+import {
+  deepCloneMap,
+  deepCloneMapOfSets,
+  shuffle,
+} from "../utils/collections";
 
 const LOG = false;
 
@@ -210,7 +220,7 @@ export function solutionsFromString(values: string): Solutions {
 
 // how to support clearing knowns and adding candidates
 
-enum Strategy {
+export enum Strategy {
   ManualSetValue, // cell, known -> set cell to known
   ManualRemoveCandidate, // cell, value -> remove candidate from cell
 
@@ -238,35 +248,129 @@ enum Strategy {
  *
  * Captures the player's moves as well to create a uniform interface.
  */
-class Move {
+export class Move {
   readonly strategy: Strategy;
+  readonly groups = new Set<Group>();
   readonly clues = new Map<Cell, Set<Known>>();
 
   readonly sets = new Map<Cell, Known>();
   readonly marks = new Map<Cell, Set<Known>>();
 
-  constructor(strategy: Strategy) {
-    this.strategy = strategy;
-  }
-
-  addClue(cell: Cell, known: Known) {
-    if (this.clues.has(cell)) {
-      this.clues.get(cell)!.add(known);
+  constructor(clone: Strategy | Move) {
+    if (clone instanceof Move) {
+      this.strategy = clone.strategy;
+      this.groups = new Set(clone.groups);
+      this.clues = deepCloneMapOfSets(clone.clues);
+      this.sets = new Map(clone.sets);
+      this.marks = deepCloneMapOfSets(clone.marks);
     } else {
-      this.clues.set(cell, new Set([known]));
+      this.strategy = clone;
+      this.groups = new Set<Group>();
+      this.clues = new Map<Cell, Set<Known>>();
+      this.sets = new Map<Cell, Known>();
+      this.marks = new Map<Cell, Set<Known>>();
     }
   }
 
-  addSet(cell: Cell, known: Known) {
+  group(group: Group): Move {
+    this.groups.add(group);
+
+    return this;
+  }
+
+  clue(
+    cells: Cell | Iterable<Cell> | IterableIterator<Cell>,
+    knowns: Known | Iterable<Known> | IterableIterator<Known>
+  ): Move {
+    return this.applyToCellsAndKnowns(
+      cells,
+      knowns,
+      (cell: Cell, known: Known) => {
+        if (this.clues.has(cell)) {
+          // console.log("add", cell.point.k, known);
+          this.clues.get(cell)!.add(known);
+        } else {
+          // console.log("set", cell.point.k, known);
+          this.clues.set(cell, new Set([known]));
+        }
+      }
+    );
+  }
+
+  set(cell: Cell, known: Known): Move {
     this.sets.set(cell, known);
+
+    return this;
   }
 
-  addMark(cell: Cell, known: Known) {
-    if (this.marks.has(cell)) {
-      this.marks.get(cell)!.add(known);
+  mark(
+    cells: Cell | Iterable<Cell> | IterableIterator<Cell>,
+    knowns: Known | Iterable<Known> | IterableIterator<Known>
+  ): Move {
+    return this.applyToCellsAndKnowns(
+      cells,
+      knowns,
+      (cell: Cell, known: Known) => {
+        if (this.marks.has(cell)) {
+          // console.log("add", cell.point.k, known);
+          this.marks.get(cell)!.add(known);
+        } else {
+          // console.log("set", cell.point.k, known);
+          this.marks.set(cell, new Set([known]));
+        }
+      }
+    );
+  }
+
+  private applyToCellsAndKnowns(
+    cells: Cell | Iterable<Cell> | IterableIterator<Cell>,
+    knowns: Known | Iterable<Known> | IterableIterator<Known>,
+    apply: (c: Cell, k: Known) => void
+  ): Move {
+    // console.log("apply", cells, knowns);
+    if (isIterable(cells)) {
+      if (isIterable(knowns)) {
+        for (const c of cells as Iterable<Cell>) {
+          for (const k of knowns as Iterable<Known>) {
+            apply(c, k);
+          }
+        }
+      } else {
+        for (const c of cells as Iterable<Cell>) {
+          apply(c, knowns as Known);
+        }
+      }
     } else {
-      this.marks.set(cell, new Set([known]));
+      if (isIterable(knowns)) {
+        for (const k of knowns as Iterable<Known>) {
+          apply(cells as Cell, k);
+        }
+      } else {
+        apply(cells as Cell, knowns as Known);
+      }
     }
+
+    return this;
+  }
+
+  isEmpty(): boolean {
+    return this.sets.size === 0 && this.marks.size === 0;
+  }
+
+  // TODO Make this pretty or remove all solver logging in favor of showing in UI
+  log() {
+    console.info(
+      "SOLVE",
+      Strategy[this.strategy],
+      "groups",
+      this.groups,
+      "clues",
+      this.clues,
+      "sets",
+      this.sets,
+      "marks",
+      this.marks
+    );
   }
 
   // FACTOR Move to WritableState, treating this as a pure data holder?
@@ -292,4 +396,8 @@ class Move {
   // - list of cell/known-set tuples used to detect the solution
   // - list of cell/value tuples being set
   // - list of cell/known-set tuples of candidates to mark
+}
+
+function isIterable<T>(t: T | Iterable<T> | IterableIterator<T>): boolean {
+  return typeof t === "object" && Symbol.iterator in t;
 }
