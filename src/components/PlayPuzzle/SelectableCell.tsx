@@ -6,7 +6,7 @@ import CellCandidates from "./CellCandidates";
 
 type SelectableCellProps = {
   point: Point;
-  initial: Value;
+  given: Value;
   value: Value;
   candidates: Set<Known>;
 
@@ -20,7 +20,7 @@ type SelectableCellProps = {
 
 const SelectableCell = ({
   point,
-  initial,
+  given,
   value,
   candidates,
   highlighted,
@@ -32,7 +32,7 @@ const SelectableCell = ({
   const solvedBackgroundColor =
     value === UNKNOWN
       ? null
-      : initial === UNKNOWN
+      : given === UNKNOWN
       ? "bg-neutral-300"
       : "bg-black";
 
@@ -48,7 +48,7 @@ const SelectableCell = ({
       : candidates.has(highlighted)
       ? "bg-emerald-50"
       : solvedBackgroundColor,
-    initial !== UNKNOWN && "text-red-400",
+    given !== UNKNOWN && "text-red-400",
     "border-r",
     point.c % 3 === 2 ? "border-black" : "border-slate-300"
   );

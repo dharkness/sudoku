@@ -20,7 +20,7 @@ export type PuzzleActions = {
   highlighted: Value;
   singleton: Value;
 
-  getInitialValue: (point: Point) => Value;
+  getGivenValue: (point: Point) => Value;
   getValue: (point: Point) => Value;
   getCandidates: (point: Point) => Set<Known>;
 
@@ -68,7 +68,7 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
 
   return useMemo<PuzzleActions>(() => {
     const { locked, selected, step, steps } = state;
-    const initial = steps[0]!.state;
+    const given = steps[0]!.state;
     const current = steps[step]!.state;
 
     const value = selected ? BOARD.getValue(current, selected) : UNKNOWN;
@@ -88,7 +88,7 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
       highlighted,
       singleton,
 
-      getInitialValue: (point: Point) => BOARD.getValue(initial, point),
+      getGivenValue: (point: Point) => BOARD.getValue(given, point),
       getValue: (point: Point) => BOARD.getValue(current, point),
       getCandidates: (point: Point) => BOARD.getCandidates(current, point),
 

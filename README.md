@@ -37,8 +37,9 @@ but feel free to explore and scavenge any code you find useful.
 
 - The `State` tracks the candidate and solved values of a puzzle in play.
 
-  - Each `Cell` holds a single `Value`: either `Unknown` (empty)
-    or `Known` once it has been solved.
+  - Each `Cell` holds a single `Value`: either `Unknown` (empty) or `Known`.
+
+  - Some values are `given` at the start to form the unique puzzle.
 
   - While a cell is unsolved, it tracks the set of `candidates`, all values
     that the cell could take as a solution given the values of its neighbors.

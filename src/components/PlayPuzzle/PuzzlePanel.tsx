@@ -26,7 +26,7 @@ const PuzzlePanel = ({ actions, size }: PuzzlePanelProps): JSX.Element => {
                 <SelectableCell
                   key={c}
                   point={point}
-                  initial={actions.getInitialValue(point)}
+                  given={actions.getGivenValue(point)}
                   value={actions.getValue(point)}
                   highlighted={actions.highlighted}
                   selected={actions.selected === point}
