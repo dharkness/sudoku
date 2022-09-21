@@ -164,7 +164,7 @@ export const ALL_GROUPINGS: Grouping[] = [
  * Returns a string containing nine slots, each showing the slot's coordinate
  * if any point in the set matches it or a period otherwise.
  */
-export function pointGroupCoordsToString(
+export function stringFromPointGroupCoords(
   g: Grouping,
   points: Set<Point>
 ): string {
