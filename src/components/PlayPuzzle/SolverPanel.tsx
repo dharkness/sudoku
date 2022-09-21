@@ -27,7 +27,11 @@ const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
           return null;
         }
 
+        const start = performance.now();
         const moves = solve(current);
+        const time = performance.now() - start;
+
+        console.info("[solver]", label, time.toLocaleString(), "ms", moves);
 
         return { key, label, disabled: !moves.length, moves };
       })
