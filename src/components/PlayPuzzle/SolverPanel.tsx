@@ -56,7 +56,8 @@ const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
 };
 
 const buttons = {
-  singletons: "Singletons",
+  nakedSingles: "Naked Singles",
+  hiddenSingles: "Hidden Singles",
   nakedPairs: "Naked Pairs",
   nakedTriples: "Naked Triples",
   hiddenPairs: "Hidden Pairs",

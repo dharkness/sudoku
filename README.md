@@ -78,9 +78,6 @@ but feel free to explore and scavenge any code you find useful.
       - move internal logic to solvers
         - actual solvers that inspect or set/erase functions take a listener on a Solutions instance?
           create Solutions in Board and return from setValue/removeCandidate
-        - tracking candidates
-          - naked singles (cell with only 1 candidate)
-          - hidden singles (group with a candidate appearing in only 1 cell)
         - intersections
           - pointing pairs/triples
           - box/line reduction

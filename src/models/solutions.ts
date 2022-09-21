@@ -1,18 +1,8 @@
-import {
-  ALL_POINTS,
-  Known,
-  stringFromKnownSet,
-  UNKNOWN,
-  valueFromString,
-} from "./basics";
+import { ALL_POINTS, Known, UNKNOWN, valueFromString } from "./basics";
 import { BOARD, Cell, Group } from "./board";
 import { WritableState } from "./state";
 
-import {
-  deepCloneMap,
-  deepCloneMapOfSets,
-  shuffle,
-} from "../utils/collections";
+import { deepCloneMapOfSets, shuffle } from "../utils/collections";
 
 const LOG = false;
 
@@ -222,7 +212,7 @@ export function solutionsFromString(values: string): Solutions {
 
 export enum Strategy {
   ManualSetValue, // cell, known -> set cell to known
-  ManualRemoveCandidate, // cell, value -> remove candidate from cell
+  ManualRemoveCandidate, // cell, known -> remove candidate from cell
 
   NakedSingle, // cell, candidate -> set cell to candidate; remove candidate from neighbors
   HiddenSingle, // cell, candidate, group(s) -> set cell to candidate
@@ -272,8 +262,14 @@ export class Move {
     }
   }
 
-  group(group: Group): Move {
-    this.groups.add(group);
+  group(groups: Group | Iterable<Group> | IterableIterator<Group>): Move {
+    if (isIterable(groups)) {
+      for (const group of groups as Iterable<Group>) {
+        this.groups.add(group);
+      }
+    } else {
+      this.groups.add(groups as Group);
+    }
 
     return this;
   }

@@ -23,8 +23,8 @@ const LOG = false;
  *   5 5·····5··
  *   6 66·6·66·6  ←-- remove 6 from cells 1, 4 and 7
  * → 7 ·7···7··7
- *   8 ···8·8···
- * → 9 ·9······9
+ *   8 ···8·····
+ * → 9 ·········
  */
 export default function solveNakedTriples(state: ReadableState): Move[] {
   const moves: Move[] = [];
