@@ -61,6 +61,7 @@ const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
 const buttons = {
   nakedSingles: "Naked Singles",
   hiddenSingles: "Hidden Singles",
+  intersectionRemovals: "Intersection Removals",
   nakedPairs: "Naked Pairs",
   nakedTriples: "Naked Triples",
   hiddenPairs: "Hidden Pairs",

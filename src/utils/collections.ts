@@ -111,6 +111,13 @@ export function areEqual<T>(a: Set<T>, b: Set<T>): boolean {
 }
 
 /**
+ * Returns a new map of sets containing only the non-empty values.
+ */
+export function withoutEmptySets<T, U>(map: Map<T, Set<U>>): Map<T, Set<U>> {
+  return new Map([...map.entries()].filter(([known, cells]) => cells.size > 0));
+}
+
+/**
  * Returns a new map containing the same keys mapped to clones of the same values.
  *
  * TODO Add cloneKey?

@@ -75,17 +75,16 @@ but feel free to explore and scavenge any code you find useful.
       - solutions that make puzzle impossible (good for creating new puzzles)
       - easier to show banner when making errors given the model
     - solvers
-      - move internal logic to solvers
-        - actual solvers that inspect or set/erase functions take a listener on a Solutions instance?
-          create Solutions in Board and return from setValue/removeCandidate
-        - intersections
-          - pointing pairs/triples
-          - box/line reduction
+      - separate solvers from the moves they produce
+        so player can see multiple move types from a single solver
+      - do not internally apply set/erase moves from solvers
+        - all should add to Solutions to start; later convert to Move[]
       - checkbox to automatically apply each strategy
       - show/apply each solution separately; highlight cells on hover; animate on apply
       - new solvers
         - Finned and Sashimi X-Wings
           https://www.sudokuonline.io/tips/sudoku-x-wing
+      - Singles Chain has problems (incorrect and/or trivial solutions)
 
 - Create
   - manual partial puzzles

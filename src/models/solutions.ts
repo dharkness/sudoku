@@ -293,10 +293,17 @@ export class Move {
     );
   }
 
-  set(cell: Cell, known: Known): Move {
-    this.sets.set(cell, known);
-
-    return this;
+  set(
+    cells: Cell | Iterable<Cell> | IterableIterator<Cell>,
+    known: Known
+  ): Move {
+    return this.applyToCellsAndKnowns(
+      cells,
+      known,
+      (cell: Cell, known: Known) => {
+        this.sets.set(cell, known);
+      }
+    );
   }
 
   mark(

@@ -42,7 +42,7 @@ export class Cell implements Stateful {
    */
   readonly neighbors = new Set<Cell>();
   /**
-   * For each cell, all cells seen by it and this cell,
+   * For each cell except this one, all cells seen by both it and this cell,
    * i.e. the neighbors they have in common.
    */
   readonly commonNeighbors = new Map<Cell, Set<Cell>>();
@@ -66,12 +66,14 @@ export class Cell implements Stateful {
 
   fillCommonNeighbors(cells: Iterable<Cell>) {
     for (const c of cells) {
-      this.commonNeighbors.set(
-        c,
-        this.neighbors.has(c)
-          ? intersect(this.neighbors, c.neighbors)
-          : new Set()
-      );
+      if (c === this) {
+        this.commonNeighbors.set(c, new Set());
+      } else {
+        this.commonNeighbors.set(
+          c,
+          c.commonNeighbors.get(this) || intersect(this.neighbors, c.neighbors)
+        );
+      }
     }
   }
 
@@ -83,10 +85,10 @@ export class Cell implements Stateful {
     return `Cell ${this.point.k}`;
   }
 
-  static stringFromPoints(cells: Set<Cell>): string {
-    return (
-      "( " + [...cells.values()].map((cell) => cell.point.k).join(" ") + " )"
-    );
+  static stringFromPoints(cells?: Set<Cell>): string {
+    return cells?.size
+      ? "( " + [...cells.values()].map((cell) => cell.point.k).join(" ") + " )"
+      : "∅";
   }
 
   static stringFromGroupCoords(g: Grouping, cells: Set<Cell>): string {
@@ -153,14 +155,16 @@ export abstract class Group extends Container {
 
   onSetKnown(state: WritableState, cell: Cell, known: Known): void {
     const candidateCells = state.clearCandidateCells(this, known);
-    for (const neighbor of candidateCells) {
-      if (neighbor !== cell) {
-        state.addErasedPencil(neighbor, known);
+    for (const candidate of candidateCells) {
+      if (candidate !== cell) {
+        // Naked/Hidden Singles
+        state.addErasedPencil(candidate, known);
       }
     }
   }
 
   onOneCellLeft(state: WritableState, known: Known, cell: Cell): void {
+    // Hidden Singles
     state.addSolvedKnown(cell, known);
   }
 }
@@ -202,18 +206,23 @@ class Block extends Group {
  * that known is removed as a candidate from the other disjoint's cells
  * since it must appear in the intersection.
  *
+ * - When the candidate is removed from the column/row disjoint,
+ *   the candidate cells in the block are called a Pointing Pair/Triple.
+ * - When the candidate is removed from the block disjoint, it is called
+ *   a Box Line Reduction.
+ *
  * When this happens, or a known is set anywhere in the union,
- * all of its containers is removed from the state.
+ * all of its containers are removed from the state.
  *
  * It does not cause any knowns to be solved by itself.
  */
-class Intersection {
-  private readonly block: Block;
-  private readonly group: Group;
+export class Intersection {
+  readonly block: Block;
+  readonly group: Group;
 
-  private readonly intersection: Container;
-  private readonly blockDisjoint: Container;
-  private readonly groupDisjoint: Container;
+  readonly intersection: Container;
+  readonly blockDisjoint: Container;
+  readonly groupDisjoint: Container;
 
   constructor(block: Block, group: Group) {
     this.block = block;
@@ -248,10 +257,18 @@ class Intersection {
     known: Known,
     disjoint: Disjoint
   ): void {
-    const other =
-      disjoint === this.blockDisjoint ? this.groupDisjoint : this.blockDisjoint;
-    for (const cell of other.cells) {
-      state.removeCandidate(cell, known);
+    const candidates = state.getCandidateCells(
+      disjoint === this.blockDisjoint ? this.groupDisjoint : this.blockDisjoint,
+      known
+    );
+
+    if (candidates.size) {
+      for (const cell of candidates) {
+        state.addErasedPencil(cell, known);
+      }
+    } else {
+      // both disjoints are empty; stop tracking the intersection entirely
+      this.clearCandidateCells(state, known);
     }
   }
 
@@ -299,7 +316,6 @@ class Disjoint extends Container {
 
   onNoCellsLeft(state: WritableState, known: Known): void {
     this.parent.removeCandidateFromOtherDisjoint(state, known, this);
-    this.parent.clearCandidateCells(state, known);
   }
 }
 
@@ -320,7 +336,7 @@ class Board {
     [Grouping.BLOCK, this.blocks],
   ]);
 
-  private readonly intersections = new Set<Intersection>();
+  readonly intersections = new Set<Intersection>();
 
   private readonly statefuls = new Set<Stateful>();
 
@@ -347,6 +363,8 @@ class Board {
   }
 
   private createCells() {
+    const cells = new Set<Cell>();
+
     for (const p of ALL_POINTS) {
       const cell = new Cell(
         p,
@@ -354,6 +372,7 @@ class Board {
         this.columns.get(p.c)!,
         this.blocks.get(p.b)!
       );
+      cells.add(cell);
       this.cells.set(p, cell);
 
       this.rows.get(p.r)!.addCell(cell);
@@ -363,12 +382,12 @@ class Board {
       this.statefuls.add(cell);
     }
 
-    for (const [_, c] of this.cells) {
+    for (const c of cells) {
       c.fillNeighbors();
     }
 
-    for (const [_, c] of this.cells) {
-      c.fillCommonNeighbors(this.cells.values());
+    for (const c of cells) {
+      c.fillCommonNeighbors(cells);
     }
   }
 

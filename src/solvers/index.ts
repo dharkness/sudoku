@@ -3,6 +3,7 @@ import { ReadableState } from "../models/state";
 
 import nakedSingles from "./solveNakedSingles";
 import hiddenSingles from "./solveHiddenSingles";
+import intersectionRemovals from "./solveIntersectionRemovals";
 import nakedPairs from "./solveNakedPairs";
 import nakedTriples from "./solveNakedTriples";
 import hiddenPairs from "./solveHiddenPairs";
@@ -16,6 +17,7 @@ type Solver = (state: ReadableState) => Move[];
 export default {
   nakedSingles,
   hiddenSingles,
+  intersectionRemovals,
   nakedPairs,
   nakedTriples,
   hiddenPairs,
