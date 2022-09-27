@@ -75,8 +75,11 @@ but feel free to explore and scavenge any code you find useful.
       - solutions that make puzzle impossible (good for creating new puzzles)
       - easier to show banner when making errors given the model
     - solvers
-      - separate solvers from the moves they produce
-        so player can see multiple move types from a single solver
+      - state management
+        - run solvers in memoized actions state
+        - store strategy to preview to update move after application
+        - separate solvers from the moves they produce
+          so player can see multiple move types from a single solver
       - do not internally apply set/erase moves from solvers
         - all should add to Solutions to start; later convert to Move[]
       - checkbox to automatically apply each strategy

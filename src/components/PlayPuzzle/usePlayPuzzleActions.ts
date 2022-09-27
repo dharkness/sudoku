@@ -18,6 +18,7 @@ export type PuzzleActions = {
   selected: Point | null;
   locked: Value;
   highlighted: Value;
+  previewed: Move | null;
   singleton: Value;
 
   getGivenValue: (point: Point) => Value;
@@ -25,6 +26,7 @@ export type PuzzleActions = {
   getCandidates: (point: Point) => Set<Known>;
 
   highlight: (value: Value) => void;
+  preview: (move: Move | null) => void;
   select: (point: Point) => void;
   setCell: (known: Known) => void;
   removeCandidate: (known: Known) => void;
@@ -61,13 +63,14 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
       step: 0,
       selected: null,
       locked: UNKNOWN,
+      previewed: null,
     } as State;
   }, [start]);
 
   const [state, dispatch] = useReducer<Reducer>(reducer, initialState);
 
   return useMemo<PuzzleActions>(() => {
-    const { locked, selected, step, steps } = state;
+    const { locked, previewed, selected, step, steps } = state;
     const given = steps[0]!.state;
     const current = steps[step]!.state;
 
@@ -86,6 +89,7 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
       selected,
       locked,
       highlighted,
+      previewed,
       singleton,
 
       getGivenValue: (point: Point) => BOARD.getValue(given, point),
@@ -93,6 +97,7 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
       getCandidates: (point: Point) => BOARD.getCandidates(current, point),
 
       highlight: (value: Value) => dispatch({ type: "highlight", value }),
+      preview: (move: Move | null) => dispatch({ type: "preview", move }),
       select: (point: Point) => dispatch({ type: "select", point }),
       setCell: (known: Known) => dispatch({ type: "set", known: known }),
       removeCandidate: (known: Known) =>
@@ -112,6 +117,7 @@ type State = {
 
   selected: Point | null;
   locked: Value;
+  previewed: Move | null;
 };
 
 type StepNode = {
@@ -121,6 +127,7 @@ type StepNode = {
 
 type Action =
   | { type: "highlight"; value: Value }
+  | { type: "preview"; move: Move | null }
   | { type: "select"; point: Point }
   | { type: "set"; known: Known }
   | { type: "remove"; known: Known }
@@ -139,6 +146,12 @@ const reducer: Reducer = (state: State, action: Action) => {
       return {
         ...state,
         locked: action.value,
+      };
+
+    case "preview":
+      return {
+        ...state,
+        previewed: action.move,
       };
 
     case "select":
@@ -200,11 +213,19 @@ const reducer: Reducer = (state: State, action: Action) => {
       });
 
     case "apply":
-      return addStep(state, (state: SimpleState) => {
+      const newState = addStep(state, (state: SimpleState) => {
         const { moves } = action;
+        // const move = moves[Math.floor(Math.random() * moves.length)];
+        const move = moves[0];
+
+        if (!move) {
+          return state;
+        }
+
         const clone = new SimpleState(state);
 
-        moves.forEach((move) => move.apply(clone));
+        // moves.forEach((move) => move.apply(clone));
+        move.apply(clone);
 
         let solved;
         while (!(solved = clone.getSolved()).isEmpty()) {
@@ -216,6 +237,11 @@ const reducer: Reducer = (state: State, action: Action) => {
 
         return clone;
       });
+
+      return {
+        ...newState,
+        previewed: null,
+      };
 
     case "undo":
       return setStep(state, step - 1, step);

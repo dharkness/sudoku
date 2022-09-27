@@ -11,6 +11,8 @@ type SelectableCellProps = {
   candidates: Set<Known>;
 
   highlighted: Value;
+  borders: [boolean, boolean, boolean, boolean];
+  colors: { [key: string]: Set<Known> };
   selected: boolean;
   onSelect: () => void;
 
@@ -24,11 +26,14 @@ const SelectableCell = ({
   value,
   candidates,
   highlighted,
+  borders,
+  colors,
   selected,
   onSelect,
   className,
   size,
 }: SelectableCellProps): JSX.Element => {
+  const [top, right, bottom, left] = borders;
   const solvedBackgroundColor =
     value === UNKNOWN
       ? null
@@ -45,12 +50,23 @@ const SelectableCell = ({
       ? solvedBackgroundColor
       : highlighted === value
       ? "bg-sky-900"
-      : candidates.has(highlighted)
-      ? "bg-emerald-50"
+      // : candidates.has(highlighted)
+      // ? "bg-emerald-50"
       : solvedBackgroundColor,
     given !== UNKNOWN && "text-red-400",
-    "border-r",
-    point.c % 3 === 2 ? "border-black" : "border-slate-300"
+    "border",
+    top ? "border-t-2 border-t-yellow-400" : "border-t-black",
+    right
+      ? "border-r-2 border-r-yellow-400"
+      : point.c % 3 === 2
+      ? "border-r-black"
+      : "border-r-slate-300",
+    bottom
+      ? "border-b-2 border-b-yellow-400"
+      : point.r % 3 === 2
+      ? "border-b-black"
+      : "border-b-slate-300",
+    left ? "border-l-2 border-l-yellow-400" : "border-l-black"
   );
 
   return (
@@ -63,6 +79,7 @@ const SelectableCell = ({
         <CellCandidates
           candidates={candidates}
           highlighted={selected ? UNKNOWN : highlighted}
+          colors={colors}
           showNumber
         />
       ) : (

@@ -240,11 +240,11 @@ export enum Strategy {
  */
 export class Move {
   readonly strategy: Strategy;
-  readonly groups = new Set<Group>();
-  readonly clues = new Map<Cell, Set<Known>>();
+  readonly groups: Set<Group>;
+  readonly clues: Map<Cell, Set<Known>>;
 
-  readonly sets = new Map<Cell, Known>();
-  readonly marks = new Map<Cell, Set<Known>>();
+  readonly sets: Map<Cell, Known>;
+  readonly marks: Map<Cell, Set<Known>>;
 
   constructor(clone: Strategy | Move) {
     if (clone instanceof Move) {

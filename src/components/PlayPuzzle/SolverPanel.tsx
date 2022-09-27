@@ -46,6 +46,8 @@ const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
           type="button"
           disabled={disabled}
           onClick={() => actions.applyMoves(moves)}
+          onMouseEnter={() => actions.preview(moves[0] || null)}
+          onMouseLeave={() => actions.preview(null)}
           className={disabled ? disabledClasses : enabledClasses}
         >
           <div className="flex flex-row justify-between gap-5">

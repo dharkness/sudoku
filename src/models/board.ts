@@ -147,6 +147,9 @@ export abstract class Group extends Container {
   readonly grouping: Grouping;
   readonly coord: Coord;
 
+  // top, right, bottom, left
+  readonly borders = new Map<Cell, [boolean, boolean, boolean, boolean]>();
+
   protected constructor(grouping: Grouping, coord: Coord) {
     super(`${Grouping[grouping]} ${coord + 1}`);
     this.grouping = grouping;
@@ -176,6 +179,13 @@ class Row extends Group {
   constructor(coord: Coord) {
     super(Grouping.ROW, coord);
   }
+
+  addCell(cell: Cell) {
+    super.addCell(cell);
+
+    const i = cell.point.i[this.grouping];
+    this.borders.set(cell, [true, i === 8, true, i === 0]);
+  }
 }
 
 /**
@@ -185,6 +195,13 @@ class Column extends Group {
   constructor(coord: Coord) {
     super(Grouping.COLUMN, coord);
   }
+
+  addCell(cell: Cell) {
+    super.addCell(cell);
+
+    const i = cell.point.i[this.grouping];
+    this.borders.set(cell, [i === 0, true, i === 8, true]);
+  }
 }
 
 /**
@@ -193,6 +210,13 @@ class Column extends Group {
 class Block extends Group {
   constructor(coord: Coord) {
     super(Grouping.BLOCK, coord);
+  }
+
+  addCell(cell: Cell) {
+    super.addCell(cell);
+
+    const i = cell.point.i[this.grouping];
+    this.borders.set(cell, [i < 3, i % 3 === 2, i > 5, i % 3 === 0]);
   }
 }
 
