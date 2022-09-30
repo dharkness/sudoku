@@ -50,8 +50,8 @@ const SelectableCell = ({
       ? solvedBackgroundColor
       : highlighted === value
       ? "bg-sky-900"
-      // : candidates.has(highlighted)
-      // ? "bg-emerald-50"
+      : candidates.has(highlighted)
+      ? "bg-emerald-50"
       : solvedBackgroundColor,
     given !== UNKNOWN && "text-red-400",
     "border",
