@@ -84,7 +84,6 @@ but feel free to explore and scavenge any code you find useful.
       - new solvers
         - Finned and Sashimi X-Wings
           https://www.sudokuonline.io/tips/sudoku-x-wing
-      - Singles Chain has problems (incorrect and/or trivial solutions)
 
 - Create
   - manual partial puzzles
