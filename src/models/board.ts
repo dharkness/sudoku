@@ -87,7 +87,12 @@ export class Cell implements Stateful {
 
   static stringFromPoints(cells?: Set<Cell>): string {
     return cells?.size
-      ? "( " + [...cells.values()].map((cell) => cell.point.k).join(" ") + " )"
+      ? "( " +
+          [...cells.values()]
+            .map((cell) => cell.point.k)
+            .sort((a, b) => a.localeCompare(b))
+            .join(" ") +
+          " )"
       : "∅";
   }
 
@@ -175,7 +180,7 @@ export abstract class Group extends Container {
 /**
  * Defines a single row within the board.
  */
-class Row extends Group {
+export class Row extends Group {
   constructor(coord: Coord) {
     super(Grouping.ROW, coord);
   }
@@ -191,7 +196,7 @@ class Row extends Group {
 /**
  * Defines a single column within the board.
  */
-class Column extends Group {
+export class Column extends Group {
   constructor(coord: Coord) {
     super(Grouping.COLUMN, coord);
   }
@@ -207,7 +212,7 @@ class Column extends Group {
 /**
  * Defines a single block within the board.
  */
-class Block extends Group {
+export class Block extends Group {
   constructor(coord: Coord) {
     super(Grouping.BLOCK, coord);
   }
