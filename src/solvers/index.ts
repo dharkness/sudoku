@@ -10,6 +10,7 @@ import hiddenPairs from "./solveHiddenPairs";
 import hiddenTriples from "./solveHiddenTriples";
 import xWings from "./solveXWings";
 import singlesChains from "./solveSinglesChains";
+import emptyRectangles from "./solveEmptyRectangles";
 import bruteForce from "./solveBruteForce";
 
 type Solver = (state: ReadableState) => Move[];
@@ -24,6 +25,7 @@ export default {
   hiddenTriples,
   xWings,
   singlesChains,
+  emptyRectangles,
   bruteForce,
 } as {
   [key: string]: Solver;
