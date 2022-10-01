@@ -39,7 +39,7 @@ const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
   }, [current]);
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-5">
       {solutions.map(({ key, label, disabled, moves }) => (
         <button
           key={key}

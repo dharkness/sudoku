@@ -9,7 +9,7 @@ const HistoryPanel = ({ actions }: HistoryPanelProps): JSX.Element => {
   const cantRedo = actions.step >= actions.steps - 1;
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-5">
       <button
         type="button"
         disabled={cantUndo}
