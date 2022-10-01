@@ -1,6 +1,7 @@
 import clsx from "clsx";
 
 import { Point, Value, Known, UNKNOWN } from "../../models/basics";
+import { Decoration } from "../../models/solutions";
 
 import CellCandidates from "./CellCandidates";
 
@@ -11,8 +12,7 @@ type SelectableCellProps = {
   candidates: Set<Known>;
 
   highlighted: Value;
-  borders: [boolean, boolean, boolean, boolean];
-  colors: { [key: string]: Set<Known> };
+  decoration: Decoration;
   selected: boolean;
   onSelect: () => void;
 
@@ -26,34 +26,34 @@ const SelectableCell = ({
   value,
   candidates,
   highlighted,
-  borders,
-  colors,
+  decoration,
   selected,
   onSelect,
   className,
   size,
 }: SelectableCellProps): JSX.Element => {
+  const { background, borders, colors, set } = decoration;
   const [top, right, bottom, left] = borders;
-  const solvedBackgroundColor =
-    value === UNKNOWN
-      ? null
-      : given === UNKNOWN
-      ? "bg-neutral-300"
-      : "bg-black";
+  const backgroundColor = given
+    ? "bg-black"
+    : value
+    ? "bg-neutral-300"
+    : background
+    ? BackgroundColors[background]
+    : selected
+    ? "bg-sky-400"
+    : highlighted && highlighted === value
+    ? "bg-sky-900"
+    : highlighted && candidates.has(highlighted) // remove?
+    ? "bg-emerald-50"
+    : null;
+  const color = given ? "text-red-400" : null;
 
   const classes = clsx(
     className,
     "mx-auto",
-    selected
-      ? "bg-sky-400"
-      : highlighted === UNKNOWN
-      ? solvedBackgroundColor
-      : highlighted === value
-      ? "bg-sky-900"
-      : candidates.has(highlighted)
-      ? "bg-emerald-50"
-      : solvedBackgroundColor,
-    given !== UNKNOWN && "text-red-400",
+    backgroundColor,
+    color,
     "border",
     top ? "border-t-2 border-t-yellow-400" : "border-t-black",
     right
@@ -87,6 +87,12 @@ const SelectableCell = ({
       )}
     </td>
   );
+};
+
+const BackgroundColors = {
+  clue: "bg-neutral-300",
+  mark: "bg-neutral-400",
+  set: "bg-neutral-500",
 };
 
 export default SelectableCell;

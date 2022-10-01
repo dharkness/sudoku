@@ -1,4 +1,4 @@
-import { ALL_POINTS, Known, UNKNOWN, valueFromString } from "./basics";
+import { ALL_POINTS, Known, UNKNOWN, Value, valueFromString } from "./basics";
 import { BOARD, Cell, Group } from "./board";
 import { WritableState } from "./state";
 
@@ -377,6 +377,71 @@ export class Move {
     );
   }
 
+  getDecoration(cell: Cell): Decoration {
+    return {
+      borders: this.getBorders(cell),
+      background: this.getBackground(cell),
+      colors: this.getColors(cell),
+      set: this.sets.get(cell) || UNKNOWN,
+    };
+  }
+
+  getBorders(cell: Cell): Borders {
+    if (this.groups.size) {
+      return [...this.groups]
+        .map((group) => group.borders.get(cell))
+        .filter(Boolean)
+        .reduce(
+          // @ts-ignore
+          (borders: Borders, next: Borders) =>
+            [
+              borders[0] || next[0],
+              borders[1] || next[1],
+              borders[2] || next[2],
+              borders[3] || next[3],
+            ] as Borders,
+          NO_BORDERS
+        ) as Borders;
+    } else if (this.sets.size) {
+      if (this.sets.has(cell) && 0 < this.sets.size && this.sets.size < 10) {
+        return FULL_BORDERS;
+      }
+    } else if (
+      this.clues.size ||
+      (0 < this.marks.size && this.marks.size < 10)
+    ) {
+      if (this.clues.has(cell) || this.marks.has(cell)) {
+        return FULL_BORDERS;
+      }
+    }
+
+    return NO_BORDERS;
+  }
+
+  getBackground(cell: Cell): CellColor | null {
+    if (this.sets.has(cell)) {
+      return "set";
+    } else if (this.marks.has(cell)) {
+      return "mark";
+    } else if (this.clues.has(cell)) {
+      return "clue";
+    } else {
+      return null;
+    }
+  }
+
+  getColors(cell: Cell): Map<Known, MarkColor> {
+    const clues = [...(this.clues.get(cell) || [])] || [];
+    const marks = [...(this.marks.get(cell) || [])] || [];
+    const set = this.sets.get(cell);
+
+    return new Map<Known, MarkColor>([
+      ...clues.map((k) => [k, "green"]),
+      ...marks.map((k) => [k, "red"]),
+      ...(set ? [[set, "green"]] : []),
+    ] as [Known, MarkColor][]);
+  }
+
   // FACTOR Move to WritableState, treating this as a pure data holder?
   apply(state: WritableState) {
     for (const [cell, known] of this.sets) {
@@ -401,6 +466,28 @@ export class Move {
   // - list of cell/value tuples being set
   // - list of cell/known-set tuples of candidates to mark
 }
+
+export type CellColor = "clue" | "mark" | "set";
+export type MarkColor = "blue" | "green" | "red";
+
+type Borders = [boolean, boolean, boolean, boolean];
+
+const NO_BORDERS: Borders = [false, false, false, false];
+const FULL_BORDERS: Borders = [true, true, true, true];
+
+export type Decoration = {
+  borders: Borders;
+  background: CellColor | null;
+  colors: Map<Known, MarkColor>;
+  set: Value;
+};
+
+export const EMPTY_DECORATION = {
+  borders: NO_BORDERS,
+  background: null,
+  colors: new Map(),
+  set: UNKNOWN,
+};
 
 function isIterable<T>(t: T | Iterable<T> | IterableIterator<T>): boolean {
   return typeof t === "object" && Symbol.iterator in t;

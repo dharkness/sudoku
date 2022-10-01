@@ -1,9 +1,10 @@
 import { Known, known, Value } from "../../models/basics";
+import { MarkColor } from "../../models/solutions";
 
 type CellCandidatesProps = {
   candidates: Set<Known>;
   highlighted: Value;
-  colors: { [key: string]: Set<Known> };
+  colors: Map<Known, MarkColor>;
   showNumber?: boolean;
 };
 
@@ -20,13 +21,8 @@ const CellCandidates = ({
           {[0, 1, 2].map((c) => {
             const k = known(3 * r + c + 1);
             const candidate = candidates.has(k);
-            const color = candidate
-              ? colors.red?.has(k)
-                ? "bg-red-200"
-                : colors.green?.has(k)
-                ? "bg-emerald-50"
-                : undefined
-              : undefined;
+            const color =
+              candidate && colors.has(k) ? Colors[colors.get(k)!] : null;
 
             return (
               <td
@@ -45,5 +41,11 @@ const CellCandidates = ({
 };
 
 const PENCIL = "•";
+
+const Colors = {
+  blue: "bg-sky-900",
+  green: "bg-emerald-100",
+  red: "bg-red-200",
+};
 
 export default CellCandidates;

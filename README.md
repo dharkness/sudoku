@@ -62,6 +62,7 @@ but feel free to explore and scavenge any code you find useful.
   - refactor
     - rename State (solved cells and candidates) to Board, Positions
     - rename Board (if State becomes Board) to Sudoku, Layout, Game
+    - replace Point with Cell in usePlayPuzzleActions hook and UI
 
 - Play
   - UI
@@ -74,6 +75,12 @@ but feel free to explore and scavenge any code you find useful.
       - incorrectly removed candidate
       - solutions that make puzzle impossible (good for creating new puzzles)
       - easier to show banner when making errors given the model
+    - move highlighting
+      * create Decoration to model cell treatment
+      * different background for clue/mark/set cells
+      - multiple clue candidate colors
+      - update solvers that need ^
+      - extract Move.getDecoration()?
     - solvers
       - state management
         - run solvers in memoized actions state
