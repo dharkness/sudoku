@@ -30,10 +30,10 @@ const LOG = false;
  *   9 ····7····
  *
  * Regular:
- * 724956138 168423597 935718624 5..3..81. .4..8175. .81.7.24. .13....72 ...1...85 .5...7.61
+ * "724956138 168423597 935718624 5..3..81. .4..8175. .81.7.24. .13....72 ...1...85 .5...7.61"
  *
  * Dual:
- * 58.179..3 ...6.8975 69735.... 9..53.728 7.381.5.. 85.9.713. 469281357 ..8765... .75493...
+ * "58.179..3 ...6.8975 69735.... 9..53.728 7.381.5.. 85.9.713. 469281357 ..8765... .75493..."
  */
 export default function solveEmptyRectangles(state: ReadableState): Move[] {
   const moves: Move[] = [];
@@ -153,7 +153,7 @@ export default function solveEmptyRectangles(state: ReadableState): Move[] {
 
           const move = new Move(Strategy.EmptyRectangle)
             .group(block)
-            .clue(cells, k)
+            .clue(cells, k, "blue")
             .clue(end, k)
             .mark(remove, k);
 

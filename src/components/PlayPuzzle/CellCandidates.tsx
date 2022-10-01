@@ -45,6 +45,7 @@ const PENCIL = "•";
 const Colors = {
   blue: "bg-sky-900",
   green: "bg-emerald-100",
+  yellow: "bg-yellow-200",
   red: "bg-red-200",
 };
 

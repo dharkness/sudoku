@@ -27,6 +27,8 @@ const LOG = false;
  *   7 ·77······  ←-- cells in line (74-79) being empty
  *   8 ······77·
  *   9 7·7··7···  ←-- ... clear box cells (91 93)
+ *
+ * "7..1....9 .2.3..7.. 4.9...... .6.8..2.. ......... .7...1.5. .....49.. .46..5..2 .1...68.."
  */
 export default function solveIntersectionRemovals(
   state: ReadableState
@@ -80,7 +82,7 @@ export default function solveIntersectionRemovals(
         )
           .group(intersection.block)
           .group(intersection.group)
-          .clue(blockCells, k)
+          .clue(blockCells, k, pointing ? "green" : "blue")
           .mark(cells, k)
       );
 

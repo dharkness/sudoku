@@ -2,7 +2,11 @@ import { ALL_POINTS, Known, UNKNOWN, Value, valueFromString } from "./basics";
 import { BOARD, Cell, Group } from "./board";
 import { WritableState } from "./state";
 
-import { deepCloneMapOfSets, shuffle } from "../utils/collections";
+import {
+  deepCloneMap,
+  deepCloneMapOfSets,
+  shuffle,
+} from "../utils/collections";
 
 const LOG = false;
 
@@ -242,7 +246,7 @@ export enum Strategy {
 export class Move {
   readonly strategy: Strategy;
   readonly groups: Set<Group>;
-  readonly clues: Map<Cell, Set<Known>>;
+  readonly clues: Map<Cell, Map<Known, MarkColor>>;
 
   readonly sets: Map<Cell, Known>;
   readonly marks: Map<Cell, Set<Known>>;
@@ -251,13 +255,13 @@ export class Move {
     if (clone instanceof Move) {
       this.strategy = clone.strategy;
       this.groups = new Set(clone.groups);
-      this.clues = deepCloneMapOfSets(clone.clues);
+      this.clues = deepCloneMap(clone.clues, deepCloneMap);
       this.sets = new Map(clone.sets);
       this.marks = deepCloneMapOfSets(clone.marks);
     } else {
       this.strategy = clone;
       this.groups = new Set<Group>();
-      this.clues = new Map<Cell, Set<Known>>();
+      this.clues = new Map<Cell, Map<Known, MarkColor>>();
       this.sets = new Map<Cell, Known>();
       this.marks = new Map<Cell, Set<Known>>();
     }
@@ -277,7 +281,8 @@ export class Move {
 
   clue(
     cells: Cell | Iterable<Cell> | IterableIterator<Cell>,
-    knowns: Known | Iterable<Known> | IterableIterator<Known>
+    knowns: Known | Iterable<Known> | IterableIterator<Known>,
+    color: MarkColor = "green"
   ): Move {
     return this.applyToCellsAndKnowns(
       cells,
@@ -285,10 +290,10 @@ export class Move {
       (cell: Cell, known: Known) => {
         if (this.clues.has(cell)) {
           // console.log("add", cell.point.k, known);
-          this.clues.get(cell)!.add(known);
+          this.clues.get(cell)!.set(known, color);
         } else {
           // console.log("set", cell.point.k, known);
-          this.clues.set(cell, new Set([known]));
+          this.clues.set(cell, new Map([[known, color]]));
         }
       }
     );
@@ -436,7 +441,7 @@ export class Move {
     const set = this.sets.get(cell);
 
     return new Map<Known, MarkColor>([
-      ...clues.map((k) => [k, "green"]),
+      ...clues,
       ...marks.map((k) => [k, "red"]),
       ...(set ? [[set, "green"]] : []),
     ] as [Known, MarkColor][]);
@@ -468,7 +473,7 @@ export class Move {
 }
 
 export type CellColor = "clue" | "mark" | "set";
-export type MarkColor = "blue" | "green" | "red";
+export type MarkColor = "blue" | "green" | "yellow" | "red";
 
 type Borders = [boolean, boolean, boolean, boolean];
 

@@ -1,7 +1,7 @@
 import { ALL_KNOWNS } from "../models/basics";
 import { BOARD, Cell } from "../models/board";
 import { ReadableState } from "../models/state";
-import { Move, Strategy } from "../models/solutions";
+import { MarkColor, Move, Strategy } from "../models/solutions";
 
 import { difference, intersect, twoSetValues } from "../utils/collections";
 
@@ -24,6 +24,8 @@ const LOG = false;
  *   7 ·········
  *   8 7······77  ←-- remove 7 from cell 88
  *   9 ······7··
+ *
+ * "..7.836.. .397.68.. 826419753 64.19.387 .8.367... .73.48.6. 39.87..26 7649..138 2.863.97."
  */
 export default function solveSinglesChains(state: ReadableState): Move[] {
   const moves: Move[] = [];
@@ -79,7 +81,7 @@ export default function solveSinglesChains(state: ReadableState): Move[] {
       }
     }
 
-    const found = new Map<Cell, Map<Cell, Color>>();
+    const found = new Map<Cell, Map<Cell, MarkColor>>();
     const ignore = new Set<Cell>();
 
     // for each cell in candidate pool
@@ -187,28 +189,31 @@ export default function solveSinglesChains(state: ReadableState): Move[] {
     }
 
     for (const [cell, colors] of found) {
-      moves.push(
-        // TODO Support colors in Move
-        new Move(Strategy.SinglesChain).clue(colors.keys(), k).mark(cell, k)
-      );
+      const move = new Move(Strategy.SinglesChain).mark(cell, k);
+
+      for (const [c, color] of colors) {
+        move.clue(c, k, color);
+      }
+
+      moves.push(move);
     }
   }
 
   return moves;
 }
 
-type Color = "red" | "green";
-const opposite = (c: Color): Color => (c === "red" ? "green" : "red");
+const opposite = (c: MarkColor): MarkColor =>
+  c === "green" ? "yellow" : "green";
 
 class Chain {
   readonly candidate: Cell;
   readonly nodes = new Set<Cell>();
-  readonly colors = new Map<Cell, Color>();
+  readonly colors = new Map<Cell, MarkColor>();
 
   readonly stack: Cell[] = [];
   readonly start: Cell;
   end: Cell;
-  color: Color = "red";
+  color: MarkColor = "green";
 
   constructor(candidate: Cell, start: Cell) {
     this.candidate = candidate;
@@ -221,7 +226,7 @@ class Chain {
   }
 
   mismatched(): boolean {
-    return this.color === "green";
+    return this.color !== "green";
   }
 
   allNodesInSameBlock(): boolean {

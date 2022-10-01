@@ -76,10 +76,8 @@ but feel free to explore and scavenge any code you find useful.
       - solutions that make puzzle impossible (good for creating new puzzles)
       - easier to show banner when making errors given the model
     - move highlighting
-      * create Decoration to model cell treatment
-      * different background for clue/mark/set cells
-      - multiple clue candidate colors
-      - update solvers that need ^
+      - show non-clue sets with large number without candidates or overlaid on top?
+      - use green for sets only, blue/yellow for clues?
       - extract Move.getDecoration()?
     - solvers
       - state management

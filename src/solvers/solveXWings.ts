@@ -1,6 +1,5 @@
 import { ALL_KNOWNS, Coord, Grouping } from "../models/basics";
 import { BOARD, Cell, Group } from "../models/board";
-import { printCellCandidates } from "../models/printers";
 import { Move, Strategy } from "../models/solutions";
 import { ReadableState } from "../models/state";
 
@@ -25,6 +24,8 @@ const LOG = false;
  *   7 ···4·····  ←-- remove 4 from cell 74
  *   8 ·······4·  ←-- remove 4 from cell 88
  *   9 ·········
+ *
+ * "1.....569 492.561.8 .561.924. ..964.8.1 .64.1.... 218.356.4 .4.5...16 9.5.614.2 621.....5"
  */
 export default function solveXWings(state: ReadableState): Move[] {
   const moves: Move[] = [];
@@ -102,7 +103,6 @@ export default function solveXWings(state: ReadableState): Move[] {
             continue;
           }
 
-          LOG && printCellCandidates(state, k);
           LOG &&
             console.info(
               "SOLVE X-WING for",
@@ -119,7 +119,6 @@ export default function solveXWings(state: ReadableState): Move[] {
               "erase",
               Cell.stringFromPoints(erase)
             );
-          // LOG && move.log();
 
           moves.push(move);
         }

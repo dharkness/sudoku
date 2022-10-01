@@ -122,8 +122,10 @@ export function withoutEmptySets<T, U>(map: Map<T, Set<U>>): Map<T, Set<U>> {
  *
  * TODO Add cloneKey?
  */
-export function deepCloneMap<K, V>(map: Map<K, V>, cloneValue: (v: V) => V) {
-  return new Map([...map.entries()].map(([k, v]) => [k, cloneValue(v)]));
+export function deepCloneMap<K, V>(map: Map<K, V>, cloneValue?: (v: V) => V) {
+  return new Map(
+    cloneValue ? [...map.entries()].map(([k, v]) => [k, cloneValue(v)]) : map
+  );
 }
 
 /**
