@@ -8,9 +8,13 @@ This app lets you create, play, and solve Sudoku puzzles.
 This project serves as a way to learn new technologies and showcase how I work,
 but feel free to explore and scavenge any code you find useful.
 
--Learning
-  -Get more comfortable with TypeScript to replace JSDoc. 
-  -Learn NextJS and the T3 stack using [`create-t3-app`](https://create.t3.gg/)
+- Learning
+
+  - Get more comfortable with TypeScript to replace JSDoc. 
+
+  - Learn NextJS, Prisma, and tRPC using [`create-t3-app`](https://create.t3.gg/).
+
+  - Learn Tailwind CSS to build React components without a UI framework.
 
 
 ## Terminology
@@ -82,16 +86,25 @@ but feel free to explore and scavenge any code you find useful.
     - solvers
       - state management
         - run solvers in memoized actions state
-        - store strategy to preview to update move after application
-        - separate solvers from the moves they produce
-          so player can see multiple move types from a single solver
-      - do not internally apply set/erase moves from solvers
-        - all should add to Solutions to start; later convert to Move[]
+          - group by strategy
+          - use strategies for buttons instead of solvers
+          - group by a key that allows detecting identical moves
+            - store added and removed moves in each step instead of full set (why?)
+        - store strategy to preview to update move after application (what was this?)
+      - produce moves when internally erasing marks
       - checkbox to automatically apply each strategy
       - show/apply each solution separately; highlight cells on hover; animate on apply
       - new solvers
-        - Finned and Sashimi X-Wings
-          https://www.sudokuonline.io/tips/sudoku-x-wing
+        - Unique Rectangles
+          https://www.sudokuwiki.org/Unique_Rectangles
+        - XY-Chain
+          https://www.sudokuwiki.org/XY_Chains
+        - Fish
+          - generalize X-Wing to Fish
+          - Swordfish (3) and Jellyfish (4)
+            https://hodoku.sourceforge.net/en/tech_fishb.php
+          - Finned and Sashimi Fish
+            https://www.sudokuonline.io/tips/sudoku-x-wing
 
 - Create
   - manual partial puzzles
