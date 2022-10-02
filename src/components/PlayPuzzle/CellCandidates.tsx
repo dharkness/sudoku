@@ -16,26 +16,28 @@ const CellCandidates = ({
 }: CellCandidatesProps): JSX.Element => {
   return (
     <table className="h-full w-full text-sm">
-      {[0, 1, 2].map((r) => (
-        <tr key={r}>
-          {[0, 1, 2].map((c) => {
-            const k = known(3 * r + c + 1);
-            const candidate = candidates.has(k);
-            const color =
-              candidate && colors.has(k) ? Colors[colors.get(k)!] : null;
+      <tbody>
+        {[0, 1, 2].map((r) => (
+          <tr key={r}>
+            {[0, 1, 2].map((c) => {
+              const k = known(3 * r + c + 1);
+              const candidate = candidates.has(k);
+              const color =
+                candidate && colors.has(k) ? Colors[colors.get(k)!] : null;
 
-            return (
-              <td
-                key={k}
-                className={`mx-auto ${color}`}
-                style={{ width: "33%", height: "33%" }}
-              >
-                {candidate ? (showNumber ? k : PENCIL) : ""}
-              </td>
-            );
-          })}
-        </tr>
-      ))}
+              return (
+                <td
+                  key={k}
+                  className={`mx-auto ${color}`}
+                  style={{ width: "33%", height: "33%" }}
+                >
+                  {candidate ? (showNumber ? k : PENCIL) : ""}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
     </table>
   );
 };
