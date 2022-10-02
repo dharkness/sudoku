@@ -26,6 +26,7 @@ const LOG = false;
  *   9 ······7··
  *
  * "..7.836.. .397.68.. 826419753 64.19.387 .8.367... .73.48.6. 39.87..26 7649..138 2.863.97."
+ * "32.5479.6 ..6213.5. .4569823. 5..472... ..79.1.25 ..28.57.. 214359678 673184592 .5.726143"
  */
 export default function solveSinglesChains(state: ReadableState): Move[] {
   const moves: Move[] = [];
@@ -44,14 +45,20 @@ export default function solveSinglesChains(state: ReadableState): Move[] {
         if (cells.size === 2) {
           const [first, second] = twoSetValues(cells);
           nodes.add(first);
+          if (state.getCandidates(first).size > 1) {
+            candidates.add(first);
+          }
           nodes.add(second);
+          if (state.getCandidates(second).size > 1) {
+            candidates.add(second);
+          }
 
           LOG &&
             console.info(
-              "[singles-chain] PAIR",
+              "[singles-chain]",
               group.name,
-              first.point.k,
-              second.point.k
+              "pair",
+              Cell.stringFromPoints(cells)
             );
 
           [
@@ -64,11 +71,12 @@ export default function solveSinglesChains(state: ReadableState): Move[] {
               edges.set(start!, new Set([end!]));
             }
           });
-        } else {
+        } else if (cells.size) {
           LOG &&
             console.info(
-              "[singles-chain] CANDIDATES",
+              "[singles-chain]",
               group.name,
+              "candidates",
               Cell.stringFromPoints(cells)
             );
 
@@ -81,6 +89,14 @@ export default function solveSinglesChains(state: ReadableState): Move[] {
       }
     }
 
+    LOG &&
+      console.info(
+        "[singles-chain] CANDIDATES",
+        Cell.stringFromPoints(candidates),
+        "NODES",
+        Cell.stringFromPoints(nodes)
+      );
+
     const found = new Map<Cell, Map<Cell, MarkColor>>();
     const ignore = new Set<Cell>();
 
@@ -88,102 +104,93 @@ export default function solveSinglesChains(state: ReadableState): Move[] {
     for (const candidate of candidates) {
       const sees = intersect(nodes, candidate.neighbors);
 
-      LOG &&
-        console.info(
-          "[singles-chain] CANDIDATE",
-          candidate.point.k,
-          "sees",
-          Cell.stringFromPoints(sees)
-        );
+      LOG && console.info("[singles-chain] CHECK", candidate.point.k);
 
-      for (const start of sees) {
-        const chain = new Chain(candidate, start);
-        const stack = [[...edges.get(start)!]];
+      const chain = new Chain(candidate);
+      const stack = [[...sees]];
+      let shortest = 1000;
 
+      while (stack.length) {
         LOG &&
           console.info(
-            "[singles-chain] CHECK",
+            "[singles-chain] STEP",
             candidate.point.k,
-            "start",
-            start.point.k
+            Cell.stringFromPoints(chain.nodes, false),
+            "stack",
+            `[ ${stack
+              .map((pool) => Cell.stringFromPoints(new Set(pool)))
+              .join(" ")} ]`
           );
 
-        while (stack.length) {
-          const pool = stack[stack.length - 1]!;
+        const pool = stack[stack.length - 1]!;
+        if (!pool.length || chain.nodes.size + 1 >= shortest) {
+          if (chain.nodes.size) {
+            LOG && console.info("[singles-chain] BACKTRACK");
+
+            chain.pop();
+          }
+
+          stack.pop();
+          continue;
+        }
+
+        const node = pool.pop()!;
+        if (node === candidate || chain.contains(node)) {
+          LOG &&
+            console.info(
+              "[singles-chain] SKIP",
+              candidate.point.k,
+              "dupe",
+              node.point.k
+            );
+
+          continue;
+        }
+
+        chain.push(node);
+        if (sees.has(node) && chain.mismatched()) {
+          if (chain.allNodesInSameBlock()) {
+            LOG &&
+              console.info(
+                "[singles-chain] IGNORE",
+                candidate.point.k,
+                "Box Line Reduction",
+                Cell.stringFromPoints(chain.nodes, false)
+              );
+
+            ignore.add(candidate);
+            found.delete(candidate);
+
+            break;
+          }
 
           LOG &&
             console.info(
-              "[singles-chain] CHECK",
+              "[singles-chain] FOUND",
               candidate.point.k,
-              "stack",
-              stack.length,
-              "pool",
-              Cell.stringFromPoints(new Set(pool))
+              Cell.stringFromPoints(chain.nodes, false)
             );
 
-          if (!pool.length) {
-            chain.pop();
-            stack.pop();
-            continue;
-          }
+          shortest = chain.nodes.size;
+          found.set(candidate, new Map(chain.colors));
 
-          const node = pool.pop()!;
-          if (node === candidate || chain.contains(node)) {
-            continue;
-          }
+          chain.pop();
+          // stack.pop();
+          continue;
+        }
 
-          chain.push(node);
-          if (sees.has(node) && chain.mismatched()) {
-            if (chain.allNodesInSameBlock()) {
-              LOG &&
-                console.info(
-                  "[singles-chain] IGNORE",
-                  candidate.point.k,
-                  "degenerate",
-                  Cell.stringFromPoints(chain.nodes)
-                );
+        const next = difference(edges.get(node)!, chain.nodes);
+        if (next.has(candidate)) {
+          next.delete(candidate);
+        }
 
-              ignore.add(candidate);
-              found.delete(candidate);
+        if (next.size) {
+          LOG && console.info("[singles-chain] EXTEND", node.point.k);
 
-              break;
-            }
-            if (
-              !chain.allNodesInSameBlock() &&
-              (!found.has(candidate) ||
-                chain.colors.size < found.get(candidate)!.size)
-            ) {
-              LOG &&
-                console.info(
-                  "[singles-chain] FOUND",
-                  candidate.point.k,
-                  "chain",
-                  Cell.stringFromPoints(chain.nodes)
-                );
-
-              found.set(candidate, new Map(chain.colors));
-            }
-
-            chain.pop();
-            stack.pop();
-            continue;
-          }
-
-          const next = difference(edges.get(node)!, chain.nodes);
-          if (next.size) {
-            LOG &&
-              console.info(
-                "[singles-chain] EXTEND",
-                candidate.point.k,
-                "nodes",
-                Cell.stringFromPoints(next)
-              );
-
-            stack.push([...next]);
-          } else {
-            // pushed above to check chain, not extending same as finding empty pool
-            chain.pop();
-          }
+          stack.push([...next]);
+        } else {
+          // pushed above to check chain, not extending same as finding empty pool
+          chain.pop();
         }
       }
     }
@@ -211,18 +218,11 @@ class Chain {
   readonly colors = new Map<Cell, MarkColor>();
 
   readonly stack: Cell[] = [];
-  readonly start: Cell;
-  end: Cell;
-  color: MarkColor = "green";
+  end?: Cell;
+  color: MarkColor = "yellow";
 
-  constructor(candidate: Cell, start: Cell) {
+  constructor(candidate: Cell) {
     this.candidate = candidate;
-    this.nodes.add(start);
-    this.colors.set(start, this.color);
-
-    this.stack.push(start);
-    this.start = start;
-    this.end = start;
   }
 
   mismatched(): boolean {
@@ -259,16 +259,15 @@ class Chain {
   }
 
   pop(): void {
-    const node = this.stack.pop();
-
-    if (!node) {
+    if (!this.end) {
       console.error("[singles-chain] cannot pop() empty chain");
       return;
     }
 
+    this.stack.pop();
     this.color = opposite(this.color);
-    this.nodes.delete(node);
-    this.colors.delete(node);
-    this.end = this.stack[this.stack.length - 1]!;
+    this.nodes.delete(this.end);
+    this.colors.delete(this.end);
+    this.end = this.stack[this.stack.length - 1];
   }
 }

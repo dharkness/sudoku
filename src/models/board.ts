@@ -85,15 +85,18 @@ export class Cell implements Stateful {
     return `Cell ${this.point.k}`;
   }
 
-  static stringFromPoints(cells?: Set<Cell>): string {
-    return cells?.size
-      ? "( " +
-          [...cells.values()]
-            .map((cell) => cell.point.k)
-            .sort((a, b) => a.localeCompare(b))
-            .join(" ") +
-          " )"
-      : "∅";
+  static stringFromPoints(cells?: Set<Cell>, sort = true): string {
+    if (!cells?.size) {
+      return "∅";
+    }
+
+    const points = [...cells].map((cell) => cell.point.k);
+
+    return (
+      "( " +
+      (sort ? points.sort((a, b) => a.localeCompare(b)) : points).join(" ") +
+      " )"
+    );
   }
 
   static stringFromGroupCoords(g: Grouping, cells: Set<Cell>): string {
