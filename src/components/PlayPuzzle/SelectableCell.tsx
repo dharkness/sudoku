@@ -1,12 +1,13 @@
 import clsx from "clsx";
 
-import { Point, Value, Known, UNKNOWN } from "../../models/basics";
+import { Value, Known, UNKNOWN } from "../../models/basics";
+import { Cell } from "../../models/board";
 import { Decoration } from "../../models/solutions";
 
 import CellCandidates from "./CellCandidates";
 
 type SelectableCellProps = {
-  point: Point;
+  cell: Cell;
   given: Value;
   value: Value;
   candidates: Set<Known>;
@@ -21,7 +22,7 @@ type SelectableCellProps = {
 };
 
 const SelectableCell = ({
-  point,
+  cell,
   given,
   value,
   candidates,
@@ -32,7 +33,7 @@ const SelectableCell = ({
   className,
   size,
 }: SelectableCellProps): JSX.Element => {
-  const { background, borders, colors, set } = decoration;
+  const { background, borders, colors } = decoration;
   const [top, right, bottom, left] = borders;
   const backgroundColor = given
     ? "bg-black"
@@ -58,12 +59,12 @@ const SelectableCell = ({
     top ? "border-t-2 border-t-yellow-400" : "border-t-black",
     right
       ? "border-r-2 border-r-yellow-400"
-      : point.c % 3 === 2
+      : cell.point.c % 3 === 2
       ? "border-r-black"
       : "border-r-slate-300",
     bottom
       ? "border-b-2 border-b-yellow-400"
-      : point.r % 3 === 2
+      : cell.point.r % 3 === 2
       ? "border-b-black"
       : "border-b-slate-300",
     left ? "border-l-2 border-l-yellow-400" : "border-l-black"

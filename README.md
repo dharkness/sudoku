@@ -63,16 +63,24 @@ but feel free to explore and scavenge any code you find useful.
 
 - Model
   - group candidate cells hold index sets instead of point sets for performance?
+    - GroupCellSet
+      - group: Group
+      - set: Set<Cell>
+      - cells: Map<Coord, Cell>
+      - indexes: BitSet or CoordSet or 0b000000000 to 0b111111111
+    - KnownSet for cell/group/container candidates
   - refactor
     - rename State (solved cells and candidates) to Board, Positions
-    - rename Board (if State becomes Board) to Sudoku, Layout, Game
-    - replace Point with Cell in usePlayPuzzleActions hook and UI
+    - rename Board (if State becomes Board) to Sudoku, Layout, Game, Grid
+      - Grid for the structure and Board for the state are a good combo
+      - remove state-access methods from Grid; use it only to access structural items
 
 - Play
   - UI
     - known panel
       - highlight hovered known in puzzle panel
       - dim solved knowns
+      - add pencil toggle button to swap behavior of number keys (set vs. mark)
     - show errors
       - note that we currently block setting cell to non-candidate
       - incorrectly solved cell

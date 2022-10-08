@@ -26,23 +26,22 @@ const PuzzlePanel = ({ actions, size }: PuzzlePanelProps): JSX.Element => {
               }`}
             >
               {ALL_COORDS.map((c) => {
-                const point = getPoint(r, c);
-                const cell = BOARD.getCell(point);
+                const cell = BOARD.getCell(getPoint(r, c));
 
                 return (
                   <SelectableCell
                     key={c}
-                    point={point}
-                    given={actions.getGivenValue(point)}
-                    value={actions.getValue(point)}
+                    cell={cell}
+                    given={actions.getGivenValue(cell)}
+                    value={actions.getValue(cell)}
                     highlighted={highlighted}
                     decoration={
                       previewed?.getDecoration(cell) || EMPTY_DECORATION
                     }
-                    selected={selected === point}
-                    onSelect={() => actions.select(point)}
+                    selected={selected === cell}
+                    onSelect={() => actions.select(cell)}
                     size={size}
-                    candidates={actions.getCandidates(point)}
+                    candidates={actions.getCandidates(cell)}
                   />
                 );
               })}

@@ -1,7 +1,7 @@
 import { useMemo, useReducer } from "react";
 
-import { Known, Point, UNKNOWN, Value } from "../../models/basics";
-import { BOARD, Cell } from "../../models/board";
+import { Known, UNKNOWN, Value } from "../../models/basics";
+import { Cell } from "../../models/board";
 import { Move, solutionsFromString } from "../../models/solutions";
 import {
   createEmptySimpleState,
@@ -15,19 +15,19 @@ export type PuzzleActions = {
   steps: number;
   step: number;
 
-  selected: Point | null;
+  selected: Cell | null;
   locked: Value;
   highlighted: Value;
   previewed: Move | null;
   singleton: Value;
 
-  getGivenValue: (point: Point) => Value;
-  getValue: (point: Point) => Value;
-  getCandidates: (point: Point) => Set<Known>;
+  getGivenValue: (cell: Cell) => Value;
+  getValue: (cell: Cell) => Value;
+  getCandidates: (cell: Cell) => Set<Known>;
 
   highlight: (value: Value) => void;
   preview: (move: Move | null) => void;
-  select: (point: Point) => void;
+  select: (cell: Cell) => void;
   setCell: (known: Known) => void;
   removeCandidate: (known: Known) => void;
   applyMoves: (moves: Move[]) => void;
@@ -48,13 +48,13 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
       const knowns = solutionsFromString(start).randomizedSolvedKnowns();
 
       for (const [cell, known] of knowns) {
-        BOARD.setKnown(state, cell, known);
+        state.setKnown(cell, known);
       }
 
       const solved = state.getSolved();
       state.clearSolved();
       solved.forEachErasedPencil((cell, known) =>
-        BOARD.removeCandidate(state, cell, known)
+        state.removeCandidate(cell, known)
       );
     }
 
@@ -71,11 +71,11 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
 
   return useMemo<PuzzleActions>(() => {
     const { locked, previewed, selected, step, steps } = state;
-    const given = steps[0]!.state;
+    const givens = steps[0]!.state;
     const current = steps[step]!.state;
 
-    const value = selected ? BOARD.getValue(current, selected) : UNKNOWN;
-    const candidates = selected ? BOARD.getCandidates(current, selected) : null;
+    const value = selected ? current.getValue(selected) : UNKNOWN;
+    const candidates = selected ? current.getCandidates(selected) : null;
 
     const singleton =
       candidates?.size === 1 ? singleSetValue(candidates) : UNKNOWN;
@@ -92,13 +92,13 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
       previewed,
       singleton,
 
-      getGivenValue: (point: Point) => BOARD.getValue(given, point),
-      getValue: (point: Point) => BOARD.getValue(current, point),
-      getCandidates: (point: Point) => BOARD.getCandidates(current, point),
+      getGivenValue: (cell: Cell) => givens.getValue(cell),
+      getValue: (cell: Cell) => current.getValue(cell),
+      getCandidates: (cell: Cell) => current.getCandidates(cell),
 
       highlight: (value: Value) => dispatch({ type: "highlight", value }),
       preview: (move: Move | null) => dispatch({ type: "preview", move }),
-      select: (point: Point) => dispatch({ type: "select", point }),
+      select: (cell: Cell) => dispatch({ type: "select", cell }),
       setCell: (known: Known) => dispatch({ type: "set", known: known }),
       removeCandidate: (known: Known) =>
         dispatch({ type: "remove", known: known }),
@@ -115,20 +115,20 @@ type State = {
   steps: StepNode[];
   step: number;
 
-  selected: Point | null;
+  selected: Cell | null;
   locked: Value;
   previewed: Move | null;
 };
 
 type StepNode = {
   state: SimpleState;
-  selected: Point | null;
+  selected: Cell | null;
 };
 
 type Action =
   | { type: "highlight"; value: Value }
   | { type: "preview"; move: Move | null }
-  | { type: "select"; point: Point }
+  | { type: "select"; cell: Cell }
   | { type: "set"; known: Known }
   | { type: "remove"; known: Known }
   | { type: "apply"; moves: Move[] }
@@ -157,7 +157,7 @@ const reducer: Reducer = (state: State, action: Action) => {
     case "select":
       return {
         ...state,
-        selected: action.point,
+        selected: action.cell,
       };
 
     case "set":
@@ -168,18 +168,18 @@ const reducer: Reducer = (state: State, action: Action) => {
       return addStep(state, (state: SimpleState) => {
         const { known } = action;
 
-        if (!BOARD.isCandidate(state, selected, known)) {
+        if (!state.isCandidate(selected, known)) {
           return state;
         }
 
         const clone = new SimpleState(state);
-        BOARD.setKnown(clone, selected, known);
+        clone.setKnown(selected, known);
 
         let solved;
         while (!(solved = clone.getSolved()).isEmpty()) {
           clone.clearSolved();
           solved.forEachErasedPencil((cell: Cell, known: Known) =>
-            BOARD.removeCandidate(clone, cell, known)
+            clone.removeCandidate(cell, known)
           );
         }
 
@@ -194,18 +194,18 @@ const reducer: Reducer = (state: State, action: Action) => {
       return addStep(state, (state: SimpleState) => {
         const { known } = action;
 
-        if (!BOARD.isCandidate(state, selected, known)) {
+        if (!state.isCandidate(selected, known)) {
           return state;
         }
 
         const clone = new SimpleState(state);
-        BOARD.removeCandidate(clone, selected, known);
+        clone.removeCandidate(selected, known);
 
         let solved;
         while (!(solved = clone.getSolved()).isEmpty()) {
           clone.clearSolved();
           solved.forEachErasedPencil((cell: Cell, known: Known) =>
-            BOARD.removeCandidate(clone, cell, known)
+            clone.removeCandidate(cell, known)
           );
         }
 
@@ -231,7 +231,7 @@ const reducer: Reducer = (state: State, action: Action) => {
         while (!(solved = clone.getSolved()).isEmpty()) {
           clone.clearSolved();
           solved.forEachErasedPencil((cell: Cell, known: Known) =>
-            BOARD.removeCandidate(clone, cell, known)
+            clone.removeCandidate(cell, known)
           );
         }
 
