@@ -1,8 +1,8 @@
 import { Known, stringFromKnownSet } from "../models/basics";
-import { BOARD, Cell } from "../models/board";
+import { ReadableBoard } from "../models/board";
+import { GRID, Cell } from "../models/grid";
 import { printGroupCandidates } from "../models/printers";
 import { Move, Strategy } from "../models/solutions";
-import { ReadableState } from "../models/state";
 
 import { difference, union } from "../utils/collections";
 
@@ -26,15 +26,15 @@ const LOG = false;
  *   8 ·········
  *   9 ·········
  */
-export default function solveNakedPairs(state: ReadableState): Move[] {
+export default function solveNakedPairs(board: ReadableBoard): Move[] {
   const moves: Move[] = [];
 
-  for (const [g, groups] of BOARD.groups) {
+  for (const [g, groups] of GRID.groups) {
     for (const [_, group] of groups) {
       const pairs = new Map(
         [...group.cells.values()]
           .map(
-            (cell) => [cell, state.getCandidates(cell)] as [Cell, Set<Known>]
+            (cell) => [cell, board.getCandidates(cell)] as [Cell, Set<Known>]
           )
           .filter(([_, knowns]) => knowns.size === 2)
       );
@@ -60,7 +60,7 @@ export default function solveNakedPairs(state: ReadableState): Move[] {
             .clue(pair, ks1ks2);
 
           for (const k of ks1ks2) {
-            const diff = difference(state.getCandidateCells(group, k), pair);
+            const diff = difference(board.getCandidateCells(group, k), pair);
             if (diff.size) {
               erase.set(k, diff);
               move.mark(diff, k);
@@ -79,7 +79,7 @@ export default function solveNakedPairs(state: ReadableState): Move[] {
             continue;
           }
 
-          LOG && printGroupCandidates(state, group);
+          LOG && printGroupCandidates(board, group);
           LOG &&
             console.info(
               "SOLVE NAKED PAIR",

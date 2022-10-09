@@ -262,7 +262,7 @@ export function isFullyCorrect(test: string, solution: string): boolean {
 }
 
 /**
- * Compare two solved state strings and return the differences as a string.
+ * Compare two solved known strings and return the differences as a string.
  */
 export function solutionDiff(test: string, solution: string): string {
   if (test.length !== solution.length) {

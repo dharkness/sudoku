@@ -1,7 +1,7 @@
 import { Known, stringFromKnownSet, UNKNOWN } from "../models/basics";
-import { BOARD, Cell } from "../models/board";
+import { ReadableBoard, SimpleBoard } from "../models/board";
+import { GRID, Cell } from "../models/grid";
 import { Move, Strategy } from "../models/solutions";
-import { ReadableState, SimpleState } from "../models/state";
 
 import { difference, singleSetValue } from "../utils/collections";
 
@@ -10,10 +10,10 @@ const LOG = false;
 /**
  * Looks for cells with a single candidate to solve.
  */
-export default function solveBruteForce(state: ReadableState): Move[] {
+export default function solveBruteForce(board: ReadableBoard): Move[] {
   const moves: Move[] = [];
-  const unsolved = [...BOARD.cells.values()]
-    .filter((cell) => BOARD.getValue(state, cell) === UNKNOWN)
+  const unsolved = [...GRID.cells.values()]
+    .filter((cell) => board.getValue(cell) === UNKNOWN)
     .sort((a, b) => a.point.k.localeCompare(b.point.k));
 
   if (unsolved.length) {
@@ -23,7 +23,7 @@ export default function solveBruteForce(state: ReadableState): Move[] {
       console.info("SOLVE BRUTE FORCE attempt", Cell.stringFromPoints(cells));
 
     solveNextStep(
-      new SimpleState(state as SimpleState),
+      new SimpleBoard(board as SimpleBoard),
       moves,
       new Move(Strategy.BruteForce),
       cells
@@ -34,12 +34,12 @@ export default function solveBruteForce(state: ReadableState): Move[] {
 }
 
 function solveNextStep(
-  state: SimpleState,
+  board: SimpleBoard,
   moves: Move[],
   move: Move,
   cells: Set<Cell>
 ) {
-  // move and state have been cloned already
+  // move and board have been cloned already
   LOG &&
     console.info(
       "SOLVE BRUTE FORCE step",
@@ -47,7 +47,7 @@ function solveNextStep(
       Cell.stringFromPoints(cells)
     );
 
-  const remaining = solveAllSingletons(state, move, cells);
+  const remaining = solveAllSingletons(board, move, cells);
   if (!remaining) {
     LOG && console.info("SOLVE BRUTE FORCE rewind");
     return;
@@ -59,18 +59,18 @@ function solveNextStep(
     return;
   }
 
-  solveNextUnknown(state, moves, move, remaining);
+  solveNextUnknown(board, moves, move, remaining);
 }
 
 function solveAllSingletons(
-  state: SimpleState,
+  board: SimpleBoard,
   move: Move,
   cells: Set<Cell>
 ): Set<Cell> | null {
   let singletons;
   let remaining = cells;
 
-  while ((singletons = collectSingletons(state, remaining)).size) {
+  while ((singletons = collectSingletons(board, remaining)).size) {
     LOG &&
       console.info(
         "SOLVE BRUTE FORCE singletons",
@@ -78,16 +78,16 @@ function solveAllSingletons(
       );
 
     for (const [cell, known] of singletons) {
-      if (!BOARD.isCandidate(state, cell, known)) {
+      if (!board.isCandidate(cell, known)) {
         return null;
       }
 
       LOG && console.info("SOLVE BRUTE FORCE set", cell.point.k, "=>", known);
 
       move.set(cell, known);
-      BOARD.setKnown(state, cell, known);
+      board.setKnown(cell, known);
 
-      if (!applyMarksAndSets(state, move)) {
+      if (!applyMarksAndSets(board, move)) {
         return null;
       }
     }
@@ -99,14 +99,14 @@ function solveAllSingletons(
 }
 
 function collectSingletons(
-  state: SimpleState,
+  board: SimpleBoard,
   cells: Set<Cell>
 ): Map<Cell, Known> {
   const singletons = new Map<Cell, Known>();
 
   for (const cell of cells) {
-    if (BOARD.getValue(state, cell) === UNKNOWN) {
-      const candidates = BOARD.getCandidates(state, cell);
+    if (board.getValue(cell) === UNKNOWN) {
+      const candidates = board.getCandidates(cell);
 
       if (candidates.size === 1) {
         singletons.set(cell, singleSetValue(candidates));
@@ -118,7 +118,7 @@ function collectSingletons(
 }
 
 function solveNextUnknown(
-  state: SimpleState,
+  board: SimpleBoard,
   moves: Move[],
   move: Move,
   cells: Set<Cell>
@@ -129,7 +129,7 @@ function solveNextUnknown(
     LOG &&
       console.info(
         "SOLVE BRUTE FORCE error",
-        new SimpleState(state),
+        new SimpleBoard(board),
         cell.point.k,
         new Move(move),
         cells
@@ -137,7 +137,7 @@ function solveNextUnknown(
     return;
   }
 
-  const candidates = BOARD.getCandidates(state, cell);
+  const candidates = board.getCandidates(cell);
   if (!candidates.size) {
     LOG && console.info("SOLVE BRUTE FORCE rewind");
     return;
@@ -152,13 +152,13 @@ function solveNextUnknown(
     );
 
   for (const k of candidates) {
-    const tryState = new SimpleState(state);
+    const tryState = new SimpleBoard(board);
     const tryMove = new Move(move);
 
     LOG && console.info("SOLVE BRUTE FORCE", cell.point.k, "try", k);
 
     tryMove.set(cell, k);
-    BOARD.setKnown(tryState, cell, k);
+    tryState.setKnown(cell, k);
 
     if (
       applyMarksAndSets(tryState, tryMove) &&
@@ -181,20 +181,17 @@ function next(cells: Set<Cell>): [Cell, Set<Cell>] {
   return [rest[0]!, new Set(rest.slice(1))];
 }
 
-function applyMarksAndSets(state: SimpleState, move: Move): boolean {
+function applyMarksAndSets(board: SimpleBoard, move: Move): boolean {
   let ok = true;
   let solved;
 
-  while (ok && !(solved = state.getSolved()).isEmpty()) {
-    state.clearSolved();
+  while (ok && !(solved = board.getSolved()).isEmpty()) {
+    board.clearSolved();
 
     // apply automatic marks
     solved.forEachErasedPencil((cell: Cell, known: Known) => {
-      if (
-        BOARD.getValue(state, cell) === UNKNOWN &&
-        BOARD.isCandidate(state, cell, known)
-      ) {
-        BOARD.removeCandidate(state, cell, known);
+      if (board.getValue(cell) === UNKNOWN && board.isCandidate(cell, known)) {
+        board.removeCandidate(cell, known);
       }
     });
 
@@ -204,11 +201,11 @@ function applyMarksAndSets(state: SimpleState, move: Move): boolean {
     //     return;
     //   }
     //
-    //   const value = BOARD.getValue(state, cell);
+    //   const value = BOARD.getValue(board, cell);
     //   if (value === UNKNOWN) {
-    //     if (BOARD.isCandidate(state, cell, known)) {
+    //     if (BOARD.isCandidate(board, cell, known)) {
     //       move.set(cell, known);
-    //       BOARD.setKnown(state, cell, known);
+    //       BOARD.setKnown(board, cell, known);
     //     } else {
     //       ok = false;
     //     }
@@ -218,17 +215,14 @@ function applyMarksAndSets(state: SimpleState, move: Move): boolean {
     // });
   }
 
-  state.clearSolved();
+  board.clearSolved();
 
   return ok;
 }
 
-function areRemainingCellsValid(state: SimpleState, rest: Set<Cell>): boolean {
+function areRemainingCellsValid(board: SimpleBoard, rest: Set<Cell>): boolean {
   for (const c of rest) {
-    if (
-      BOARD.getValue(state, c) === UNKNOWN &&
-      !BOARD.getCandidates(state, c).size
-    ) {
+    if (board.getValue(c) === UNKNOWN && !board.getCandidates(c).size) {
       return false;
     }
   }

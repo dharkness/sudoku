@@ -1,5 +1,5 @@
 import { ALL_COORDS, getPoint } from "../../models/basics";
-import { BOARD } from "../../models/board";
+import { GRID } from "../../models/grid";
 import { EMPTY_DECORATION } from "../../models/solutions";
 
 import { PuzzleActions } from "./usePlayPuzzleActions";
@@ -26,7 +26,7 @@ const PuzzlePanel = ({ actions, size }: PuzzlePanelProps): JSX.Element => {
               }`}
             >
               {ALL_COORDS.map((c) => {
-                const cell = BOARD.getCell(getPoint(r, c));
+                const cell = GRID.getCell(getPoint(r, c));
 
                 return (
                   <SelectableCell

@@ -1,8 +1,8 @@
 import { ALL_KNOWNS, Known, stringFromKnownSet } from "../models/basics";
-import { BOARD, Cell } from "../models/board";
+import { ReadableBoard } from "../models/board";
+import { GRID, Cell } from "../models/grid";
 import { printGroupCandidates } from "../models/printers";
 import { Move, Strategy } from "../models/solutions";
-import { ReadableState } from "../models/state";
 
 import { difference, union } from "../utils/collections";
 
@@ -30,14 +30,14 @@ const LOG = false;
  *     |  remove 2 and 6 from cell 4
  *     remove 6 from cell 1
  */
-export default function solveHiddenTriples(state: ReadableState): Move[] {
+export default function solveHiddenTriples(board: ReadableBoard): Move[] {
   const moves: Move[] = [];
 
-  for (const [_, groups] of BOARD.groups) {
+  for (const [_, groups] of GRID.groups) {
     for (const [_, group] of groups) {
       const triples = new Map(
         ALL_KNOWNS.map(
-          (k) => [k, state.getCandidateCells(group, k)] as [Known, Set<Cell>]
+          (k) => [k, board.getCandidateCells(group, k)] as [Known, Set<Cell>]
         ).filter(([_, cells]) => 2 <= cells.size && cells.size <= 3)
       );
       if (triples.size < 3) {
@@ -78,7 +78,7 @@ export default function solveHiddenTriples(state: ReadableState): Move[] {
               .clue(cs1cs2cs3, triple);
 
             for (const cell of cs1cs2cs3) {
-              const diff = difference(state.getCandidates(cell), triple);
+              const diff = difference(board.getCandidates(cell), triple);
               if (diff.size) {
                 erase.set(cell, diff);
                 move.mark(cell, diff);
@@ -96,7 +96,7 @@ export default function solveHiddenTriples(state: ReadableState): Move[] {
               continue;
             }
 
-            LOG && printGroupCandidates(state, group);
+            LOG && printGroupCandidates(board, group);
             LOG &&
               console.info(
                 "SOLVE HIDDEN TRIPLE",

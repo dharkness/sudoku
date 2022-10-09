@@ -1,8 +1,8 @@
 import { ALL_KNOWNS, Known, stringFromKnownSet } from "../models/basics";
-import { BOARD, Cell } from "../models/board";
+import { ReadableBoard } from "../models/board";
+import { GRID, Cell } from "../models/grid";
 import { printGroupCandidates } from "../models/printers";
 import { Move, Strategy } from "../models/solutions";
-import { ReadableState } from "../models/state";
 
 import { difference, union } from "../utils/collections";
 
@@ -29,14 +29,14 @@ const LOG = false;
  *      |   remove 5, 8, 9 from cell 6
  *      remove 8 from cell 2
  */
-export default function solveHiddenPairs(state: ReadableState): Move[] {
+export default function solveHiddenPairs(board: ReadableBoard): Move[] {
   const moves: Move[] = [];
 
-  for (const [_, groups] of BOARD.groups) {
+  for (const [_, groups] of GRID.groups) {
     for (const [_, group] of groups) {
       const pairs = new Map(
         ALL_KNOWNS.map(
-          (k) => [k, state.getCandidateCells(group, k)] as [Known, Set<Cell>]
+          (k) => [k, board.getCandidateCells(group, k)] as [Known, Set<Cell>]
         ).filter(([_, cells]) => cells.size === 2)
       );
       if (pairs.size < 2) {
@@ -61,7 +61,7 @@ export default function solveHiddenPairs(state: ReadableState): Move[] {
             .clue(cs1cs2, pair);
 
           for (const cell of cs1cs2) {
-            const diff = difference(state.getCandidates(cell), pair);
+            const diff = difference(board.getCandidates(cell), pair);
             if (diff.size) {
               erase.set(cell, diff);
               move.mark(cell, diff);
@@ -79,7 +79,7 @@ export default function solveHiddenPairs(state: ReadableState): Move[] {
             continue;
           }
 
-          LOG && printGroupCandidates(state, group);
+          LOG && printGroupCandidates(board, group);
           LOG &&
             console.info(
               "SOLVE HIDDEN PAIR",

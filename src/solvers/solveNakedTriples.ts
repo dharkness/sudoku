@@ -1,8 +1,8 @@
 import { Known, stringFromKnownSet } from "../models/basics";
-import { BOARD, Cell } from "../models/board";
+import { ReadableBoard } from "../models/board";
+import { GRID, Cell } from "../models/grid";
 import { printGroupCandidates } from "../models/printers";
 import { Move, Strategy } from "../models/solutions";
-import { ReadableState } from "../models/state";
 
 import { difference, union } from "../utils/collections";
 
@@ -26,15 +26,15 @@ const LOG = false;
  *   8 ···8·····
  * → 9 ·········
  */
-export default function solveNakedTriples(state: ReadableState): Move[] {
+export default function solveNakedTriples(board: ReadableBoard): Move[] {
   const moves: Move[] = [];
 
-  for (const [g, groups] of BOARD.groups) {
+  for (const [g, groups] of GRID.groups) {
     for (const [_, group] of groups) {
       const triples = new Map(
         [...group.cells.values()]
           .map(
-            (cell) => [cell, state.getCandidates(cell)] as [Cell, Set<Known>]
+            (cell) => [cell, board.getCandidates(cell)] as [Cell, Set<Known>]
           )
           .filter(([_, knowns]) => 2 <= knowns.size && knowns.size <= 3)
       );
@@ -77,7 +77,7 @@ export default function solveNakedTriples(state: ReadableState): Move[] {
 
             for (const k of ks1ks2ks3) {
               const diff = difference(
-                state.getCandidateCells(group, k),
+                board.getCandidateCells(group, k),
                 triple
               );
               if (diff.size) {
@@ -98,7 +98,7 @@ export default function solveNakedTriples(state: ReadableState): Move[] {
               continue;
             }
 
-            LOG && printGroupCandidates(state, group);
+            LOG && printGroupCandidates(board, group);
             LOG &&
               console.info(
                 "SOLVE NAKED TRIPLE",

@@ -1,6 +1,6 @@
 import { ALL_KNOWNS } from "../models/basics";
-import { BOARD, Cell } from "../models/board";
-import { ReadableState } from "../models/state";
+import { ReadableBoard } from "../models/board";
+import { GRID, Cell } from "../models/grid";
 import { MarkColor, Move, Strategy } from "../models/solutions";
 
 import { difference, intersect, twoSetValues } from "../utils/collections";
@@ -28,7 +28,7 @@ const LOG = false;
  * "..7.836.. .397.68.. 826419753 64.19.387 .8.367... .73.48.6. 39.87..26 7649..138 2.863.97."
  * "32.5479.6 ..6213.5. .4569823. 5..472... ..79.1.25 ..28.57.. 214359678 673184592 .5.726143"
  */
-export default function solveSinglesChains(state: ReadableState): Move[] {
+export default function solveSinglesChains(board: ReadableBoard): Move[] {
   const moves: Move[] = [];
 
   for (const k of ALL_KNOWNS) {
@@ -38,18 +38,18 @@ export default function solveSinglesChains(state: ReadableState): Move[] {
     const nodes = new Set<Cell>();
     const edges = new Map<Cell, Set<Cell>>();
 
-    for (const [_, groups] of BOARD.groups) {
+    for (const [_, groups] of GRID.groups) {
       for (const [_, group] of groups) {
-        const cells = state.getCandidateCells(group, k);
+        const cells = board.getCandidateCells(group, k);
 
         if (cells.size === 2) {
           const [first, second] = twoSetValues(cells);
           nodes.add(first);
-          if (state.getCandidates(first).size > 1) {
+          if (board.getCandidates(first).size > 1) {
             candidates.add(first);
           }
           nodes.add(second);
-          if (state.getCandidates(second).size > 1) {
+          if (board.getCandidates(second).size > 1) {
             candidates.add(second);
           }
 
@@ -81,7 +81,7 @@ export default function solveSinglesChains(state: ReadableState): Move[] {
             );
 
           for (const c of cells) {
-            if (state.getCandidates(c).size > 1) {
+            if (board.getCandidates(c).size > 1) {
               candidates.add(c);
             }
           }

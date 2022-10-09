@@ -1,5 +1,5 @@
 import { Move } from "../models/solutions";
-import { ReadableState } from "../models/state";
+import { ReadableBoard } from "../models/board";
 
 import nakedSingles from "./solveNakedSingles";
 import hiddenSingles from "./solveHiddenSingles";
@@ -13,7 +13,7 @@ import singlesChains from "./solveSinglesChains";
 import emptyRectangles from "./solveEmptyRectangles";
 import bruteForce from "./solveBruteForce";
 
-type Solver = (state: ReadableState) => Move[];
+type Solver = (board: ReadableBoard) => Move[];
 
 export default {
   nakedSingles,

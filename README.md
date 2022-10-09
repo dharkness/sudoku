@@ -19,39 +19,44 @@ but feel free to explore and scavenge any code you find useful.
 
 ## Terminology
 
-- The `Board` determines the physical structure and layout.
+- The `Grid` determines the physical structure and layout.
 
   - It consists of a nine-by-nine grid of eighty-one `Cell`s,
     each identified by a unique `Point` on the grid.
 
   - The cells are grouped into twenty-seven `Group`s:
-    nine `Row`s from top-to-bottom, nine `Column`s from left-to-right,
-    and nine three-by-three square `Block`s from top-to-bottom
-    then left-to-right.
+    - nine `Row`s from top-to-bottom,
+    - nine `Column`s from left-to-right, and
+    - nine three-by-three square `Block`s.
 
-  - The `neighbors` of a cell are all other cells in the same
+  - The `neighbors` of each cell consist of every cell in the same
     row, column or block.
 
   - Where a row or column intersects a block, they form an `Intersection`
     with an `Intersect` containing the cells in common and two `Disjoint`s
     containing the cells in one group but not the other.
 
-- A `Puzzle` holds the complete solution of all eighty-one cells
-  along with the subset of starting values given to the player.
+- A `Puzzle` holds the complete `solution` of all eighty-one cells
+  along with the subset of `given` values that the player uses
+  to solve the puzzle.
 
-- The `State` tracks the candidate and solved values of a puzzle in play.
+- A `Board` tracks the candidate and solved values of a puzzle in play.
 
   - Each `Cell` holds a single `Value`: either `Unknown` (empty) or `Known`.
 
-  - Some values are `given` at the start to form the unique puzzle.
-
-  - While a cell is unsolved, it tracks the set of `candidates`, all values
+  - While a cell is unsolved, it tracks the set of `candidate`s, all values
     that the cell could take as a solution given the values of its neighbors.
     They are often called _pencil marks_ since players typically mark up the
     paper with a pencil while solving a physical puzzle.
 
   - When a cell is solved, its value is removed from the set of candidates
     for each of its neighbors.
+
+- A `Solver` is an algorithm applied to the board to find cells that can
+  be solved or marks that can be removed.
+
+  - The solver packages the `clue`s that allowed the determination 
+    and the changes to apply (`set`s and `mark`s) into a `Move`.
 
 
 ## Next Steps
@@ -69,11 +74,6 @@ but feel free to explore and scavenge any code you find useful.
       - cells: Map<Coord, Cell>
       - indexes: BitSet or CoordSet or 0b000000000 to 0b111111111
     - KnownSet for cell/group/container candidates
-  - refactor
-    - rename State (solved cells and candidates) to Board, Positions
-    - rename Board (if State becomes Board) to Sudoku, Layout, Game, Grid
-      - Grid for the structure and Board for the state are a good combo
-      - remove state-access methods from Grid; use it only to access structural items
 
 - Play
   - UI

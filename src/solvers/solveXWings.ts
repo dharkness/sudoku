@@ -1,7 +1,7 @@
 import { ALL_KNOWNS, Coord, Grouping } from "../models/basics";
-import { BOARD, Cell, Group } from "../models/board";
+import { ReadableBoard } from "../models/board";
+import { GRID, Cell, Group } from "../models/grid";
 import { Move, Strategy } from "../models/solutions";
-import { ReadableState } from "../models/state";
 
 import { difference } from "../utils/collections";
 
@@ -27,18 +27,18 @@ const LOG = false;
  *
  * "1.....569 492.561.8 .561.924. ..964.8.1 .64.1.... 218.356.4 .4.5...16 9.5.614.2 621.....5"
  */
-export default function solveXWings(state: ReadableState): Move[] {
+export default function solveXWings(board: ReadableBoard): Move[] {
   const moves: Move[] = [];
 
   const iterations = [
-    [Grouping.ROW, BOARD.rows, Grouping.COLUMN, BOARD.columns],
-    [Grouping.COLUMN, BOARD.columns, Grouping.ROW, BOARD.rows],
+    [Grouping.ROW, GRID.rows, Grouping.COLUMN, GRID.columns],
+    [Grouping.COLUMN, GRID.columns, Grouping.ROW, GRID.rows],
   ] as [Grouping, Map<Coord, Group>, Grouping, Map<Coord, Group>][];
 
   for (const [g1, groups1, g2, groups2] of iterations) {
     for (const k of ALL_KNOWNS) {
       for (const [i1, group1] of groups1) {
-        const cells1 = state.getCandidateCells(group1, k);
+        const cells1 = board.getCandidateCells(group1, k);
         if (cells1.size !== 2) {
           continue;
         }
@@ -48,7 +48,7 @@ export default function solveXWings(state: ReadableState): Move[] {
             continue;
           }
 
-          const cells2 = state.getCandidateCells(group2, k);
+          const cells2 = board.getCandidateCells(group2, k);
           if (cells2.size !== 2) {
             continue;
           }
@@ -74,7 +74,7 @@ export default function solveXWings(state: ReadableState): Move[] {
             groups2.get(cell12!.point.i[g1])!,
           ]) {
             const diff = difference(
-              state.getCandidateCells(otherGroup, k),
+              board.getCandidateCells(otherGroup, k),
               xwing
             );
             if (diff.size) {

@@ -1,6 +1,6 @@
 import { ALL_KNOWNS } from "../models/basics";
-import { BOARD, Cell, Column, Group, Row } from "../models/board";
-import { ReadableState } from "../models/state";
+import { ReadableBoard } from "../models/board";
+import { GRID, Cell, Column, Group, Row } from "../models/grid";
 import { Move, Strategy } from "../models/solutions";
 
 import { difference, intersect, singleSetValue } from "../utils/collections";
@@ -35,15 +35,15 @@ const LOG = false;
  * Dual:
  * "58.179..3 ...6.8975 69735.... 9..53.728 7.381.5.. 85.9.713. 469281357 ..8765... .75493..."
  */
-export default function solveEmptyRectangles(state: ReadableState): Move[] {
+export default function solveEmptyRectangles(board: ReadableBoard): Move[] {
   const moves: Move[] = [];
 
   // for each known
   for (const k of ALL_KNOWNS) {
     LOG && console.info("[empty-rectangle] START", k);
 
-    for (const [_, block] of BOARD.blocks) {
-      const cells = state.getCandidateCells(block, k);
+    for (const [_, block] of GRID.blocks) {
+      const cells = board.getCandidateCells(block, k);
       const count = cells.size;
       if (count < 3) {
         // ignore degenerate singles chain
@@ -102,14 +102,14 @@ export default function solveEmptyRectangles(state: ReadableState): Move[] {
         [true, row, column],
         [false, column, row],
       ] as [boolean, Group, Group][]) {
-        const starts = difference(state.getCandidateCells(from, k), cells);
+        const starts = difference(board.getCandidateCells(from, k), cells);
 
         for (const start of starts) {
           if (checked.has(start)) {
             continue;
           }
 
-          const pair = state.getCandidateCells(
+          const pair = board.getCandidateCells(
             isRow ? start.column : start.row,
             k
           );
@@ -135,13 +135,13 @@ export default function solveEmptyRectangles(state: ReadableState): Move[] {
               end.point.k
             );
 
-          const candidates = state.getCandidateCells(
+          const candidates = board.getCandidateCells(
             isRow ? end.row : end.column,
             k
           );
           const candidate = intersect(
             candidates,
-            state.getCandidateCells(to, k)
+            board.getCandidateCells(to, k)
           );
           if (candidate.size !== 1) {
             continue;

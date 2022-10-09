@@ -1,7 +1,7 @@
 import clsx from "clsx";
 
 import { Value, Known, UNKNOWN } from "../../models/basics";
-import { Cell } from "../../models/board";
+import { Cell } from "../../models/grid";
 import { Decoration } from "../../models/solutions";
 
 import CellCandidates from "./CellCandidates";

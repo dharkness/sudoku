@@ -1,576 +1,421 @@
+// noinspection JSUnusedLocalSymbols
+
 import {
-  ALL_COORDS,
-  ALL_POINTS,
-  coord,
-  Coord,
-  getPoint,
-  Grouping,
+  ALL_KNOWNS,
   Known,
-  Point,
+  stringFromKnownSet,
   UNKNOWN,
   Value,
 } from "./basics";
-import { ReadableState, WritableState } from "./state";
+import { GRID, Cell, Container } from "./grid";
+import { Solutions } from "./solutions";
 
-import { difference, intersect } from "../utils/collections";
+import {
+  deepCloneMap,
+  deepCloneMapOfSets,
+  singleSetValue,
+} from "../utils/collections";
 
-const MISSING = "·";
+const LOG = false;
 
-/**
- * Implemented by all trackers that manipulate their own state.
- */
-interface Stateful {
-  addEmptyState(state: WritableState): void;
+export interface ReadableBoard {
+  solvedCount(): number;
+  isSolved(cell?: Cell): boolean;
+  getValue(cell: Cell): Value;
+
+  getCandidateCount(cell: Cell): number;
+  isCandidate(cell: Cell, known: Known): boolean;
+  getCandidates(cell: Cell): Set<Known>;
+
+  getCandidateCells(container: Container, known: Known): Set<Cell>;
+  getCandidateCellsByKnown(container: Container): Map<Known, Set<Cell>>;
 }
 
-// ---------- CELLS ------------------------------------------------------------------------------------------
+export interface WritableBoard extends ReadableBoard {
+  addCell(cell: Cell): void;
+  addContainer(container: Container): void;
 
-/**
- * Defines a single cell within the board.
- *
- * When it has one remaining candidate, it adds it as the solution for itself.
- * When it is set to a known value, it notifies its containing groups and all neighbors.
- */
-export class Cell implements Stateful {
-  readonly point: Point;
-  readonly row: Row;
-  readonly column: Column;
-  readonly block: Block;
+  setKnown(cell: Cell, known: Known): boolean;
+  removeCandidate(
+    cell: Cell,
+    known: Known,
+    triggerLastCandidate?: boolean
+  ): boolean;
+  clearCandidateCells(container: Container, known: Known): Set<Cell>;
 
-  /**
-   * All cells in this cell's row, column and block, excluding this cell.
-   */
-  readonly neighbors = new Set<Cell>();
-  /**
-   * For each cell except this one, all cells seen by both it and this cell,
-   * i.e. the neighbors they have in common.
-   */
-  readonly commonNeighbors = new Map<Cell, Set<Cell>>();
+  // FACTOR Move safety checks to Solutions
+  getSolved(): Solutions;
+  addSolvedKnown(cell: Cell, known: Known): void;
+  removeSolvedKnown(cell: Cell): void;
+  addErasedPencil(cell: Cell, known: Known): void;
+  removeErasedPencil(cell: Cell, known: Known): void;
+  clearSolved(): void;
+}
 
-  constructor(point: Point, row: Row, column: Column, block: Block) {
-    this.point = point;
-    this.row = row;
-    this.column = column;
-    this.block = block;
+export class SimpleBoard implements WritableBoard {
+  public readonly step: number;
+
+  private readonly values: Map<Cell, Value>;
+  private readonly candidates: Map<Cell, Set<Known>>;
+
+  private readonly containers: Map<Cell, Set<Container>>;
+  private readonly candidateContainers: Map<Cell, Map<Known, Set<Container>>>;
+
+  private readonly candidateCells: Map<Container, Map<Known, Set<Cell>>>;
+
+  private solutions: Solutions;
+
+  constructor(clone?: SimpleBoard) {
+    if (clone) {
+      this.step = clone.step + 1;
+      this.values = new Map(clone.values);
+      this.candidates = deepCloneMapOfSets(clone.candidates);
+      this.containers = deepCloneMapOfSets(clone.containers);
+      this.candidateContainers = deepCloneMap(
+        clone.candidateContainers,
+        deepCloneMapOfSets
+      );
+      this.candidateCells = deepCloneMap(
+        clone.candidateCells,
+        deepCloneMapOfSets
+      );
+      this.solutions = new Solutions();
+    } else {
+      this.step = 1;
+      this.values = new Map<Cell, Value>();
+      this.candidates = new Map<Cell, Set<Known>>();
+      this.containers = new Map<Cell, Set<Container>>();
+      this.candidateContainers = new Map<Cell, Map<Known, Set<Container>>>();
+      this.candidateCells = new Map<Container, Map<Known, Set<Cell>>>();
+      this.solutions = new Solutions();
+    }
   }
 
-  fillNeighbors() {
-    for (const group of [this.block, this.row, this.column]) {
-      for (const c of group.cells) {
-        if (c !== this) {
-          this.neighbors.add(c);
+  addCell(cell: Cell): void {
+    this.values.set(cell, UNKNOWN);
+    this.candidates.set(cell, new Set(ALL_KNOWNS));
+    this.containers.set(cell, new Set());
+    this.candidateContainers.set(
+      cell,
+      new Map(ALL_KNOWNS.map((k) => [k, new Set()]))
+    );
+  }
+
+  addContainer(container: Container): void {
+    for (const c of container.cells) {
+      this.containers.get(c)!.add(container);
+      for (const k of ALL_KNOWNS) {
+        this.candidateContainers.get(c)!.get(k)!.add(container);
+      }
+    }
+    this.candidateCells.set(
+      container,
+      new Map(ALL_KNOWNS.map((k) => [k, new Set(container.cells)]))
+    );
+  }
+
+  // ========== CELL VALUES ========================================
+
+  solvedCount(): number {
+    let count = 0;
+    for (const [_, v] of this.values) {
+      if (v !== UNKNOWN) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  isSolved(cell?: Cell): boolean {
+    if (cell) {
+      return this.values.get(cell) !== UNKNOWN;
+    } else {
+      for (const [_, v] of this.values) {
+        if (v === UNKNOWN) {
+          return false;
         }
       }
+      return true;
     }
   }
 
-  fillCommonNeighbors(cells: Iterable<Cell>) {
-    for (const c of cells) {
-      if (c === this) {
-        this.commonNeighbors.set(c, new Set());
-      } else {
-        this.commonNeighbors.set(
-          c,
-          c.commonNeighbors.get(this) || intersect(this.neighbors, c.neighbors)
-        );
-      }
+  getValue(cell: Cell): Value {
+    return this.values.get(cell)!;
+  }
+
+  setKnown(cell: Cell, known: Known): boolean {
+    const current = this.getValue(cell);
+    if (current === known) {
+      return false;
     }
-  }
-
-  addEmptyState(state: WritableState): void {
-    state.addCell(this);
-  }
-
-  toString() {
-    return `Cell ${this.point.k}`;
-  }
-
-  static stringFromPoints(cells?: Set<Cell>, sort = true): string {
-    if (!cells?.size) {
-      return "∅";
+    if (current !== UNKNOWN) {
+      throw new ChangeCellValueError(cell, current, known);
     }
 
-    const points = [...cells].map((cell) => cell.point.k);
-
-    return (
-      "( " +
-      (sort ? points.sort((a, b) => a.localeCompare(b)) : points).join(" ") +
-      " )"
-    );
-  }
-
-  static stringFromGroupCoords(g: Grouping, cells: Set<Cell>): string {
-    const coords = new Set<Coord>(
-      Array.from(cells.values()).map((c) => c.point.i[g])
-    );
-    return ALL_COORDS.map((c) =>
-      coords.has(c) ? (c + 1).toString() : MISSING
-    ).join("");
-  }
-}
-
-/**
- * Generic container of cells within the board.
- */
-export abstract class Container implements Stateful {
-  readonly name: string;
-  readonly cells: Set<Cell>;
-
-  protected constructor(name: string, cells?: Set<Cell>) {
-    this.name = name;
-    this.cells = cells ?? new Set<Cell>();
-  }
-
-  addCell(cell: Cell) {
-    this.cells.add(cell);
-  }
-
-  addEmptyState(state: WritableState): void {
-    state.addContainer(this);
-  }
-
-  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
-    // override to perform actions
-  }
-
-  toString(): string {
-    return `${this.name} ${Cell.stringFromPoints(this.cells)}`;
-  }
-
-  onOneCellLeft(state: WritableState, known: Known, cell: Cell): void {
-    // override if necessary
-  }
-
-  onNoCellsLeft(state: WritableState, known: Known): void {
-    // override if necessary
-  }
-}
-
-// ---------- GROUPS ------------------------------------------------------------------------------------------
-
-/**
- * Base class for rows, columns, and blocks.
- */
-export abstract class Group extends Container {
-  readonly grouping: Grouping;
-  readonly coord: Coord;
-
-  // top, right, bottom, left
-  readonly borders = new Map<Cell, [boolean, boolean, boolean, boolean]>();
-
-  protected constructor(grouping: Grouping, coord: Coord) {
-    super(`${Grouping[grouping]} ${coord + 1}`);
-    this.grouping = grouping;
-    this.coord = coord;
-  }
-
-  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
-    const candidateCells = state.clearCandidateCells(this, known);
-    for (const candidate of candidateCells) {
-      if (candidate !== cell) {
-        // Naked/Hidden Singles
-        state.addErasedPencil(candidate, known);
-      }
+    const candidates = this.getCandidates(cell);
+    if (!candidates.has(known)) {
+      throw new NotCandidateError(cell, known, candidates);
     }
-  }
 
-  onOneCellLeft(state: WritableState, known: Known, cell: Cell): void {
-    // Hidden Singles
-    state.addSolvedKnown(cell, known);
-  }
-}
-
-/**
- * Defines a single row within the board.
- */
-export class Row extends Group {
-  constructor(coord: Coord) {
-    super(Grouping.ROW, coord);
-  }
-
-  addCell(cell: Cell) {
-    super.addCell(cell);
-
-    const i = cell.point.i[this.grouping];
-    this.borders.set(cell, [true, i === 8, true, i === 0]);
-  }
-}
-
-/**
- * Defines a single column within the board.
- */
-export class Column extends Group {
-  constructor(coord: Coord) {
-    super(Grouping.COLUMN, coord);
-  }
-
-  addCell(cell: Cell) {
-    super.addCell(cell);
-
-    const i = cell.point.i[this.grouping];
-    this.borders.set(cell, [i === 0, true, i === 8, true]);
-  }
-}
-
-/**
- * Defines a single block within the board.
- */
-export class Block extends Group {
-  constructor(coord: Coord) {
-    super(Grouping.BLOCK, coord);
-  }
-
-  addCell(cell: Cell) {
-    super.addCell(cell);
-
-    const i = cell.point.i[this.grouping];
-    this.borders.set(cell, [i < 3, i % 3 === 2, i > 5, i % 3 === 0]);
-  }
-}
-
-// ---------- INTERSECTIONS ------------------------------------------------------------------------------------------
-
-/**
- * Models the intersection between a block and a row or column
- * and the subsets of points not in the block, called disjoints.
- *
- * When either disjoint loses the last cell for a candidate,
- * that known is removed as a candidate from the other disjoint's cells
- * since it must appear in the intersection.
- *
- * - When the candidate is removed from the column/row disjoint,
- *   the candidate cells in the block are called a Pointing Pair/Triple.
- * - When the candidate is removed from the block disjoint, it is called
- *   a Box Line Reduction.
- *
- * When this happens, or a known is set anywhere in the union,
- * all of its containers are removed from the state.
- *
- * It does not cause any knowns to be solved by itself.
- */
-export class Intersection {
-  readonly block: Block;
-  readonly group: Group;
-
-  readonly intersection: Container;
-  readonly blockDisjoint: Container;
-  readonly groupDisjoint: Container;
-
-  constructor(block: Block, group: Group) {
-    this.block = block;
-    this.group = group;
-
-    const intersection = intersect(block.cells, group.cells);
-    this.intersection = new Intersect(
-      this,
-      `Intersection ( ${this.block.name}, ${this.group.name} )`,
-      intersection
-    );
-    this.blockDisjoint = new Disjoint(
-      this,
-      `Block Disjoint ( ${this.block.name}, ${this.group.name} )`,
-      difference(block.cells, intersection)
-    );
-    this.groupDisjoint = new Disjoint(
-      this,
-      `Group Disjoint ( ${this.block.name}, ${this.group.name} )`,
-      difference(group.cells, intersection)
-    );
-  }
-
-  addEmptyState(state: WritableState): void {
-    this.intersection.addEmptyState(state);
-    this.blockDisjoint.addEmptyState(state);
-    this.groupDisjoint.addEmptyState(state);
-  }
-
-  removeCandidateFromOtherDisjoint(
-    state: WritableState,
-    known: Known,
-    disjoint: Disjoint
-  ): void {
-    const candidates = state.getCandidateCells(
-      disjoint === this.blockDisjoint ? this.groupDisjoint : this.blockDisjoint,
-      known
-    );
-
-    if (candidates.size) {
-      for (const cell of candidates) {
-        state.addErasedPencil(cell, known);
-      }
-    } else {
-      // both disjoints are empty; stop tracking the intersection entirely
-      this.clearCandidateCells(state, known);
-    }
-  }
-
-  clearCandidateCells(state: WritableState, known: Known): void {
-    state.clearCandidateCells(this.intersection, known);
-    state.clearCandidateCells(this.blockDisjoint, known);
-    state.clearCandidateCells(this.groupDisjoint, known);
-  }
-}
-
-/**
- * Tracks the cells in common between a block and a row or column.
- */
-class Intersect extends Container {
-  private readonly parent: Intersection;
-
-  constructor(parent: Intersection, name: string, cells: Set<Cell>) {
-    super(name, cells);
-    this.parent = parent;
-  }
-
-  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
-    this.parent.clearCandidateCells(state, known);
-  }
-
-  onNoCellsLeft(state: WritableState, known: Known): void {
-    this.parent.clearCandidateCells(state, known);
-  }
-}
-
-/**
- * Tracks the cells not in common between a block and a row or column.
- */
-class Disjoint extends Container {
-  private readonly parent: Intersection;
-
-  constructor(parent: Intersection, name: string, cells: Set<Cell>) {
-    super(name, cells);
-    this.parent = parent;
-  }
-
-  onSetKnown(state: WritableState, cell: Cell, known: Known): void {
-    this.parent.clearCandidateCells(state, known);
-  }
-
-  onNoCellsLeft(state: WritableState, known: Known): void {
-    this.parent.removeCandidateFromOtherDisjoint(state, known, this);
-  }
-}
-
-// ---------- BOARD ------------------------------------------------------------------------------------------
-
-/**
- * Manages the various structures that make up the board.
- */
-class Board {
-  readonly cells = new Map<Point, Cell>();
-
-  readonly rows = new Map<Coord, Row>();
-  readonly columns = new Map<Coord, Column>();
-  readonly blocks = new Map<Coord, Block>();
-  readonly groups = new Map<Grouping, Map<Coord, Group>>([
-    [Grouping.ROW, this.rows],
-    [Grouping.COLUMN, this.columns],
-    [Grouping.BLOCK, this.blocks],
-  ]);
-
-  readonly intersections = new Set<Intersection>();
-
-  private readonly statefuls = new Set<Stateful>();
-
-  constructor() {
-    this.createGroups();
-    this.createCells();
-    this.createIntersections();
-  }
-
-  private createGroups() {
-    for (const c of ALL_COORDS) {
-      const row = new Row(c);
-      this.rows.set(c, row);
-      this.statefuls.add(row);
-
-      const column = new Column(c);
-      this.columns.set(c, column);
-      this.statefuls.add(column);
-
-      const block = new Block(c);
-      this.blocks.set(c, block);
-      this.statefuls.add(block);
-    }
-  }
-
-  private createCells() {
-    const cells = new Set<Cell>();
-
-    for (const p of ALL_POINTS) {
-      const cell = new Cell(
-        p,
-        this.rows.get(p.r)!,
-        this.columns.get(p.c)!,
-        this.blocks.get(p.b)!
+    const remaining = new Set(candidates);
+    remaining.delete(known);
+    LOG &&
+      console.info(
+        "STATE set",
+        cell.toString(),
+        "=>",
+        known,
+        "==>",
+        stringFromKnownSet(remaining)
       );
-      cells.add(cell);
-      this.cells.set(p, cell);
+    this.values.set(cell, known);
+    this.candidates.set(cell, remaining);
 
-      this.rows.get(p.r)!.addCell(cell);
-      this.columns.get(p.c)!.addCell(cell);
-      this.blocks.get(p.b)!.addCell(cell);
-
-      this.statefuls.add(cell);
+    // for every container of this cell
+    //   remove candidate from cell
+    //   collect candidate cells into set to remove as candidate, i.e. neighbors
+    //     Groups return cells; Intersections return none
+    const containers = [...this.candidateContainers.get(cell)!.get(known)!];
+    for (const container of containers) {
+      container.onSetKnown(this, cell, known);
     }
 
-    for (const c of cells) {
-      c.fillNeighbors();
+    // for every remaining known in cell
+    //   remove candidates
+    for (const k of [...remaining]) {
+      this.removeCandidate(cell, k, false);
     }
 
-    for (const c of cells) {
-      c.fillCommonNeighbors(cells);
-    }
+    return true;
   }
 
-  private createIntersections() {
-    for (const [_, block] of this.blocks) {
-      this.intersections.add(
-        new Intersection(
-          block,
-          this.rows.get(coord(3 * Math.floor(block.coord / 3), "row"))!
-        )
-      );
-      this.intersections.add(
-        new Intersection(
-          block,
-          this.rows.get(coord(3 * Math.floor(block.coord / 3) + 1, "row"))!
-        )
-      );
-      this.intersections.add(
-        new Intersection(
-          block,
-          this.rows.get(coord(3 * Math.floor(block.coord / 3) + 2, "row"))!
-        )
-      );
+  // ========== CANDIDATES ========================================
 
-      this.intersections.add(
-        new Intersection(
-          block,
-          this.columns.get(coord(3 * (block.coord % 3), "column"))!
-        )
-      );
-      this.intersections.add(
-        new Intersection(
-          block,
-          this.columns.get(coord(3 * (block.coord % 3) + 1, "column"))!
-        )
-      );
-      this.intersections.add(
-        new Intersection(
-          block,
-          this.columns.get(coord(3 * (block.coord % 3) + 2, "column"))!
-        )
-      );
-    }
+  getCandidateCount(cell: Cell): number {
+    return this.candidates.get(cell)!.size;
   }
 
-  setupEmptyState(state: WritableState): void {
-    for (const [_, cell] of this.cells) {
-      cell.addEmptyState(state);
-    }
-    [this.rows, this.columns, this.blocks].forEach((groups) =>
-      groups.forEach((group) => group.addEmptyState(state))
-    );
-    for (const intersection of this.intersections) {
-      intersection.addEmptyState(state);
-    }
+  isCandidate(cell: Cell, known: Known): boolean {
+    return this.candidates.get(cell)!.has(known);
   }
 
-  getCell(pointOrCell: Point | Cell): Cell {
-    return pointOrCell instanceof Cell
-      ? pointOrCell
-      : this.cells.get(pointOrCell)!;
-  }
-
-  isCandidate(
-    state: ReadableState,
-    pointOrCell: Point | Cell,
-    known: Known
-  ): boolean {
-    return state.isCandidate(this.getCell(pointOrCell), known);
-  }
-
-  getCandidates(state: ReadableState, pointOrCell: Point | Cell): Set<Known> {
-    return state.getCandidates(this.getCell(pointOrCell));
+  getCandidates(cell: Cell): Set<Known> {
+    return this.candidates.get(cell)!;
   }
 
   removeCandidate(
-    state: WritableState,
-    pointOrCell: Point | Cell,
-    known: Known
+    cell: Cell,
+    known: Known,
+    triggerLastCandidate: boolean = true
   ): boolean {
-    return state.removeCandidate(this.getCell(pointOrCell), known);
-  }
+    const candidates = this.getCandidates(cell);
+    if (!candidates.has(known)) {
+      LOG &&
+        console.warn(
+          "STATE erase",
+          known,
+          "from",
+          cell.toString(),
+          "not in",
+          stringFromKnownSet(candidates)
+        );
+      return false;
+    }
+    // if (candidates.size === 1 && !this.isSolved(cell)) {
+    //   throw new RemoveLastCandidateError(cell, known);
+    // }
 
-  getValue(state: ReadableState, pointOrCell: Point | Cell): Value {
-    return state.getValue(this.getCell(pointOrCell));
-  }
+    // remove candidate from cell
+    const remaining = new Set(candidates);
+    remaining.delete(known);
+    this.candidates.set(cell, remaining);
 
-  setKnown(
-    state: WritableState,
-    pointOrCell: Point | Cell,
-    known: Known
-  ): boolean {
-    return state.setKnown(this.getCell(pointOrCell), known);
-  }
+    LOG &&
+      console.info(
+        "STATE erase",
+        known,
+        "from",
+        cell.toString(),
+        "==>",
+        stringFromKnownSet(remaining)
+      );
 
-  toString(state: ReadableState): string {
-    return ALL_COORDS.map((r) =>
-      ALL_COORDS.map((c) => {
-        const value = state.getValue(this.cells.get(getPoint(r, c))!);
-        return value === UNKNOWN ? "." : value.toString();
-      }).join("")
-    ).join(" ");
-  }
+    // solve cell if only one candidate remaining
+    if (triggerLastCandidate && remaining.size === 1) {
+      this.addSolvedKnown(cell, singleSetValue(remaining));
+    }
 
-  validate(state: ReadableState): boolean {
-    let valid = true;
-
-    for (const [_, cell] of this.cells) {
-      const value = state.getValue(cell);
-      if (value === UNKNOWN) {
+    // remove candidate cell from its containers
+    const containers = [...this.candidateContainers.get(cell)!.get(known)!];
+    for (const container of containers) {
+      const candidateCells = this.candidateCells.get(container)!.get(known)!;
+      if (!candidateCells.has(cell)) {
+        LOG &&
+          console.warn(
+            "STATE remove",
+            container.name,
+            "x",
+            known,
+            cell.toString(),
+            "not in",
+            Cell.stringFromPoints(candidateCells)
+          );
         continue;
       }
 
-      if (state.getCandidates(cell).size) {
-        console.error(
-          "INVALID",
-          cell.toString(),
-          "=",
-          value,
-          "with knowns",
-          state.getCandidates(cell)
-        );
-        valid = false;
-      }
+      // remove cell from container
+      const remaining = new Set(candidateCells);
+      remaining.delete(cell);
+      this.candidateCells.get(container)!.set(known, remaining);
 
-      [
-        this.rows.get(cell.point.r)!,
-        this.columns.get(cell.point.c)!,
-        this.blocks.get(cell.point.b)!,
-      ].forEach((group) => {
-        const candidateCells = state.getCandidateCells(group, value);
-        if (
-          candidateCells.size > 1 ||
-          !(candidateCells.size === 1 || !candidateCells.has(cell))
-        ) {
-          console.error(
-            "INVALID",
-            cell.toString(),
-            "=",
-            value,
-            group.toString(),
-            "has cells",
-            Cell.stringFromPoints(candidateCells)
-          );
-          valid = false;
-        }
-      });
+      LOG &&
+        console.info(
+          "STATE erase",
+          known,
+          "from",
+          cell.toString(),
+          "in",
+          container.name,
+          "==>",
+          Cell.stringFromPoints(remaining)
+        );
+
+      // notify container when zero or one candidate cell remains
+      switch (remaining.size) {
+        case 1:
+          container.onOneCellLeft(this, known, singleSetValue(remaining));
+          break;
+
+        case 0:
+          container.onNoCellsLeft(this, known);
+          break;
+      }
     }
 
-    return valid;
+    return true;
+  }
+
+  // ========== CANDIDATE CELLS ========================================
+
+  getCandidateCells(container: Container, known: Known): Set<Cell> {
+    return this.candidateCells.get(container)!.get(known)!;
+  }
+
+  getCandidateCellsByKnown(container: Container): Map<Known, Set<Cell>> {
+    return this.candidateCells.get(container)!;
+  }
+
+  clearCandidateCells(container: Container, known: Known): Set<Cell> {
+    const knowns = this.candidateCells.get(container)!;
+    const cells = knowns.get(known)!;
+
+    LOG &&
+      console.info(
+        "STATE clear",
+        container.name,
+        "x",
+        known,
+        "from",
+        Cell.stringFromPoints(cells)
+      );
+
+    // remove all cells from the container
+    knowns.set(known, new Set());
+
+    // remove the container from each cell
+    for (const cell of cells) {
+      this.candidateContainers.get(cell)!.get(known)!.delete(container);
+    }
+
+    return cells;
+  }
+
+  getSolved(): Solutions {
+    return this.solutions;
+  }
+
+  addSolvedKnown(cell: Cell, known: Known): void {
+    // fail on change; ignore when already set to known
+    const current = this.getValue(cell);
+    if (current !== UNKNOWN) {
+      if (current !== known) {
+        throw new ChangeCellValueError(cell, current, known);
+      }
+
+      return;
+    }
+
+    if (!this.isCandidate(cell, known)) {
+      throw new NotCandidateError(cell, known, this.getCandidates(cell));
+    }
+
+    this.solutions.addSolvedKnown(cell, known);
+  }
+
+  removeSolvedKnown(cell: Cell): void {
+    this.solutions.removeSolvedKnown(cell);
+  }
+
+  addErasedPencil(cell: Cell, known: Known): void {
+    if (this.isSolved(cell)) {
+      return;
+    }
+    const candidates = this.getCandidates(cell);
+    if (!candidates.has(known)) {
+      return;
+    }
+    // if (candidates.size === 1) {
+    //   throw new RemoveLastCandidateError(cell, known);
+    // }
+
+    this.solutions.addErasedPencil(cell, known);
+  }
+
+  removeErasedPencil(cell: Cell, known: Known): void {
+    this.solutions.removeErasedPencil(cell, known);
+  }
+
+  clearSolved(): void {
+    this.solutions = new Solutions();
   }
 }
 
-export const BOARD = new Board();
+/**
+ * Thrown when attempting to set a cell to a value that is not a candidate.
+ */
+class NotCandidateError extends Error {
+  constructor(cell: Cell, to: Known, candidatess: Set<Known>) {
+    super(
+      `Cannot set ${cell.toString()} to ${to} not in ${stringFromKnownSet(
+        candidatess
+      )}`
+    );
+  }
+}
+
+/**
+ * Thrown when attempting to remove a cell's last candidate.
+ */
+class RemoveLastCandidateError extends Error {
+  constructor(cell: Cell, candidate: Known) {
+    super(`Cannot remove last candidate ${candidate} from ${cell.toString()}`);
+  }
+}
+
+/**
+ * Thrown when attempting to change a cell's value.
+ */
+class ChangeCellValueError extends Error {
+  constructor(cell: Cell, from: Known, to: Known) {
+    super(`Cannot change ${cell.toString()} from ${from} to ${to}`);
+  }
+}
+
+/**
+ * Returns a new empty, writable board.
+ */
+export function createEmptySimpleBoard(): SimpleBoard {
+  const board = new SimpleBoard();
+  GRID.setupEmptyState(board);
+  return board;
+}

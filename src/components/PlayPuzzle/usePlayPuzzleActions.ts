@@ -1,17 +1,18 @@
 import { useMemo, useReducer } from "react";
 
 import { Known, UNKNOWN, Value } from "../../models/basics";
-import { Cell } from "../../models/board";
-import { Move, solutionsFromString } from "../../models/solutions";
 import {
-  createEmptySimpleState,
-  ReadableState,
-  SimpleState,
-} from "../../models/state";
+  createEmptySimpleBoard,
+  ReadableBoard,
+  SimpleBoard,
+} from "../../models/board";
+import { Cell } from "../../models/grid";
+import { Move, solutionsFromString } from "../../models/solutions";
+
 import { singleSetValue } from "../../utils/collections";
 
 export type PuzzleActions = {
-  current: ReadableState;
+  current: ReadableBoard;
   steps: number;
   step: number;
 
@@ -42,24 +43,24 @@ export type PuzzleActions = {
  */
 export default function usePlayPuzzleActions(start?: string): PuzzleActions {
   const initialState = useMemo<State>(() => {
-    const state = createEmptySimpleState();
+    const board = createEmptySimpleBoard();
 
     if (start) {
       const knowns = solutionsFromString(start).randomizedSolvedKnowns();
 
       for (const [cell, known] of knowns) {
-        state.setKnown(cell, known);
+        board.setKnown(cell, known);
       }
 
-      const solved = state.getSolved();
-      state.clearSolved();
+      const solved = board.getSolved();
+      board.clearSolved();
       solved.forEachErasedPencil((cell, known) =>
-        state.removeCandidate(cell, known)
+        board.removeCandidate(cell, known)
       );
     }
 
     return {
-      steps: [{ state, selected: null }],
+      steps: [{ board, selected: null }],
       step: 0,
       selected: null,
       locked: UNKNOWN,
@@ -71,8 +72,8 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
 
   return useMemo<PuzzleActions>(() => {
     const { locked, previewed, selected, step, steps } = state;
-    const givens = steps[0]!.state;
-    const current = steps[step]!.state;
+    const givens = steps[0]!.board;
+    const current = steps[step]!.board;
 
     const value = selected ? current.getValue(selected) : UNKNOWN;
     const candidates = selected ? current.getCandidates(selected) : null;
@@ -121,7 +122,7 @@ type State = {
 };
 
 type StepNode = {
-  state: SimpleState;
+  board: SimpleBoard;
   selected: Cell | null;
 };
 
@@ -165,14 +166,14 @@ const reducer: Reducer = (state: State, action: Action) => {
         return state;
       }
 
-      return addStep(state, (state: SimpleState) => {
+      return addStep(state, (board: SimpleBoard) => {
         const { known } = action;
 
-        if (!state.isCandidate(selected, known)) {
-          return state;
+        if (!board.isCandidate(selected, known)) {
+          return board;
         }
 
-        const clone = new SimpleState(state);
+        const clone = new SimpleBoard(board);
         clone.setKnown(selected, known);
 
         let solved;
@@ -191,14 +192,14 @@ const reducer: Reducer = (state: State, action: Action) => {
         return state;
       }
 
-      return addStep(state, (state: SimpleState) => {
+      return addStep(state, (board: SimpleBoard) => {
         const { known } = action;
 
-        if (!state.isCandidate(selected, known)) {
-          return state;
+        if (!board.isCandidate(selected, known)) {
+          return board;
         }
 
-        const clone = new SimpleState(state);
+        const clone = new SimpleBoard(board);
         clone.removeCandidate(selected, known);
 
         let solved;
@@ -213,16 +214,16 @@ const reducer: Reducer = (state: State, action: Action) => {
       });
 
     case "apply":
-      const newState = addStep(state, (state: SimpleState) => {
+      const newState = addStep(state, (board: SimpleBoard) => {
         const { moves } = action;
         // const move = moves[Math.floor(Math.random() * moves.length)];
         const move = moves[0];
 
         if (!move) {
-          return state;
+          return board;
         }
 
-        const clone = new SimpleState(state);
+        const clone = new SimpleBoard(board);
 
         // moves.forEach((move) => move.apply(clone));
         move.apply(clone);
@@ -256,10 +257,10 @@ const reducer: Reducer = (state: State, action: Action) => {
 
 function addStep(
   state: State,
-  apply: (state: SimpleState) => SimpleState
+  apply: (board: SimpleBoard) => SimpleBoard
 ): State {
   const { steps, step, selected } = state;
-  const current = steps[step]?.state;
+  const current = steps[step]?.board;
 
   if (!current) {
     throw new Error(`step ${step} out of bounds [0,${steps.length - 1}]`);
@@ -273,7 +274,7 @@ function addStep(
 
   return {
     ...state,
-    steps: [...steps.slice(0, step + 1), { state: applied, selected }],
+    steps: [...steps.slice(0, step + 1), { board: applied, selected }],
     step: step + 1,
   };
 }

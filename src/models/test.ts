@@ -10,7 +10,7 @@ import {
   stringFromKnownSet,
   UNKNOWN,
 } from "./basics";
-import { BOARD } from "./board";
+import { GRID } from "./grid";
 import {
   printAllCandidates,
   printCandidateCounts,
@@ -18,7 +18,7 @@ import {
   printValues,
 } from "./printers";
 import { Solutions, solutionsFromString } from "./solutions";
-import { createEmptySimpleState } from "./state";
+import { createEmptySimpleBoard } from "./board";
 
 import solveNakedPairs from "../solvers/solveNakedPairs";
 import solveNakedTriples from "../solvers/solveNakedTriples";
@@ -97,7 +97,7 @@ const start =
 const full =
   "398..7... 217.5.9.. 654..9.3. 529.7.3.1 146...... 8731....6 .8....2.. .3..4.... 4627...1.";
 
-// const state = createEmptySimpleState();
+// const board = createEmptySimpleState();
 // for (const [p, k] of [
 //   [getPoint(0, 1), 1],
 //   [getPoint(0, 2), 2],
@@ -107,25 +107,25 @@ const full =
 //   [getPoint(0, 6), 6],
 //   [getPoint(0, 7), 7],
 // ] as [Point, Known][]) {
-//   BOARD.setKnown(state, p, k);
+//   BOARD.setKnown(board, p, k);
 // }
-// printValues(state);
-// printAllCandidates(state);
-// solveNakeds(state, 2);
+// printValues(board);
+// printAllCandidates(board);
+// solveNakeds(board, 2);
 
-const state = createEmptySimpleState();
+const board = createEmptySimpleBoard();
 const knowns = solutionsFromString(start).randomizedSolvedKnowns();
 const pencils = [];
 let stop = false;
 while (!stop && (knowns.length || pencils.length)) {
   // check solvers
   const solved = new Solutions();
-  solveNakedPairs(state, solved);
-  solveNakedTriples(state, solved);
-  solveHiddenPairs(state, solved);
-  solveHiddenTriples(state, solved);
-  solveXWings(state, solved);
-  solveSinglesChains(state, solved);
+  solveNakedPairs(board, solved);
+  solveNakedTriples(board, solved);
+  solveHiddenPairs(board, solved);
+  solveHiddenTriples(board, solved);
+  solveXWings(board, solved);
+  solveSinglesChains(board, solved);
   if (!solved.isEmpty()) {
     // console.info("FOUND", newSolutions);
     // nakeds do not solve knowns directly
@@ -136,29 +136,29 @@ while (!stop && (knowns.length || pencils.length)) {
   // apply all erased pencil marks
   while (!stop && pencils.length) {
     const [cell, known] = pencils.shift()!;
-    if (!state.isCandidate(cell, known)) {
+    if (!board.isCandidate(cell, known)) {
       continue;
     }
 
     console.log("");
     console.log("erasing", cell.toString(), "=>", known);
-    BOARD.removeCandidate(state, cell, known);
-    // printAllCandidates(state);
+    GRID.removeCandidate(board, cell, known);
+    // printAllCandidates(board);
 
-    const test = BOARD.toString(state);
-    if (!BOARD.validate(state) || !isCorrectSoFar(test, full)) {
+    const test = GRID.toString(board);
+    if (!GRID.validate(board) || !isCorrectSoFar(test, full)) {
       console.log("");
-      printValues(state);
+      printValues(board);
       console.log("");
-      printAllCandidates(state);
-      printCandidates(state, known);
+      printAllCandidates(board);
+      printCandidates(board, known);
       console.error("STOPPED");
       stop = true;
       break;
     }
 
-    const newSolutions = state.getSolved();
-    state.clearSolved();
+    const newSolutions = board.getSolved();
+    board.clearSolved();
     if (!newSolutions.isEmpty()) {
       // console.info("FOUND", newSolutions);
       knowns.push(...newSolutions.randomizedSolvedKnowns());
@@ -170,25 +170,25 @@ while (!stop && (knowns.length || pencils.length)) {
   // apply next solved known
   if (knowns.length) {
     const [cell, known] = knowns.shift()!;
-    if (state.getValue(cell) === known) {
+    if (board.getValue(cell) === known) {
       continue;
     }
 
-    printValues(state);
+    printValues(board);
     console.log("");
     console.log("solving", cell.toString(), "=>", known);
-    BOARD.setKnown(state, cell, known);
+    GRID.setKnown(board, cell, known);
 
-    const test = BOARD.toString(state);
-    if (!BOARD.validate(state) || !isCorrectSoFar(test, full)) {
-      printCandidates(state, known);
+    const test = GRID.toString(board);
+    if (!GRID.validate(board) || !isCorrectSoFar(test, full)) {
+      printCandidates(board, known);
       console.error("STOPPED");
       stop = true;
       break;
     }
 
-    const newSolutions = state.getSolved();
-    state.clearSolved();
+    const newSolutions = board.getSolved();
+    board.clearSolved();
     if (!newSolutions.isEmpty()) {
       // console.info("FOUND", newSolutions);
       knowns.push(...newSolutions.randomizedSolvedKnowns());
@@ -200,29 +200,29 @@ while (!stop && (knowns.length || pencils.length)) {
   // apply all erased pencil marks
   while (!stop && pencils.length) {
     const [cell, known] = pencils.shift()!;
-    if (!state.isCandidate(cell, known)) {
+    if (!board.isCandidate(cell, known)) {
       continue;
     }
 
     console.log("");
     console.log("erasing", cell.toString(), "=>", known);
-    BOARD.removeCandidate(state, cell, known);
-    // printAllCandidates(state);
+    GRID.removeCandidate(board, cell, known);
+    // printAllCandidates(board);
 
-    const test = BOARD.toString(state);
-    if (!BOARD.validate(state) || !isCorrectSoFar(test, full)) {
+    const test = GRID.toString(board);
+    if (!GRID.validate(board) || !isCorrectSoFar(test, full)) {
       console.log("");
-      printValues(state);
+      printValues(board);
       console.log("");
-      printAllCandidates(state);
-      printCandidates(state, known);
+      printAllCandidates(board);
+      printCandidates(board, known);
       console.error("STOPPED");
       stop = true;
       break;
     }
 
-    const newSolutions = state.getSolved();
-    state.clearSolved();
+    const newSolutions = board.getSolved();
+    board.clearSolved();
     if (!newSolutions.isEmpty()) {
       console.info("FOUND", newSolutions);
       knowns.push(...newSolutions.randomizedSolvedKnowns());
@@ -232,23 +232,23 @@ while (!stop && (knowns.length || pencils.length)) {
   }
 
   console.log(" ");
-  printValues(state);
-  printAllCandidates(state);
-  // printCandidateCounts(state);
-  // ALL_KNOWNS.forEach((k) => printCandidates(state, k));
+  printValues(board);
+  printAllCandidates(board);
+  // printCandidateCounts(board);
+  // ALL_KNOWNS.forEach((k) => printCandidates(board, k));
   // break;
 }
 
 console.log("");
-printAllCandidates(state);
-// printCandidates(state, 5);
-BOARD.validate(state);
-// console.log(state);
+printAllCandidates(board);
+// printCandidates(board, 5);
+GRID.validate(board);
+// console.log(board);
 
 console.log("");
-console.log("still", 81 - state.solvedCount(), "unknown");
+console.log("still", 81 - board.solvedCount(), "unknown");
 
-const test = BOARD.toString(state);
+const test = GRID.toString(board);
 console.log("start   ", start);
 console.log("current ", test);
 console.log("solution", full);

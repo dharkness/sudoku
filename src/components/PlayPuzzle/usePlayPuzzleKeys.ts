@@ -1,6 +1,7 @@
 import useEventListener from "@use-it/event-listener";
 
 import { coord, getPoint, Known, known, UNKNOWN } from "../../models/basics";
+import { GRID } from "../../models/grid";
 
 import { PuzzleActions } from "./usePlayPuzzleActions";
 
@@ -65,59 +66,83 @@ export default function usePlayPuzzleKeys(actions: PuzzleActions) {
         switch (key) {
           case "u":
           case "Home":
-            actions.select(getPoint(ctrlKey ? 0 : selected.r, 0));
+            actions.select(
+              GRID.getCell(getPoint(ctrlKey ? 0 : selected.point.r, 0))
+            );
             event.preventDefault();
             return;
           case "o":
           case "End":
-            actions.select(getPoint(ctrlKey ? 8 : selected.r, 8));
+            actions.select(
+              GRID.getCell(getPoint(ctrlKey ? 8 : selected.point.r, 8))
+            );
             event.preventDefault();
             return;
 
           case "y":
           case "PageUp":
-            actions.select(getPoint(0, selected.c));
+            actions.select(GRID.getCell(getPoint(0, selected.point.c)));
             event.preventDefault();
             return;
           case "h":
           case "PageDown":
-            actions.select(getPoint(8, selected.c));
+            actions.select(GRID.getCell(getPoint(8, selected.point.c)));
             event.preventDefault();
             return;
 
           case "i":
           case "Up":
           case "ArrowUp":
-            if (selected.r > 0) {
+            if (selected.point.r > 0) {
               actions.select(
-                getPoint(ctrlKey ? 0 : coord(selected.r - 1, "row"), selected.c)
+                GRID.getCell(
+                  getPoint(
+                    ctrlKey ? 0 : coord(selected.point.r - 1, "row"),
+                    selected.point.c
+                  )
+                )
               );
             }
             break;
           case "k":
           case "Down":
           case "ArrowDown":
-            if (selected.r < 8) {
+            if (selected.point.r < 8) {
               actions.select(
-                getPoint(ctrlKey ? 8 : coord(selected.r + 1, "row"), selected.c)
+                GRID.getCell(
+                  getPoint(
+                    ctrlKey ? 8 : coord(selected.point.r + 1, "row"),
+                    selected.point.c
+                  )
+                )
               );
             }
             break;
           case "j":
           case "Left":
           case "ArrowLeft":
-            if (selected.c > 0) {
+            if (selected.point.c > 0) {
               actions.select(
-                getPoint(selected.r, ctrlKey ? 0 : coord(selected.c - 1, "col"))
+                GRID.getCell(
+                  getPoint(
+                    selected.point.r,
+                    ctrlKey ? 0 : coord(selected.point.c - 1, "col")
+                  )
+                )
               );
             }
             break;
           case "l":
           case "Right":
           case "ArrowRight":
-            if (selected.c < 8) {
+            if (selected.point.c < 8) {
               actions.select(
-                getPoint(selected.r, ctrlKey ? 8 : coord(selected.c + 1, "col"))
+                GRID.getCell(
+                  getPoint(
+                    selected.point.r,
+                    ctrlKey ? 8 : coord(selected.point.c + 1, "col")
+                  )
+                )
               );
             }
             break;
@@ -131,12 +156,12 @@ export default function usePlayPuzzleKeys(actions: PuzzleActions) {
       switch (key) {
         case "u":
         case "Home":
-          actions.select(getPoint(0, 0));
+          actions.select(GRID.getCell(getPoint(0, 0)));
           event.preventDefault();
           return;
         case "o":
         case "End":
-          actions.select(getPoint(8, 8));
+          actions.select(GRID.getCell(getPoint(8, 8)));
           event.preventDefault();
           return;
       }

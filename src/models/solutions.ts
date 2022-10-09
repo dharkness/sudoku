@@ -1,6 +1,6 @@
 import { ALL_POINTS, Known, UNKNOWN, Value, valueFromString } from "./basics";
-import { BOARD, Cell, Group } from "./board";
-import { WritableState } from "./state";
+import { WritableBoard } from "./board";
+import { GRID, Cell, Group } from "./grid";
 
 import {
   deepCloneMap,
@@ -205,7 +205,7 @@ export function solutionsFromString(values: string): Solutions {
   for (const p of ALL_POINTS) {
     const value = valueFromString(values.charAt(width * p.r + p.c));
     if (value !== UNKNOWN) {
-      solutions.addSolvedKnown(BOARD.getCell(p), value);
+      solutions.addSolvedKnown(GRID.getCell(p), value);
     }
   }
 
@@ -448,18 +448,18 @@ export class Move {
   }
 
   // FACTOR Move to WritableState, treating this as a pure data holder?
-  apply(state: WritableState) {
+  apply(board: WritableBoard) {
     for (const [cell, known] of this.sets) {
-      if (!state.isSolved(cell) && state.isCandidate(cell, known)) {
-        state.setKnown(cell, known);
+      if (!board.isSolved(cell) && board.isCandidate(cell, known)) {
+        board.setKnown(cell, known);
       }
     }
 
     for (const [cell, candidates] of this.marks) {
-      if (!state.isSolved(cell)) {
+      if (!board.isSolved(cell)) {
         for (const candidate of candidates) {
-          if (state.isCandidate(cell, candidate)) {
-            state.removeCandidate(cell, candidate);
+          if (board.isCandidate(cell, candidate)) {
+            board.removeCandidate(cell, candidate);
           }
         }
       }

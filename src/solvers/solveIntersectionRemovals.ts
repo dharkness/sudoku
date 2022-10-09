@@ -1,6 +1,6 @@
-import { BOARD, Cell, Intersection } from "../models/board";
+import { ReadableBoard } from "../models/board";
+import { GRID, Cell, Intersection } from "../models/grid";
 import { Move, Strategy } from "../models/solutions";
-import { ReadableState } from "../models/state";
 
 import { difference, intersect, withoutEmptySets } from "../utils/collections";
 
@@ -31,7 +31,7 @@ const LOG = false;
  * "7..1....9 .2.3..7.. 4.9...... .6.8..2.. ......... .7...1.5. .....49.. .46..5..2 .1...68.."
  */
 export default function solveIntersectionRemovals(
-  state: ReadableState
+  board: ReadableBoard
 ): Move[] {
   const moves: Move[] = [];
 
@@ -44,10 +44,10 @@ export default function solveIntersectionRemovals(
       : intersection.blockDisjoint;
 
     const candidates = withoutEmptySets(
-      state.getCandidateCellsByKnown(intersection.intersection)
+      board.getCandidateCellsByKnown(intersection.intersection)
     );
-    const keep = withoutEmptySets(state.getCandidateCellsByKnown(from));
-    const remaining = withoutEmptySets(state.getCandidateCellsByKnown(to));
+    const keep = withoutEmptySets(board.getCandidateCellsByKnown(from));
+    const remaining = withoutEmptySets(board.getCandidateCellsByKnown(to));
 
     const remove = intersect(
       difference(new Set(candidates.keys()), new Set(keep.keys())),
@@ -102,7 +102,7 @@ export default function solveIntersectionRemovals(
     }
   }
 
-  for (const intersection of BOARD.intersections) {
+  for (const intersection of GRID.intersections) {
     check(intersection, true);
     check(intersection, false);
   }

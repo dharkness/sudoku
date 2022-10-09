@@ -1,19 +1,19 @@
 import { ALL_COORDS, ALL_KNOWNS, getPoint, Known, UNKNOWN } from "./basics";
-import { BOARD, Cell, Group } from "./board";
-import { ReadableState } from "./state";
+import { ReadableBoard } from "./board";
+import { GRID, Cell, Group } from "./grid";
 
 const MISSING = "·";
 
 /**
  * Prints a grid of cells with their known value or a period.
  */
-export function printValues(state: ReadableState) {
+export function printValues(board: ReadableBoard) {
   console.log("  ", 123456789);
   ALL_COORDS.forEach((r) =>
     console.log(
       r + 1,
       ALL_COORDS.map((c) => {
-        const value = state.getValue(BOARD.getCell(getPoint(r, c)));
+        const value = board.getValue(GRID.getCell(getPoint(r, c)));
         return value === UNKNOWN ? MISSING : value.toString();
       }).join("")
     )
@@ -23,13 +23,13 @@ export function printValues(state: ReadableState) {
 /**
  * Prints a grid of cells with the number of candidates.
  */
-export function printCandidateCounts(state: ReadableState) {
+export function printCandidateCounts(board: ReadableBoard) {
   console.log("  ", 123456789, "CANDIDATE COUNTS");
   ALL_COORDS.forEach((r) =>
     console.log(
       r + 1,
       ALL_COORDS.reduce((cells: string[], c) => {
-        const count = state.getCandidateCount(BOARD.getCell(getPoint(r, c)));
+        const count = board.getCandidateCount(GRID.getCell(getPoint(r, c)));
         return [...cells, count ? count.toString() : MISSING];
       }, []).join("")
     )
@@ -40,7 +40,7 @@ export function printCandidateCounts(state: ReadableState) {
  * Prints a grid of cells, with each cell showing its candidates.
  */
 export function printAllCandidates(
-  state: ReadableState,
+  board: ReadableBoard,
   showKnowns: boolean = false
 ) {
   const lines = Array.from(Array(3 * 9 + 8), (_, i) =>
@@ -58,14 +58,14 @@ export function printAllCandidates(
 
   ALL_COORDS.forEach((r) => {
     ALL_COORDS.forEach((c) => {
-      const cell = BOARD.getCell(getPoint(r, c));
-      const value = state.getValue(cell);
+      const cell = GRID.getCell(getPoint(r, c));
+      const value = board.getValue(cell);
       if (showKnowns && value !== UNKNOWN) {
         [0, 1, 2].forEach(
           (i) => (lines[4 * r + i]![1] += `${value}${value}${value}`)
         );
       } else {
-        const candidates = state.getCandidates(cell);
+        const candidates = board.getCandidates(cell);
         for (const k of ALL_KNOWNS) {
           lines[4 * r + Math.floor((k - 1) / 3)]![1] += candidates.has(k)
             ? k.toString()
@@ -101,29 +101,29 @@ export function printAllCandidates(
   lines.forEach((line) => console.log(line[0], line[1]));
 }
 
-export function printCandidates(state: ReadableState, known: Known) {
-  printCellCandidates(state, known);
-  printRowCandidates(state, known);
-  printColumnCandidates(state, known);
-  printBlockCandidates(state, known);
+export function printCandidates(board: ReadableBoard, known: Known) {
+  printCellCandidates(board, known);
+  printRowCandidates(board, known);
+  printColumnCandidates(board, known);
+  printBlockCandidates(board, known);
 }
 
-export function printRowCandidates(state: ReadableState, known: Known) {
+export function printRowCandidates(board: ReadableBoard, known: Known) {
   console.log("  ", 123456789, "ROW CANDIDATES FOR", known);
-  for (const [r, row] of BOARD.rows) {
-    const cells = state.getCandidateCells(row, known);
+  for (const [r, row] of GRID.rows) {
+    const cells = board.getCandidateCells(row, known);
     console.log(r + 1, Cell.stringFromGroupCoords(0, cells));
   }
 }
 
-export function printCellCandidates(state: ReadableState, known: Known) {
+export function printCellCandidates(board: ReadableBoard, known: Known) {
   console.log("  ", 123456789, "CANDIDATES FOR", known);
   ALL_COORDS.forEach((r) =>
     console.log(
       r + 1,
       ALL_COORDS.reduce((cells: string[], c) => {
-        const candidate = state.isCandidate(
-          BOARD.getCell(getPoint(r, c)),
+        const candidate = board.isCandidate(
+          GRID.getCell(getPoint(r, c)),
           known
         );
         return [...cells, candidate ? known.toString() : MISSING];
@@ -131,12 +131,12 @@ export function printCellCandidates(state: ReadableState, known: Known) {
     )
   );
 }
-export function printColumnCandidates(state: ReadableState, known: Known) {
+export function printColumnCandidates(board: ReadableBoard, known: Known) {
   const lines = Array.from(Array(9), () => "");
-  for (const [c, column] of BOARD.columns) {
-    const cells = state.getCandidateCells(column, known);
+  for (const [c, column] of GRID.columns) {
+    const cells = board.getCandidateCells(column, known);
     for (const r of ALL_COORDS) {
-      lines[r] += cells.has(BOARD.getCell(getPoint(r, c)))
+      lines[r] += cells.has(GRID.getCell(getPoint(r, c)))
         ? (r + 1).toString()
         : MISSING;
     }
@@ -146,10 +146,10 @@ export function printColumnCandidates(state: ReadableState, known: Known) {
   lines.forEach((line, r) => console.log(r + 1, line));
 }
 
-export function printBlockCandidates(state: ReadableState, known: Known) {
+export function printBlockCandidates(board: ReadableBoard, known: Known) {
   const lines = Array.from(Array(9), () => "");
-  for (const [b, block] of BOARD.blocks) {
-    const cells = state.getCandidateCells(block, known);
+  for (const [b, block] of GRID.blocks) {
+    const cells = board.getCandidateCells(block, known);
     block.cells.forEach(
       (cell) =>
         (lines[3 * Math.floor(b / 3) + (cell.point.r % 3)] += cells.has(cell)
@@ -163,14 +163,14 @@ export function printBlockCandidates(state: ReadableState, known: Known) {
 }
 
 export function printGroupCandidates(
-  state: ReadableState,
+  board: ReadableBoard,
   group: Group,
   description?: string
 ) {
   const lines = ["", "", "", "", "", "", "", "", ""];
   for (const cell of group.cells) {
     for (const k of ALL_KNOWNS) {
-      lines[k - 1]! += state.isCandidate(cell, k) ? k.toString() : MISSING;
+      lines[k - 1]! += board.isCandidate(cell, k) ? k.toString() : MISSING;
     }
   }
 
