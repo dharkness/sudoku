@@ -35,14 +35,14 @@ const SelectableCell = ({
 }: SelectableCellProps): JSX.Element => {
   const { background, borders, colors } = decoration;
   const [top, right, bottom, left] = borders;
-  const backgroundColor = given
+  const backgroundColor = selected
+    ? "bg-sky-400"
+    : given
     ? "bg-black"
     : value
     ? "bg-neutral-300"
     : background
     ? BackgroundColors[background]
-    : selected
-    ? "bg-sky-400"
     : highlighted && highlighted === value
     ? "bg-sky-900"
     : highlighted && candidates.has(highlighted) // remove?
