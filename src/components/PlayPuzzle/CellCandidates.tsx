@@ -1,18 +1,24 @@
 import { Known, known, Value } from "../../models/basics";
 import { MarkColor } from "../../models/solutions";
 
+export enum ShowMarkNumber {
+  Never,
+  Highlighted,
+  Always,
+}
+
 type CellCandidatesProps = {
   candidates: Set<Known>;
   highlighted: Value;
   colors: Map<Known, MarkColor>;
-  showNumber?: boolean;
+  showMarkNumber: ShowMarkNumber;
 };
 
 const CellCandidates = ({
   candidates,
   highlighted,
   colors,
-  showNumber,
+  showMarkNumber,
 }: CellCandidatesProps): JSX.Element => {
   return (
     <table className="h-full w-full text-sm">
@@ -24,6 +30,15 @@ const CellCandidates = ({
               const candidate = candidates.has(k);
               const color =
                 candidate && colors.has(k) ? Colors[colors.get(k)!] : null;
+              const mark = candidate
+                ? showMarkNumber === ShowMarkNumber.Never
+                  ? PENCIL
+                  : showMarkNumber === ShowMarkNumber.Always ||
+                    k === highlighted ||
+                    color
+                  ? k
+                  : PENCIL
+                : null;
 
               return (
                 <td key={k} className={`w-1/3 h-1/3 ${color && "m-auto"}`}>
@@ -32,12 +47,10 @@ const CellCandidates = ({
                       <div
                         className={`h-full w-full m-auto border rounded-full ${color}`}
                       >
-                        {showNumber ? k : PENCIL}
+                        {mark}
                       </div>
-                    ) : showNumber ? (
-                      k
                     ) : (
-                      PENCIL
+                      mark
                     )
                   ) : (
                     <div />

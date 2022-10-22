@@ -77,6 +77,9 @@ but feel free to explore and scavenge any code you find useful.
 
 - Play
   - UI
+    - options
+      - dark mode
+      - show mark numbers: never, always, when highlighted
     - known panel
       - highlight hovered known in puzzle panel
       - dim solved knowns

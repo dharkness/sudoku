@@ -1,10 +1,10 @@
 import clsx from "clsx";
 
-import { Value, Known, UNKNOWN } from "../../models/basics";
+import { Known, UNKNOWN, Value } from "../../models/basics";
 import { Cell } from "../../models/grid";
 import { Decoration } from "../../models/solutions";
 
-import CellCandidates from "./CellCandidates";
+import CellCandidates, { ShowMarkNumber } from "./CellCandidates";
 
 type SelectableCellProps = {
   cell: Cell;
@@ -43,7 +43,7 @@ const SelectableCell = ({
     ? "bg-neutral-300"
     : background
     ? BackgroundColors[background]
-    : highlighted && highlighted === value
+    : highlighted && highlighted === value // impossible (line 42)
     ? "bg-sky-900"
     : highlighted && candidates.has(highlighted) // remove?
     ? "bg-emerald-50"
@@ -81,7 +81,7 @@ const SelectableCell = ({
           candidates={candidates}
           highlighted={selected ? UNKNOWN : highlighted}
           colors={colors}
-          showNumber
+          showMarkNumber={ShowMarkNumber.Always}
         />
       ) : (
         <span style={{ fontSize: "2em" }}>{value}</span>
