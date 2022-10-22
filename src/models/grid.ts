@@ -133,16 +133,16 @@ export abstract class Container implements Stateful {
     // override to perform actions
   }
 
-  toString(): string {
-    return `${this.name} ${Cell.stringFromPoints(this.cells)}`;
-  }
-
   onOneCellLeft(board: WritableBoard, known: Known, cell: Cell): void {
     // override if necessary
   }
 
   onNoCellsLeft(board: WritableBoard, known: Known): void {
     // override if necessary
+  }
+
+  toString(): string {
+    return `${this.name} ${Cell.stringFromPoints(this.cells)}`;
   }
 }
 
@@ -347,6 +347,7 @@ class Disjoint extends Container {
   }
 
   onNoCellsLeft(board: WritableBoard, known: Known): void {
+    // TODO Remove this since it would be solved by Intersection Removal?
     this.parent.removeCandidateFromOtherDisjoint(board, known, this);
   }
 }
