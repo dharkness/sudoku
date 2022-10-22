@@ -26,12 +26,22 @@ const CellCandidates = ({
                 candidate && colors.has(k) ? Colors[colors.get(k)!] : null;
 
               return (
-                <td
-                  key={k}
-                  className={`mx-auto ${color}`}
-                  style={{ width: "33%", height: "33%" }}
-                >
-                  {candidate ? (showNumber ? k : PENCIL) : ""}
+                <td key={k} className={`w-1/3 h-1/3 ${color && "m-auto"}`}>
+                  {candidate ? (
+                    color ? (
+                      <div
+                        className={`h-full w-full m-auto border rounded-full ${color}`}
+                      >
+                        {showNumber ? k : PENCIL}
+                      </div>
+                    ) : showNumber ? (
+                      k
+                    ) : (
+                      PENCIL
+                    )
+                  ) : (
+                    <div />
+                  )}
                 </td>
               );
             })}
