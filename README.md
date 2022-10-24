@@ -106,6 +106,8 @@ but feel free to explore and scavenge any code you find useful.
       - checkbox to automatically apply each strategy
       - show/apply each solution separately; highlight cells on hover; animate on apply
       - new solvers
+        - X-Cycles
+          https://www.sudokuwiki.org/X_Cycles
         - XY-Chain
           https://www.sudokuwiki.org/XY_Chains
         - Fish

@@ -10,6 +10,7 @@ import hiddenPairs from "./solveHiddenPairs";
 import hiddenTriples from "./solveHiddenTriples";
 import xWings from "./solveXWings";
 import singlesChains from "./solveSinglesChains";
+import yWings from "./solveYWings";
 import emptyRectangles from "./solveEmptyRectangles";
 import uniqueRectangles from "./solveUniqueRectangles";
 import bruteForce from "./solveBruteForce";
@@ -26,6 +27,7 @@ export default {
   hiddenTriples,
   xWings,
   singlesChains,
+  yWings,
   emptyRectangles,
   uniqueRectangles,
   bruteForce,

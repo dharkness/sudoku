@@ -87,6 +87,10 @@ export class Cell implements Stateful {
     board.addCell(this);
   }
 
+  sees(cell: Cell): boolean {
+    return this.neighbors.has(cell);
+  }
+
   toString() {
     return `Cell ${this.point.k}`;
   }

@@ -70,6 +70,7 @@ const buttons = {
   hiddenTriples: "Hidden Triples",
   xWings: "X-Wings",
   singlesChains: "Singles Chains",
+  yWings: "Y-Wings",
   emptyRectangles: "Empty Rectangles",
   uniqueRectangles: "Unique Rectangles",
   // bruteForce: "Brute Force",
