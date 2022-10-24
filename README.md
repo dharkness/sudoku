@@ -106,8 +106,6 @@ but feel free to explore and scavenge any code you find useful.
       - checkbox to automatically apply each strategy
       - show/apply each solution separately; highlight cells on hover; animate on apply
       - new solvers
-        - Unique Rectangles
-          https://www.sudokuwiki.org/Unique_Rectangles
         - XY-Chain
           https://www.sudokuwiki.org/XY_Chains
         - Fish

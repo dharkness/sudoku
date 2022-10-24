@@ -71,7 +71,8 @@ const buttons = {
   xWings: "X-Wings",
   singlesChains: "Singles Chains",
   emptyRectangles: "Empty Rectangles",
-  bruteForce: "Brute Force",
+  uniqueRectangles: "Unique Rectangles",
+  // bruteForce: "Brute Force",
 };
 
 const enabledClasses =

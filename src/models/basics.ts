@@ -215,6 +215,13 @@ export function stringFromKnownSet(knowns: Set<Known>): string {
 }
 
 /**
+ * Returns a stable key for a set of knowns.
+ */
+export function keyFromKnownSet(knowns: Set<Known>): string {
+  return [...knowns].sort((a, b) => a - b).join(",");
+}
+
+/**
  * Used to mark cells that are not yet known.
  */
 export const UNKNOWN = null;

@@ -15,6 +15,7 @@ import { ReadableBoard, WritableBoard } from "./board";
 import { difference, intersect } from "../utils/collections";
 
 const MISSING = "·";
+const EMPTY_SET = "∅";
 
 /**
  * Implemented by all trackers that manipulate their own board.
@@ -36,6 +37,7 @@ export class Cell implements Stateful {
   readonly row: Row;
   readonly column: Column;
   readonly block: Block;
+  readonly groups = new Map<Grouping, Group>();
 
   /**
    * All cells in this cell's row, column and block, excluding this cell.
@@ -52,6 +54,10 @@ export class Cell implements Stateful {
     this.row = row;
     this.column = column;
     this.block = block;
+    this.groups
+      .set(Grouping.ROW, row)
+      .set(Grouping.COLUMN, column)
+      .set(Grouping.BLOCK, block);
   }
 
   fillNeighbors() {
@@ -85,12 +91,15 @@ export class Cell implements Stateful {
     return `Cell ${this.point.k}`;
   }
 
-  static stringFromPoints(cells?: Set<Cell>, sort = true): string {
-    if (!cells?.size) {
-      return "∅";
+  static stringFromPoints(cells?: Iterable<Cell>, sort = true): string {
+    if (!cells) {
+      return EMPTY_SET;
     }
 
-    const points = [...cells].map((cell) => cell.point.k);
+    const points = Array.from(cells).map((cell) => cell.point.k);
+    if (!points.length) {
+      return EMPTY_SET;
+    }
 
     return (
       "( " +
@@ -99,13 +108,52 @@ export class Cell implements Stateful {
     );
   }
 
-  static stringFromGroupCoords(g: Grouping, cells: Set<Cell>): string {
+  static keyFromPoints(cells?: Iterable<Cell>): string {
+    if (!cells) {
+      return EMPTY_SET;
+    }
+
+    return (
+      Array.from(cells)
+        .map((cell) => cell.point.k)
+        .sort((a, b) => a.localeCompare(b))
+        .join(",") || EMPTY_SET
+    );
+  }
+
+  static stringFromGroupCoords(g: Grouping, cells: Iterable<Cell>): string {
     const coords = new Set<Coord>(
-      Array.from(cells.values()).map((c) => c.point.i[g])
+      Array.from(cells || []).map((c) => c.point.i[g])
     );
     return ALL_COORDS.map((c) =>
       coords.has(c) ? (c + 1).toString() : MISSING
     ).join("");
+  }
+
+  static uniqueRows(cells: Iterable<Cell>): Set<Coord> {
+    return new Set(
+      Array.from(cells)
+        .map((c) => c.point.r)
+        .sort((a, b) => a - b)
+    );
+  }
+
+  static uniqueColumns(cells: Iterable<Cell>): Set<Coord> {
+    return new Set(
+      Array.from(cells)
+        .map((c) => c.point.c)
+        .sort((a, b) => a - b)
+    );
+  }
+
+  static sortedByRowColumn(cells: Iterable<Cell>): Cell[] {
+    return Array.from(cells).sort((a, b) => a.point.k.localeCompare(b.point.k));
+  }
+
+  static sortedByColumnRow(cells: Iterable<Cell>): Cell[] {
+    return Array.from(cells).sort((a, b) =>
+      a.point.c === b.point.c ? a.point.r - b.point.r : a.point.c - b.point.c
+    );
   }
 }
 

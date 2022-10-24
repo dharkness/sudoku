@@ -27,7 +27,7 @@ export function shuffle<T>(array: T[]): T[] {
  */
 export function singleSetValue<T>(set: Set<T>): T {
   if (set.size !== 1) {
-    throw new Error(`Set must have 2 elements but has ${set.size}`);
+    throw new Error(`Set must have 1 element but has ${set.size}`);
   }
 
   return set.values().next().value;
@@ -110,11 +110,61 @@ export function areEqual<T>(a: Set<T>, b: Set<T>): boolean {
   return true;
 }
 
+export function hasEvery<T>(subset: Set<T>, set: Set<T>): boolean {
+  for (const t of subset) {
+    if (!set.has(t)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Returns a list of every distinct pairing of the elements of the given set.
+ * Each pair of elements will be returned exactly once.
+ */
+export function distinctPairs<T>(set: Set<T>): [T, T][] {
+  const list = [...set];
+  const pairs = [] as [T, T][];
+
+  if (list.length >= 2) {
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        pairs.push([list[i]!, list[j]!]);
+      }
+    }
+  }
+
+  return pairs;
+}
+
+/**
+ * Returns a list of every distinct triple of the elements of the given set.
+ * Each triple of elements will be returned exactly once.
+ */
+export function distinctTriples<T>(set: Set<T>): [T, T, T][] {
+  const list = [...set];
+  const triples = [] as [T, T, T][];
+
+  if (list.length >= 3) {
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        for (let k = j + 1; k < list.length; k++) {
+          triples.push([list[i]!, list[j]!, list[k]!]);
+        }
+      }
+    }
+  }
+
+  return triples;
+}
+
 /**
  * Returns a new map of sets containing only the non-empty values.
  */
 export function withoutEmptySets<T, U>(map: Map<T, Set<U>>): Map<T, Set<U>> {
-  return new Map([...map.entries()].filter(([known, cells]) => cells.size > 0));
+  return new Map([...map.entries()].filter(([_, cells]) => cells.size > 0));
 }
 
 /**

@@ -11,6 +11,7 @@ import hiddenTriples from "./solveHiddenTriples";
 import xWings from "./solveXWings";
 import singlesChains from "./solveSinglesChains";
 import emptyRectangles from "./solveEmptyRectangles";
+import uniqueRectangles from "./solveUniqueRectangles";
 import bruteForce from "./solveBruteForce";
 
 type Solver = (board: ReadableBoard) => Move[];
@@ -26,6 +27,7 @@ export default {
   xWings,
   singlesChains,
   emptyRectangles,
+  uniqueRectangles,
   bruteForce,
 } as {
   [key: string]: Solver;
