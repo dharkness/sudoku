@@ -47,6 +47,39 @@ export function twoSetValues<T>(set: Set<T>): [T, T] {
 }
 
 /**
+ * Returns the pair of values of the given set
+ *
+ * @throws {Error} If the set does not have exactly two elements
+ */
+export function threeSetValues<T>(set: Set<T>): [T, T, T] {
+  if (set.size !== 3) {
+    throw new Error(`Set must have 3 elements but has ${set.size}`);
+  }
+
+  return [...set.values()] as [T, T, T];
+}
+
+/**
+ * Returns a copy of the given set with the given element added
+ * even if it doesn't currently contain the element.
+ */
+export function including<T>(set: Set<T>, t: T): Set<T> {
+  const clone = new Set(set);
+  clone.add(t);
+  return clone;
+}
+
+/**
+ * Returns a copy of the given set with the given element removed
+ * even if it doesn't currently contain the element.
+ */
+export function excluding<T>(set: Set<T>, t: T): Set<T> {
+  const clone = new Set(set);
+  clone.delete(t);
+  return clone;
+}
+
+/**
  * Returns a new set containing the elements that are in either set,
  * in the order they appear in the first followed by those that are
  * only in the second.
@@ -158,6 +191,20 @@ export function distinctTriples<T>(set: Set<T>): [T, T, T][] {
   }
 
   return triples;
+}
+
+/**
+ * Returns a list of every pairing of each element of the first set
+ * with each element of the second set.
+ */
+export function combinePairs<T>(a: Set<T>, b: Set<T>): [T, T][] {
+  return Array.from(a).reduce(
+    (list: [T, T][], a: T) => [
+      ...list,
+      ...Array.from(b).map((b: T) => [a, b] as [T, T]),
+    ],
+    [] as [T, T][]
+  );
 }
 
 /**
