@@ -80,8 +80,11 @@ but feel free to explore and scavenge any code you find useful.
     - options
       - dark mode
       - show mark numbers: never, always, when highlighted
+    - selected cell
+      - highlight all common candidates, not just known of solved cell
     - known panel
       - highlight hovered known in puzzle panel
+      - allow multiple locked knowns (alt-shift-# to toggle)
       - dim solved knowns
       - add pencil toggle button to swap behavior of number keys (set vs. mark)
     - show errors
@@ -92,6 +95,7 @@ but feel free to explore and scavenge any code you find useful.
       - easier to show banner when making errors given the model
     - move highlighting
       - show non-clue sets with large number without candidates or overlaid on top?
+      - clues only, marks only, cells only to help you learn to spot stuff
       - use green for sets only, blue/yellow for clues?
       - extract Move.getDecoration()?
     - solvers
