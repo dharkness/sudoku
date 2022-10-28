@@ -1,9 +1,14 @@
-import { ALL_KNOWNS, Coord, Grouping } from "../models/basics";
+import { ALL_KNOWNS, Grouping } from "../models/basics";
 import { ReadableBoard } from "../models/board";
-import { GRID, Cell, Group } from "../models/grid";
+import { Cell, GRID, Group } from "../models/grid";
 import { Move, Strategy } from "../models/solutions";
 
-import { difference } from "../utils/collections";
+import {
+  difference,
+  distinctPairs,
+  twoSetValues,
+  union,
+} from "../utils/collections";
 
 const LOG = false;
 
@@ -30,101 +35,116 @@ const LOG = false;
 export default function solveXWings(board: ReadableBoard): Move[] {
   const moves: Move[] = [];
 
-  const iterations = [
-    [Grouping.ROW, GRID.rows, Grouping.COLUMN, GRID.columns],
-    [Grouping.COLUMN, GRID.columns, Grouping.ROW, GRID.rows],
-  ] as [Grouping, Map<Coord, Group>, Grouping, Map<Coord, Group>][];
+  for (const k of ALL_KNOWNS) {
+    for (const groups of [GRID.rows, GRID.columns]) {
+      const candidates = Array.from(groups.values())
+        .map((g) => [g, board.getCandidateCells(g, k)] as [Group, Set<Cell>])
+        .filter(([_, cells]) => cells.size === 2)
+        .map(([g, cells]) => new CandidateGroup(g, cells));
 
-  for (const [g1, groups1, g2, groups2] of iterations) {
-    for (const k of ALL_KNOWNS) {
-      for (const [i1, group1] of groups1) {
-        const cells1 = board.getCandidateCells(group1, k);
-        if (cells1.size !== 2) {
+      for (const [cand1, cand2] of distinctPairs(candidates)) {
+        if (!cand1.matches(cand2)) {
           continue;
         }
 
-        for (const [i2, group2] of groups1) {
-          if (i2 <= i1) {
-            continue;
-          }
+        const candidate = new Candidate(cand1, cand2);
+        const markCells = difference(
+          [candidate.cross1, candidate.cross2].reduce(
+            (cells, cross) => union(cells, board.getCandidateCells(cross, k)),
+            new Set<Cell>()
+          ),
+          candidate.cells
+        );
 
-          const cells2 = board.getCandidateCells(group2, k);
-          if (cells2.size !== 2) {
-            continue;
-          }
-
-          const [cell11, cell12] = [...cells1];
-          const [cell21, cell22] = [...cells2];
-          if (
-            cell11!.point.i[g1] !== cell21!.point.i[g1] ||
-            cell12!.point.i[g1] !== cell22!.point.i[g1]
-          ) {
-            continue;
-          }
-
-          const xwing = new Set([cell11, cell12, cell21, cell22] as Cell[]);
-          const erase = new Set<Cell>();
-          const move = new Move(Strategy.XWing)
-            .group(group1)
-            .group(group2)
-            .clue(xwing, k);
-
-          for (const otherGroup of [
-            groups2.get(cell11!.point.i[g1])!,
-            groups2.get(cell12!.point.i[g1])!,
-          ]) {
-            const diff = difference(
-              board.getCandidateCells(otherGroup, k),
-              xwing
-            );
-            if (diff.size) {
-              for (const cell of diff) {
-                erase.add(cell!);
-              }
-              move.mark(diff, k);
-            }
-          }
-
-          if (move.isEmpty()) {
-            LOG &&
-              console.info(
-                "empty X-Wing for",
-                k,
-                "in",
-                `${Grouping[g1]}S`,
-                group1.coord + 1,
-                "and",
-                group2.coord + 1,
-                `${Grouping[g2]}S`,
-                cell11!.point.i[g1] + 1,
-                "and",
-                cell12!.point.i[g1] + 1
-              );
-            continue;
-          }
-
+        if (!markCells.size) {
           LOG &&
             console.info(
-              "SOLVE X-WING for",
+              "[x-wing] EMPTY",
               k,
-              "in",
-              `${Grouping[g1]}S`,
-              group1.coord + 1,
-              "and",
-              group2.coord + 1,
-              `${Grouping[g2]}S`,
-              cell11!.point.i[g1] + 1,
-              "and",
-              cell12!.point.i[g1] + 1,
-              "erase",
-              Cell.stringFromPoints(erase)
+              candidate.main1.name,
+              candidate.main2.name,
+              "x",
+              candidate.cross1.name,
+              candidate.cross2.name
             );
 
-          moves.push(move);
+          continue;
         }
+
+        LOG &&
+          console.info(
+            "[x-wing] SOLVE",
+            k,
+            candidate.main1.name,
+            candidate.main2.name,
+            "x",
+            candidate.cross1.name,
+            candidate.cross2.name,
+            "∉",
+            Cell.stringFromPoints(markCells)
+          );
+
+        moves.push(
+          new Move(Strategy.XWing)
+            .group(candidate.main1)
+            .group(candidate.main2)
+            .clue(candidate.cells, k)
+            .mark(markCells, k)
+        );
       }
     }
   }
 
   return moves;
+}
+
+class CandidateGroup {
+  readonly main: Group;
+  readonly cells: Set<Cell>;
+  readonly cell1: Cell;
+  readonly cell2: Cell;
+
+  readonly cross1: Group;
+  readonly cross2: Group;
+
+  constructor(main: Group, cells: Set<Cell>) {
+    this.main = main;
+    this.cells = cells;
+
+    const [c1, c2] = Cell.sortedByRowColumn(twoSetValues(cells)) as [
+      Cell,
+      Cell
+    ];
+    this.cell1 = c1;
+    this.cell2 = c2;
+
+    const cross =
+      main.grouping === Grouping.ROW ? Grouping.COLUMN : Grouping.ROW;
+    this.cross1 = c1.groups.get(cross)!;
+    this.cross2 = c2.groups.get(cross)!;
+  }
+
+  matches(other: CandidateGroup): boolean {
+    return this.cross1 === other.cross1 && this.cross2 === other.cross2;
+  }
+}
+
+class Candidate {
+  readonly main1: Group;
+  readonly main2: Group;
+
+  readonly cross1: Group;
+  readonly cross2: Group;
+
+  readonly cells: Set<Cell>;
+
+  constructor(cg1: CandidateGroup, cg2: CandidateGroup) {
+    this.main1 = cg1.main;
+    this.main2 = cg2.main;
+
+    this.cross1 = cg1.cross1;
+    this.cross2 = cg1.cross2;
+
+    this.cells = union(cg1.cells, cg2.cells);
+  }
 }

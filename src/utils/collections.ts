@@ -154,11 +154,11 @@ export function hasEvery<T>(subset: Set<T>, set: Set<T>): boolean {
 }
 
 /**
- * Returns a list of every distinct pairing of the elements of the given set.
- * Each pair of elements will be returned exactly once.
+ * Returns a list of every distinct pairing of the elements of the given collection,
+ * regardless of order and without any element grouped with itself.
  */
-export function distinctPairs<T>(set: Set<T>): [T, T][] {
-  const list = [...set];
+export function distinctPairs<T>(elements: Iterable<T>): [T, T][] {
+  const list = Array.from(elements);
   const pairs = [] as [T, T][];
 
   if (list.length >= 2) {
@@ -173,11 +173,11 @@ export function distinctPairs<T>(set: Set<T>): [T, T][] {
 }
 
 /**
- * Returns a list of every distinct triple of the elements of the given set.
- * Each triple of elements will be returned exactly once.
+ * Returns a list of every distinct triple of the elements of the given collection,
+ * regardless of order and without any element grouped with itself.
  */
-export function distinctTriples<T>(set: Set<T>): [T, T, T][] {
-  const list = [...set];
+export function distinctTriples<T>(elements: Iterable<T>): [T, T, T][] {
+  const list = Array.from(elements);
   const triples = [] as [T, T, T][];
 
   if (list.length >= 3) {
