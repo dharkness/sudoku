@@ -115,9 +115,7 @@ but feel free to explore and scavenge any code you find useful.
         - XY-Chain
           https://www.sudokuwiki.org/XY_Chains
         - Fish
-          - generalize X-Wing to Fish
-          - Jellyfish (4)
-            https://hodoku.sourceforge.net/en/tech_fishb.php
+          - refactor X-Wing, Swordfish, and Jellyfish to Fish
           - Finned and Sashimi Fish
             https://www.sudokuonline.io/tips/sudoku-x-wing
 

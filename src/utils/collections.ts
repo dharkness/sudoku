@@ -154,6 +154,26 @@ export function hasEvery<T>(subset: Set<T>, set: Set<T>): boolean {
 }
 
 /**
+ * Uses the `reducer` callback to calculate a value from the elements of an iterable
+ * similar to `Array.reduce()`.
+ */
+export function reduce<T, A>(
+  elements: Iterable<T>,
+  reducer: (acc: A, t: T, i: number, ts: Iterable<T>) => A,
+  initial: A
+): A {
+  let acc = initial;
+  let i = 0;
+
+  for (const t of elements) {
+    acc = reducer(acc, t, i, elements);
+    i += 1;
+  }
+
+  return acc;
+}
+
+/**
  * Returns a list of every distinct pairing of the elements of the given collection,
  * regardless of order and without any element grouped with itself.
  */
@@ -191,6 +211,29 @@ export function distinctTriples<T>(elements: Iterable<T>): [T, T, T][] {
   }
 
   return triples;
+}
+
+/**
+ * Returns a list of every distinct quad of the elements of the given collection,
+ * regardless of order and without any element grouped with itself.
+ */
+export function distinctQuads<T>(elements: Iterable<T>): [T, T, T, T][] {
+  const list = Array.from(elements);
+  const quads = [] as [T, T, T, T][];
+
+  if (list.length >= 4) {
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        for (let k = j + 1; k < list.length; k++) {
+          for (let l = k + 1; l < list.length; l++) {
+            quads.push([list[i]!, list[j]!, list[k]!, list[l]!]);
+          }
+        }
+      }
+    }
+  }
+
+  return quads;
 }
 
 /**

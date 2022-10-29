@@ -13,6 +13,7 @@ import singlesChains from "./solveSinglesChains";
 import yWings from "./solveYWings";
 import swordfish from "./solveSwordfish";
 import xyzWings from "./solveXYZWings";
+import jellyfish from "./solveJellyfish";
 import emptyRectangles from "./solveEmptyRectangles";
 import uniqueRectangles from "./solveUniqueRectangles";
 import bruteForce from "./solveBruteForce";
@@ -32,6 +33,7 @@ export default {
   yWings,
   swordfish,
   xyzWings,
+  jellyfish,
   emptyRectangles,
   uniqueRectangles,
   bruteForce,

@@ -73,6 +73,7 @@ const buttons = {
   yWings: "Y-Wings",
   swordfish: "Swordfish",
   xyzWings: "XYZ-Wings",
+  jellyfish: "Jellyfish",
   emptyRectangles: "Empty Rectangles",
   uniqueRectangles: "Unique Rectangles",
   // bruteForce: "Brute Force",
