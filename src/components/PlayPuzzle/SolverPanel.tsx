@@ -71,6 +71,7 @@ const buttons = {
   xWings: "X-Wings",
   singlesChains: "Singles Chains",
   yWings: "Y-Wings",
+  swordfish: "Swordfish",
   xyzWings: "XYZ-Wings",
   emptyRectangles: "Empty Rectangles",
   uniqueRectangles: "Unique Rectangles",

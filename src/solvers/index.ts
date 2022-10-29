@@ -11,6 +11,7 @@ import hiddenTriples from "./solveHiddenTriples";
 import xWings from "./solveXWings";
 import singlesChains from "./solveSinglesChains";
 import yWings from "./solveYWings";
+import swordfish from "./solveSwordfish";
 import xyzWings from "./solveXYZWings";
 import emptyRectangles from "./solveEmptyRectangles";
 import uniqueRectangles from "./solveUniqueRectangles";
@@ -29,6 +30,7 @@ export default {
   xWings,
   singlesChains,
   yWings,
+  swordfish,
   xyzWings,
   emptyRectangles,
   uniqueRectangles,

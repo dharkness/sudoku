@@ -234,6 +234,7 @@ export enum Strategy {
   SinglesChain, // cells, 1 candidate -> cells; remove candidate from cells
   YWing,
   XYZWing,
+  Swordfish,
   EmptyRectangle, // block, (2 cells, 1 candidate) -> cells; remove candidate from cells
   UniqueRectangle,
 
