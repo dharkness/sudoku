@@ -230,6 +230,7 @@ export enum Strategy {
   NakedQuad,
   HiddenPair, // 2 cells, 2 candidates, 1 group -> remove other candidates from the cells
   HiddenTriple, // same ^ but with 3 cells and candidates
+  HiddenQuad,
 
   XWing, // 4 cells, 1 candidate; 1 direction (row or column) -> cells; remove candidate from other cells in given direction
   SinglesChain, // cells, 1 candidate -> cells; remove candidate from cells

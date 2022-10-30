@@ -1,7 +1,7 @@
 import { ReadableBoard } from "../models/board";
 import { Move, Strategy } from "../models/solutions";
 
-import { distinctTriples } from "../utils/collections";
+import { distinctQuads } from "../utils/collections";
 
 import solveAbstractHiddenTuples from "./solveAbstractHiddenTuples";
 
@@ -26,13 +26,16 @@ import solveAbstractHiddenTuples from "./solveAbstractHiddenTuples";
  *     |  | remove 2, 6 and 7 from cell 6
  *     |  remove 2 and 6 from cell 4
  *     remove 6 from cell 1
+ *
+ * "65..87.24 ...649.5. .4..25... 57.438.61 ...5.1... 31.9.2.85 ...89..1. ...213... 13.75..98"
+ * "9.15...46 425.9..81 86..1..2. 5.2...... .19...46. 6.......2 196.4.253 2...6.817 .....1694"
  */
-export default function solveHiddenTriples(board: ReadableBoard): Move[] {
+export default function solveHiddenQuads(board: ReadableBoard): Move[] {
   return solveAbstractHiddenTuples(
-    "hidden triple",
-    Strategy.HiddenTriple,
-    [2, 3],
-    distinctTriples,
+    "hidden quad",
+    Strategy.HiddenQuad,
+    [2, 3, 4],
+    distinctQuads,
     board
   );
 }

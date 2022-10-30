@@ -69,6 +69,7 @@ const buttons = {
   nakedQuads: "Naked Quads",
   hiddenPairs: "Hidden Pairs",
   hiddenTriples: "Hidden Triples",
+  hiddenQuads: "Hidden Quads",
   xWings: "X-Wings",
   singlesChains: "Singles Chains",
   yWings: "Y-Wings",

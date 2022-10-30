@@ -9,6 +9,7 @@ import nakedTriples from "./solveNakedTriples";
 import nakedQuads from "./solveNakedQuads";
 import hiddenPairs from "./solveHiddenPairs";
 import hiddenTriples from "./solveHiddenTriples";
+import hiddenQuads from "./solveHiddenQuads";
 import xWings from "./solveXWings";
 import singlesChains from "./solveSinglesChains";
 import yWings from "./solveYWings";
@@ -30,6 +31,7 @@ export default {
   nakedQuads,
   hiddenPairs,
   hiddenTriples,
+  hiddenQuads,
   xWings,
   singlesChains,
   yWings,
