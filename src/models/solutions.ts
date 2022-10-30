@@ -227,6 +227,7 @@ export enum Strategy {
 
   NakedPair, // 2 cells, 2 candidates, 1 group -> cells; remove both candidates from other cells in group
   NakedTriple, // same ^ but with 3 cells and candidates
+  NakedQuad,
   HiddenPair, // 2 cells, 2 candidates, 1 group -> remove other candidates from the cells
   HiddenTriple, // same ^ but with 3 cells and candidates
 

@@ -6,6 +6,7 @@ import hiddenSingles from "./solveHiddenSingles";
 import intersectionRemovals from "./solveIntersectionRemovals";
 import nakedPairs from "./solveNakedPairs";
 import nakedTriples from "./solveNakedTriples";
+import nakedQuads from "./solveNakedQuads";
 import hiddenPairs from "./solveHiddenPairs";
 import hiddenTriples from "./solveHiddenTriples";
 import xWings from "./solveXWings";
@@ -26,6 +27,7 @@ export default {
   intersectionRemovals,
   nakedPairs,
   nakedTriples,
+  nakedQuads,
   hiddenPairs,
   hiddenTriples,
   xWings,

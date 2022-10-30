@@ -1,12 +1,9 @@
-import { Known, stringFromKnownSet } from "../models/basics";
 import { ReadableBoard } from "../models/board";
-import { GRID, Cell } from "../models/grid";
-import { printGroupCandidates } from "../models/printers";
 import { Move, Strategy } from "../models/solutions";
 
-import { difference, union } from "../utils/collections";
+import { distinctPairs } from "../utils/collections";
 
-const LOG = false;
+import solveAbstractNakedTuples from "./solveAbstractNakedTuples";
 
 /**
  * Looks for naked pairs to determine pencil marks to remove.
@@ -25,81 +22,15 @@ const LOG = false;
  *   7 ·········      (coincidence that hidden pair [1, 2] has same result)
  *   8 ·········
  *   9 ·········
+ *
+ * "9........ 3...6..2. ..5...7.3 .31.84... 82..1.549 .4....8.. 75.1.6.8. 4..8..1.. ...7....."
  */
 export default function solveNakedPairs(board: ReadableBoard): Move[] {
-  const moves: Move[] = [];
-
-  for (const [g, groups] of GRID.groups) {
-    for (const [_, group] of groups) {
-      const pairs = new Map(
-        [...group.cells.values()]
-          .map(
-            (cell) => [cell, board.getCandidates(cell)] as [Cell, Set<Known>]
-          )
-          .filter(([_, knowns]) => knowns.size === 2)
-      );
-      if (pairs.size < 2) {
-        continue;
-      }
-
-      for (const [c1, ks1] of pairs) {
-        for (const [c2, ks2] of pairs) {
-          if (c2.point.i[g] <= c1.point.i[g]) {
-            continue;
-          }
-
-          const ks1ks2 = union(ks1, ks2);
-          if (ks1ks2.size !== 2) {
-            continue;
-          }
-
-          const pair = new Set([c1, c2]);
-          const erase = new Map<Known, Set<Cell>>();
-          const move = new Move(Strategy.NakedPair)
-            .group(group)
-            .clue(pair, ks1ks2);
-
-          for (const k of ks1ks2) {
-            const diff = difference(board.getCandidateCells(group, k), pair);
-            if (diff.size) {
-              erase.set(k, diff);
-              move.mark(diff, k);
-            }
-          }
-
-          if (move.isEmpty()) {
-            LOG &&
-              console.info(
-                "empty naked pair",
-                stringFromKnownSet(ks1ks2),
-                "in",
-                group.name,
-                Cell.stringFromGroupCoords(g, pair)
-              );
-            continue;
-          }
-
-          LOG && printGroupCandidates(board, group);
-          LOG &&
-            console.info(
-              "SOLVE NAKED PAIR",
-              stringFromKnownSet(ks1),
-              "in",
-              group.name,
-              Cell.stringFromGroupCoords(g, pair),
-              "erase",
-              ...[...erase.entries()].flatMap(([k, cells]) => [
-                k,
-                Cell.stringFromPoints(cells),
-              ])
-            );
-          // LOG && move.log();
-
-          moves.push(move);
-        }
-      }
-    }
-  }
-
-  return moves;
+  return solveAbstractNakedTuples(
+    "naked pair",
+    Strategy.NakedPair,
+    [2],
+    distinctPairs,
+    board
+  );
 }

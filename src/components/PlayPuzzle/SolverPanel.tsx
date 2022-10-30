@@ -66,6 +66,7 @@ const buttons = {
   intersectionRemovals: "Intersection Removals",
   nakedPairs: "Naked Pairs",
   nakedTriples: "Naked Triples",
+  nakedQuads: "Naked Quads",
   hiddenPairs: "Hidden Pairs",
   hiddenTriples: "Hidden Triples",
   xWings: "X-Wings",
