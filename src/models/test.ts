@@ -150,7 +150,7 @@ while (!stop && (knowns.length || pencils.length)) {
 
     console.log("");
     console.log("erasing", cell.toString(), "=>", known);
-    GRID.removeCandidate(board, cell, known);
+    board.removeCandidate(cell, known);
     // printAllCandidates(board);
 
     const test = GRID.toString(board);
@@ -185,7 +185,7 @@ while (!stop && (knowns.length || pencils.length)) {
     printValues(board);
     console.log("");
     console.log("solving", cell.toString(), "=>", known);
-    GRID.setKnown(board, cell, known);
+    board.setKnown(cell, known);
 
     const test = GRID.toString(board);
     if (!GRID.validate(board) || !isCorrectSoFar(test, full)) {
@@ -214,7 +214,7 @@ while (!stop && (knowns.length || pencils.length)) {
 
     console.log("");
     console.log("erasing", cell.toString(), "=>", known);
-    GRID.removeCandidate(board, cell, known);
+    board.removeCandidate(cell, known);
     // printAllCandidates(board);
 
     const test = GRID.toString(board);

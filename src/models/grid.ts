@@ -8,7 +8,6 @@ import {
   Known,
   Point,
   UNKNOWN,
-  Value,
 } from "./basics";
 import { ReadableBoard, WritableBoard } from "./board";
 
@@ -534,38 +533,6 @@ class Grid {
     return pointOrCell instanceof Cell
       ? pointOrCell
       : this.cells.get(pointOrCell)!;
-  }
-
-  isCandidate(
-    board: ReadableBoard,
-    pointOrCell: Point | Cell,
-    known: Known
-  ): boolean {
-    return board.isCandidate(this.getCell(pointOrCell), known);
-  }
-
-  getCandidates(board: ReadableBoard, pointOrCell: Point | Cell): Set<Known> {
-    return board.getCandidates(this.getCell(pointOrCell));
-  }
-
-  removeCandidate(
-    board: WritableBoard,
-    pointOrCell: Point | Cell,
-    known: Known
-  ): boolean {
-    return board.removeCandidate(this.getCell(pointOrCell), known);
-  }
-
-  getValue(board: ReadableBoard, pointOrCell: Point | Cell): Value {
-    return board.getValue(this.getCell(pointOrCell));
-  }
-
-  setKnown(
-    board: WritableBoard,
-    pointOrCell: Point | Cell,
-    known: Known
-  ): boolean {
-    return board.setKnown(this.getCell(pointOrCell), known);
   }
 
   toString(board: ReadableBoard): string {
