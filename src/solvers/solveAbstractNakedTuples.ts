@@ -92,7 +92,7 @@ export default function solveAbstractNakedTuples(
             group.name,
             Cell.stringFromGroupCoords(g, cells),
             "erase",
-            ...[...erase.entries()].flatMap(([k, cells]) => [
+            ...Array.from(erase.entries()).flatMap(([k, cells]) => [
               k,
               Cell.stringFromPoints(cells),
             ])

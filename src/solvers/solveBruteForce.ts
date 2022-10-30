@@ -12,7 +12,7 @@ const LOG = false;
  */
 export default function solveBruteForce(board: ReadableBoard): Move[] {
   const moves: Move[] = [];
-  const unsolved = [...GRID.cells.values()]
+  const unsolved = Array.from(GRID.cells.values())
     .filter((cell) => board.getValue(cell) === UNKNOWN)
     .sort((a, b) => a.point.k.localeCompare(b.point.k));
 
@@ -172,7 +172,7 @@ function solveNextUnknown(
 }
 
 function next(cells: Set<Cell>): [Cell, Set<Cell>] {
-  const rest = [...cells];
+  const rest = Array.from(cells);
 
   if (!rest.length) {
     throw new Error("Cannot call next() on empty set");

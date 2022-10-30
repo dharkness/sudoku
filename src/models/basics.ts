@@ -98,7 +98,13 @@ export function uniquePoints(points: Point[]): Point[] {
  * Returns a human-readable string representation of a set of points.
  */
 export function stringFromPointSet(points: Set<Point>): string {
-  return "( " + [...points.values()].map((point) => point.k).join(" ") + " )";
+  return (
+    "( " +
+    Array.from(points.values())
+      .map((point) => point.k)
+      .join(" ") +
+    " )"
+  );
 }
 
 /**
@@ -142,7 +148,13 @@ export class PointSet extends Set<Point> {
   }
 
   toString(): string {
-    return "( " + [...this.values()].map((p) => p.k).join(" ") + " )";
+    return (
+      "( " +
+      Array.from(this.values())
+        .map((p) => p.k)
+        .join(" ") +
+      " )"
+    );
   }
 }
 
@@ -218,7 +230,9 @@ export function stringFromKnownSet(knowns: Set<Known>): string {
  * Returns a stable key for a set of knowns.
  */
 export function keyFromKnownSet(knowns: Set<Known>): string {
-  return [...knowns].sort((a, b) => a - b).join(",");
+  return Array.from(knowns)
+    .sort((a, b) => a - b)
+    .join(",");
 }
 
 /**

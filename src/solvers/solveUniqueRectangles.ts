@@ -323,8 +323,8 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
       }
 
       const candidate = singleSetValue(roofLeftExtra);
-      const cells = [...roofLeft.commonNeighbors.get(roofRight)!].filter((c) =>
-        board.isCandidate(c, candidate)
+      const cells = Array.from(roofLeft.commonNeighbors.get(roofRight)!).filter(
+        (c) => board.isCandidate(c, candidate)
       );
       if (!cells.length) {
         return;

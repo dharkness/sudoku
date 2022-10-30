@@ -107,7 +107,7 @@ export default function solveSinglesChains(board: ReadableBoard): Move[] {
       LOG && console.info("[singles-chain] CHECK", candidate.point.k);
 
       const chain = new Chain(candidate);
-      const stack = [[...sees]];
+      const stack = [Array.from(sees)];
       let shortest = 1000;
 
       while (stack.length) {
@@ -187,7 +187,7 @@ export default function solveSinglesChains(board: ReadableBoard): Move[] {
         if (next.size) {
           LOG && console.info("[singles-chain] EXTEND", node.point.k);
 
-          stack.push([...next]);
+          stack.push(Array.from(next));
         } else {
           // pushed above to check chain, not extending same as finding empty pool
           chain.pop();

@@ -106,7 +106,21 @@ but feel free to explore and scavenge any code you find useful.
           - group by a key that allows detecting identical moves
             - store added and removed moves in each step instead of full set (why?)
         - store strategy to preview to update move after application (what was this?)
-      - produce moves when internally erasing marks
+      - return moves when internally solving cells or removing candidates
+        - create Moves to allow applying individual strategies?
+          - simply replace Solution with that, keeping it attached to the Board?
+          - I don't like passing in a `Move[]` as it affects so many methods,
+            but that does make it more explicit as it's in every caller's face.
+        - Board.setKnown()
+          - remove mark from remaining candidate cells
+            - Group.onSetKnown()
+        - Board.removeCandidate()
+          - Naked Single - solve last remaining candidate
+          - Hidden Single - solve last remaining candidate cell
+            - Group.onOneCellLeft()
+          - Intersection Removal (which depends on the disjoint) - remove candidate from other disjoint
+            - Disjoint.onNoCellsLeft()
+            - Intersection.removeCandidateFromOtherDisjoint()
       - checkbox to automatically apply each strategy
       - show/apply each solution separately; highlight cells on hover; animate on apply
       - new solvers

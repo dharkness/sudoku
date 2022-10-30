@@ -254,7 +254,9 @@ export function combinePairs<T>(a: Set<T>, b: Set<T>): [T, T][] {
  * Returns a new map of sets containing only the non-empty values.
  */
 export function withoutEmptySets<T, U>(map: Map<T, Set<U>>): Map<T, Set<U>> {
-  return new Map([...map.entries()].filter(([_, cells]) => cells.size > 0));
+  return new Map(
+    Array.from(map.entries()).filter(([_, cells]) => cells.size > 0)
+  );
 }
 
 /**
@@ -264,7 +266,9 @@ export function withoutEmptySets<T, U>(map: Map<T, Set<U>>): Map<T, Set<U>> {
  */
 export function deepCloneMap<K, V>(map: Map<K, V>, cloneValue?: (v: V) => V) {
   return new Map(
-    cloneValue ? [...map.entries()].map(([k, v]) => [k, cloneValue(v)]) : map
+    cloneValue
+      ? Array.from(map.entries()).map(([k, v]) => [k, cloneValue(v)])
+      : map
   );
 }
 
@@ -279,7 +283,7 @@ export function deepCloneMapOfSets<K, V>(
   cloneValue?: (v: V) => V
 ) {
   return deepCloneMap(map, (set) =>
-    cloneValue ? new Set([...set].map(cloneValue)) : new Set(set)
+    cloneValue ? new Set(Array.from(set).map(cloneValue)) : new Set(set)
   );
 }
 
@@ -297,7 +301,7 @@ export function intersectMap<K, V>(set: Set<K>, map: Map<K, V>): Map<K, V> {
   }
 
   return result;
-  // return new Map([...map.entries()].filter(([k]) => set.has(k)));
+  // return new Map(Array.from(map.entries()).filter(([k]) => set.has(k)));
 }
 
 /**

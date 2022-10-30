@@ -29,7 +29,7 @@ export class SolvedKnowns {
   }
 
   ordered(): [Cell, Known][] {
-    return [...this.knowns.entries()];
+    return Array.from(this.knowns.entries());
   }
 
   randomized(): [Cell, Known][] {
@@ -94,8 +94,8 @@ export class ErasedPencils {
   }
 
   ordered(): [Cell, Known][] {
-    return [...this.pencils.entries()].flatMap(([cell, knowns]) =>
-      [...knowns].map((known) => [cell, known])
+    return Array.from(this.pencils.entries()).flatMap(([cell, knowns]) =>
+      Array.from(knowns).map((known) => [cell, known])
     ) as [Cell, Known][];
   }
 
@@ -217,6 +217,7 @@ export function solutionsFromString(values: string): Solutions {
 export enum Strategy {
   ManualSetValue, // cell, known -> set cell to known
   ManualRemoveCandidate, // cell, known -> remove candidate from cell
+  Neighbor,
 
   NakedSingle, // cell, candidate -> set cell to candidate; remove candidate from neighbors
   HiddenSingle, // cell, candidate, group(s) -> set cell to candidate
@@ -400,7 +401,7 @@ export class Move {
 
   getBorders(cell: Cell): Borders {
     if (this.groups.size) {
-      return [...this.groups]
+      return Array.from(this.groups)
         .map((group) => group.borders.get(cell))
         .filter(Boolean)
         .reduce(
@@ -443,8 +444,8 @@ export class Move {
   }
 
   getColors(cell: Cell): Map<Known, MarkColor> {
-    const clues = [...(this.clues.get(cell) || [])] || [];
-    const marks = [...(this.marks.get(cell) || [])] || [];
+    const clues = Array.from(this.clues.get(cell) || []);
+    const marks = Array.from(this.marks.get(cell) || []);
     const set = this.sets.get(cell);
 
     return new Map<Known, MarkColor>([

@@ -92,7 +92,7 @@ export default function solveAbstractHiddenTuples(
             group.name,
             Cell.stringFromGroupCoords(g, cells),
             "erase",
-            ...[...erase.entries()].flatMap(([c, ks]) => [
+            ...Array.from(erase.entries()).flatMap(([c, ks]) => [
               c.toString(),
               stringFromKnownSet(ks),
             ])
