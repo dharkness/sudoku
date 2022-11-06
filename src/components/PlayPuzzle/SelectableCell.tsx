@@ -2,9 +2,9 @@ import clsx from "clsx";
 
 import { Known, UNKNOWN, Value } from "../../models/basics";
 import { Cell } from "../../models/grid";
-import { Decoration } from "../../models/solutions";
 
 import CellCandidates, { ShowMarkNumber } from "./CellCandidates";
+import { Decoration } from "../../models/decoration";
 
 type SelectableCellProps = {
   cell: Cell;

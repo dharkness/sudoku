@@ -1,7 +1,7 @@
 import { ALL_KNOWNS, Known, stringFromKnownSet } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell } from "../models/grid";
-import { Move, Strategy } from "../models/solutions";
+import { Move, Strategy } from "../models/move";
 
 import {
   combinePairs,
@@ -105,7 +105,7 @@ export default function solveXYZWings(board: ReadableBoard): Move[] {
           );
 
         moves.push(
-          new Move(Strategy.XYZWing)
+          Move.start(Strategy.XYZWing)
             .clue([cell, xCell, yCell], [x, y])
             .clue([cell, xCell, yCell], z, "yellow")
             .mark(markCells, z)

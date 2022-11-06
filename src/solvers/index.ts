@@ -1,4 +1,4 @@
-import { Move } from "../models/solutions";
+import { Move } from "../models/move";
 import { ReadableBoard } from "../models/board";
 
 import nakedSingles from "./solveNakedSingles";

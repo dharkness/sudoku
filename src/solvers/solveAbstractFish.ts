@@ -1,7 +1,7 @@
 import { ALL_KNOWNS, Grouping } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { Cell, GRID, Group } from "../models/grid";
-import { Move, Strategy } from "../models/solutions";
+import { Move, Strategy } from "../models/move";
 
 import {
   areEqual,
@@ -70,7 +70,7 @@ export default function solveAbstractFish(
           );
 
         moves.push(
-          new Move(strategy)
+          Move.start(strategy)
             .group(fish.mains)
             .clue(fish.cells, k)
             .mark(markCells, k)

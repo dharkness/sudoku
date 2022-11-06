@@ -1,6 +1,6 @@
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell, Intersection } from "../models/grid";
-import { Move, Strategy } from "../models/solutions";
+import { Move, Strategy } from "../models/move";
 
 import { difference, intersect, withoutEmptySets } from "../utils/collections";
 
@@ -73,7 +73,7 @@ export default function solveIntersectionRemovals(
       }
 
       moves.push(
-        new Move(
+        Move.start(
           pointing
             ? count === 2
               ? Strategy.PointingPair

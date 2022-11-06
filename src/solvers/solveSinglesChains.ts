@@ -1,9 +1,10 @@
 import { ALL_KNOWNS } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell } from "../models/grid";
-import { MarkColor, Move, Strategy } from "../models/solutions";
+import { Move, Strategy } from "../models/move";
 
 import { difference, intersect, twoSetValues } from "../utils/collections";
+import { MarkColor } from "../models/decoration";
 
 const LOG = false;
 
@@ -196,7 +197,7 @@ export default function solveSinglesChains(board: ReadableBoard): Move[] {
     }
 
     for (const [cell, colors] of found) {
-      const move = new Move(Strategy.SinglesChain).mark(cell, k);
+      const move = Move.start(Strategy.SinglesChain).mark(cell, k);
 
       for (const [c, color] of colors) {
         move.clue(c, k, color);

@@ -7,7 +7,7 @@ import {
   SimpleBoard,
 } from "../../models/board";
 import { Cell } from "../../models/grid";
-import { Move, solutionsFromString } from "../../models/solutions";
+import { Move, Moves, movesFromString, Strategy } from "../../models/move";
 
 import { singleSetValue } from "../../utils/collections";
 
@@ -46,17 +46,7 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
     const board = createEmptySimpleBoard();
 
     if (start) {
-      const knowns = solutionsFromString(start).randomizedSolvedKnowns();
-
-      for (const [cell, known] of knowns) {
-        board.setKnown(cell, known);
-      }
-
-      const solved = board.getSolved();
-      board.clearSolved();
-      solved.forEachErasedPencil((cell, known) =>
-        board.removeCandidate(cell, known)
-      );
+      movesFromString(start).apply(board).only(Strategy.Neighbor).apply(board);
     }
 
     return {
@@ -174,15 +164,9 @@ const reducer: Reducer = (state: State, action: Action) => {
         }
 
         const clone = new SimpleBoard(board);
-        clone.setKnown(selected, known);
-
-        let solved;
-        while (!(solved = clone.getSolved()).isEmpty()) {
-          clone.clearSolved();
-          solved.forEachErasedPencil((cell: Cell, known: Known) =>
-            clone.removeCandidate(cell, known)
-          );
-        }
+        const next = new Moves();
+        Move.start(Strategy.Solve).set(selected, known).apply(clone, next);
+        next.only(Strategy.Neighbor).apply(clone);
 
         return clone;
       });
@@ -200,15 +184,8 @@ const reducer: Reducer = (state: State, action: Action) => {
         }
 
         const clone = new SimpleBoard(board);
-        clone.removeCandidate(selected, known);
-
-        let solved;
-        while (!(solved = clone.getSolved()).isEmpty()) {
-          clone.clearSolved();
-          solved.forEachErasedPencil((cell: Cell, known: Known) =>
-            clone.removeCandidate(cell, known)
-          );
-        }
+        const next = new Moves();
+        Move.start(Strategy.EraseMark).mark(selected, known).apply(clone, next);
 
         return clone;
       });
@@ -224,17 +201,11 @@ const reducer: Reducer = (state: State, action: Action) => {
         }
 
         const clone = new SimpleBoard(board);
+        const next = new Moves();
 
         // moves.forEach((move) => move.apply(clone));
-        move.apply(clone);
-
-        let solved;
-        while (!(solved = clone.getSolved()).isEmpty()) {
-          clone.clearSolved();
-          solved.forEachErasedPencil((cell: Cell, known: Known) =>
-            clone.removeCandidate(cell, known)
-          );
-        }
+        move.apply(clone, next);
+        next.only(Strategy.Neighbor).apply(clone);
 
         return clone;
       });

@@ -1,6 +1,6 @@
 // ========== COORDS ============================================================ //
 
-const MISSING = "·";
+import { EMPTY, MISSING } from "./symbols";
 
 /**
  * Identifies a row, column, or block (numbered left-to-right, top-to-bottom)
@@ -221,6 +221,10 @@ export function valueFromString(char: string): Value {
  * Returns a string form of a set of knowns.
  */
 export function stringFromKnownSet(knowns: Set<Known>): string {
+  if (!knowns.size) {
+    return EMPTY;
+  }
+
   return `( ${ALL_KNOWNS.map((k) =>
     knowns.has(k) ? k.toString() : MISSING
   ).join(" ")} )`;

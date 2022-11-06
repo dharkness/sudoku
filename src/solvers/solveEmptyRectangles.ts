@@ -1,7 +1,7 @@
 import { ALL_KNOWNS } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell, Column, Group, Row } from "../models/grid";
-import { Move, Strategy } from "../models/solutions";
+import { Move, Strategy } from "../models/move";
 
 import { difference, intersect, singleSetValue } from "../utils/collections";
 
@@ -151,7 +151,7 @@ export default function solveEmptyRectangles(board: ReadableBoard): Move[] {
           const double = candidates.size === 2;
           checked.add(remove);
 
-          const move = new Move(Strategy.EmptyRectangle)
+          const move = Move.start(Strategy.EmptyRectangle)
             .group(block)
             .clue(cells, k, "blue")
             .clue(end, k)

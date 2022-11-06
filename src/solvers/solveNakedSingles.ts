@@ -1,6 +1,6 @@
 import { ReadableBoard } from "../models/board";
 import { GRID } from "../models/grid";
-import { Move, Strategy } from "../models/solutions";
+import { Move, Strategy } from "../models/move";
 
 import { singleSetValue } from "../utils/collections";
 
@@ -19,7 +19,7 @@ export default function solveNakedSingles(board: ReadableBoard): Move[] {
       const candidate = singleSetValue(candidates);
 
       moves.push(
-        new Move(Strategy.NakedSingle)
+        Move.start(Strategy.NakedSingle)
           .clue(cell, candidate)
           .set(cell, candidate)
       );

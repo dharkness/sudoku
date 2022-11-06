@@ -8,15 +8,21 @@ import {
   Value,
 } from "./basics";
 import { GRID, Cell, Container } from "./grid";
-import { Solutions } from "./solutions";
+import { Moves, Strategy } from "./move";
 
 import {
   deepCloneMap,
   deepCloneMapOfSets,
+  excluding,
   singleSetValue,
 } from "../utils/collections";
 
 const LOG = false;
+
+enum CellError {
+  Unsolvable,
+  Duplicate,
+}
 
 export interface ReadableBoard {
   solvedCount(): number;
@@ -29,27 +35,22 @@ export interface ReadableBoard {
 
   getCandidateCells(container: Container, known: Known): Set<Cell>;
   getCandidateCellsByKnown(container: Container): Map<Known, Set<Cell>>;
+
+  collectErrors(): Map<Cell, CellError>;
 }
 
 export interface WritableBoard extends ReadableBoard {
   addCell(cell: Cell): void;
   addContainer(container: Container): void;
 
-  setKnown(cell: Cell, known: Known): boolean;
+  setKnown(cell: Cell, known: Known, moves: Moves): boolean;
   removeCandidate(
     cell: Cell,
     known: Known,
-    triggerLastCandidate?: boolean
+    triggerLastCandidate: boolean,
+    moves: Moves
   ): boolean;
   clearCandidateCells(container: Container, known: Known): Set<Cell>;
-
-  // FACTOR Move safety checks to Solutions
-  getSolved(): Solutions;
-  addSolvedKnown(cell: Cell, known: Known): void;
-  removeSolvedKnown(cell: Cell): void;
-  addErasedPencil(cell: Cell, known: Known): void;
-  removeErasedPencil(cell: Cell, known: Known): void;
-  clearSolved(): void;
 }
 
 export class SimpleBoard implements WritableBoard {
@@ -62,8 +63,6 @@ export class SimpleBoard implements WritableBoard {
   private readonly candidateContainers: Map<Cell, Map<Known, Set<Container>>>;
 
   private readonly candidateCells: Map<Container, Map<Known, Set<Cell>>>;
-
-  private solutions: Solutions;
 
   constructor(clone?: SimpleBoard) {
     if (clone) {
@@ -79,7 +78,6 @@ export class SimpleBoard implements WritableBoard {
         clone.candidateCells,
         deepCloneMapOfSets
       );
-      this.solutions = new Solutions();
     } else {
       this.step = 1;
       this.values = new Map<Cell, Value>();
@@ -87,7 +85,6 @@ export class SimpleBoard implements WritableBoard {
       this.containers = new Map<Cell, Set<Container>>();
       this.candidateContainers = new Map<Cell, Map<Known, Set<Container>>>();
       this.candidateCells = new Map<Container, Map<Known, Set<Cell>>>();
-      this.solutions = new Solutions();
     }
   }
 
@@ -143,7 +140,7 @@ export class SimpleBoard implements WritableBoard {
     return this.values.get(cell)!;
   }
 
-  setKnown(cell: Cell, known: Known): boolean {
+  setKnown(cell: Cell, known: Known, moves: Moves): boolean {
     const current = this.getValue(cell);
     if (current === known) {
       return false;
@@ -157,8 +154,7 @@ export class SimpleBoard implements WritableBoard {
       throw new NotCandidateError(cell, known, candidates);
     }
 
-    const remaining = new Set(candidates);
-    remaining.delete(known);
+    const remaining = excluding(candidates, known);
     LOG &&
       console.info(
         "STATE set",
@@ -175,15 +171,15 @@ export class SimpleBoard implements WritableBoard {
     //   remove candidate from cell
     //   collect candidate cells into set to remove as candidate, i.e. neighbors
     //     Groups return cells; Intersections return none
-    const containers = [...this.candidateContainers.get(cell)!.get(known)!];
+    const containers = this.candidateContainers.get(cell)!.get(known)!;
     for (const container of containers) {
-      container.onSetKnown(this, cell, known);
+      container.onSetKnown(this, cell, known, moves);
     }
 
     // for every remaining known in cell
     //   remove candidates
-    for (const k of [...remaining]) {
-      this.removeCandidate(cell, k, false);
+    for (const k of remaining) {
+      this.removeCandidate(cell, k, false, moves);
     }
 
     return true;
@@ -206,7 +202,8 @@ export class SimpleBoard implements WritableBoard {
   removeCandidate(
     cell: Cell,
     known: Known,
-    triggerLastCandidate: boolean = true
+    triggerLastCandidate: boolean,
+    moves: Moves
   ): boolean {
     const candidates = this.getCandidates(cell);
     if (!candidates.has(known)) {
@@ -242,11 +239,11 @@ export class SimpleBoard implements WritableBoard {
 
     // solve cell if only one candidate remaining
     if (triggerLastCandidate && remaining.size === 1) {
-      this.addSolvedKnown(cell, singleSetValue(remaining));
+      moves.add(Strategy.NakedSingle).set(cell, singleSetValue(remaining));
     }
 
     // remove candidate cell from its containers
-    const containers = [...this.candidateContainers.get(cell)!.get(known)!];
+    const containers = this.candidateContainers.get(cell)!.get(known)!;
     for (const container of containers) {
       const candidateCells = this.candidateCells.get(container)!.get(known)!;
       if (!candidateCells.has(cell)) {
@@ -264,8 +261,7 @@ export class SimpleBoard implements WritableBoard {
       }
 
       // remove cell from container
-      const remaining = new Set(candidateCells);
-      remaining.delete(cell);
+      const remaining = excluding(candidateCells, cell);
       this.candidateCells.get(container)!.set(known, remaining);
 
       LOG &&
@@ -283,11 +279,16 @@ export class SimpleBoard implements WritableBoard {
       // notify container when zero or one candidate cell remains
       switch (remaining.size) {
         case 1:
-          container.onOneCellLeft(this, known, singleSetValue(remaining));
+          container.onOneCellLeft(
+            this,
+            known,
+            singleSetValue(remaining),
+            moves
+          );
           break;
 
         case 0:
-          container.onNoCellsLeft(this, known);
+          container.onNoCellsLeft(this, known, moves);
           break;
       }
     }
@@ -330,53 +331,28 @@ export class SimpleBoard implements WritableBoard {
     return cells;
   }
 
-  getSolved(): Solutions {
-    return this.solutions;
-  }
+  // ========== ERRORS ========================================
 
-  addSolvedKnown(cell: Cell, known: Known): void {
-    // fail on change; ignore when already set to known
-    const current = this.getValue(cell);
-    if (current !== UNKNOWN) {
-      if (current !== known) {
-        throw new ChangeCellValueError(cell, current, known);
+  collectErrors(): Map<Cell, CellError> {
+    const errors = new Map<Cell, CellError>();
+
+    for (const cell of GRID.cells.values()) {
+      if (this.isSolved(cell)) {
+        const known = this.getValue(cell);
+
+        for (const neighbor of cell.neighbors) {
+          if (this.getValue(neighbor) === known) {
+            errors.set(cell, CellError.Duplicate);
+          }
+        }
+      } else {
+        if (!this.getCandidates(cell).size) {
+          errors.set(cell, CellError.Unsolvable);
+        }
       }
-
-      return;
     }
 
-    if (!this.isCandidate(cell, known)) {
-      throw new NotCandidateError(cell, known, this.getCandidates(cell));
-    }
-
-    this.solutions.addSolvedKnown(cell, known);
-  }
-
-  removeSolvedKnown(cell: Cell): void {
-    this.solutions.removeSolvedKnown(cell);
-  }
-
-  addErasedPencil(cell: Cell, known: Known): void {
-    if (this.isSolved(cell)) {
-      return;
-    }
-    const candidates = this.getCandidates(cell);
-    if (!candidates.has(known)) {
-      return;
-    }
-    // if (candidates.size === 1) {
-    //   throw new RemoveLastCandidateError(cell, known);
-    // }
-
-    this.solutions.addErasedPencil(cell, known);
-  }
-
-  removeErasedPencil(cell: Cell, known: Known): void {
-    this.solutions.removeErasedPencil(cell, known);
-  }
-
-  clearSolved(): void {
-    this.solutions = new Solutions();
+    return errors;
   }
 }
 

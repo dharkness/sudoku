@@ -1,10 +1,10 @@
 import { ALL_COORDS, getPoint } from "../../models/basics";
 import { GRID } from "../../models/grid";
-import { EMPTY_DECORATION } from "../../models/solutions";
 
 import { PuzzleActions } from "./usePlayPuzzleActions";
 
 import SelectableCell from "./SelectableCell";
+import { EMPTY_DECORATION } from "../../models/decoration";
 
 type PuzzlePanelProps = {
   actions: PuzzleActions;

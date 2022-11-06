@@ -1,7 +1,7 @@
 import { ALL_KNOWNS, Known, stringFromKnownSet } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell } from "../models/grid";
-import { Move, Strategy } from "../models/solutions";
+import { Move, Strategy } from "../models/move";
 
 import {
   difference,
@@ -62,7 +62,7 @@ export default function solveAbstractHiddenTuples(
 
         const knowns = new Set(cellsByKnown.keys());
         const erase = new Map<Cell, Set<Known>>();
-        const move = new Move(strategy).group(group).clue(cells, knowns);
+        const move = Move.start(strategy).group(group).clue(cells, knowns);
 
         for (const c of cells) {
           const diff = difference(board.getCandidates(c), knowns);

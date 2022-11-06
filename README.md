@@ -74,6 +74,11 @@ but feel free to explore and scavenge any code you find useful.
       - cells: Map<Coord, Cell>
       - indexes: BitSet or CoordSet or 0b000000000 to 0b111111111
     - KnownSet for cell/group/container candidates
+  - replace Solutions with Moves
+    - update all strategies to use Moves instead of Move[]
+    - rename Move's set() to solve(), mark() to erase()?
+      - latter works with marks() unchanged, but sets() doesn't match (solutions()?)
+      - gets complicated when adding support for clearing knowns and adding candidates
 
 - Play
   - UI
@@ -105,23 +110,11 @@ but feel free to explore and scavenge any code you find useful.
           - use strategies for buttons instead of solvers
           - group by a key that allows detecting identical moves
             - store added and removed moves in each step instead of full set (why?)
+          - run each solver in a promise
+            - show icons on solver buttons that are still running
+            - break Brute Force up somehow so it doesn't block the UI
         - store strategy to preview to update move after application (what was this?)
-      - return moves when internally solving cells or removing candidates
-        - create Moves to allow applying individual strategies?
-          - simply replace Solution with that, keeping it attached to the Board?
-          - I don't like passing in a `Move[]` as it affects so many methods,
-            but that does make it more explicit as it's in every caller's face.
-        - Board.setKnown()
-          - remove mark from remaining candidate cells
-            - Group.onSetKnown()
-        - Board.removeCandidate()
-          - Naked Single - solve last remaining candidate
-          - Hidden Single - solve last remaining candidate cell
-            - Group.onOneCellLeft()
-          - Intersection Removal (which depends on the disjoint) - remove candidate from other disjoint
-            - Disjoint.onNoCellsLeft()
-            - Intersection.removeCandidateFromOtherDisjoint()
-      - checkbox to automatically apply each strategy
+      - checkbox to automatically apply individual strategies
       - show/apply each solution separately; highlight cells on hover; animate on apply
       - new solvers
         - X-Cycles

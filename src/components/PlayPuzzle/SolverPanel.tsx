@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { Move } from "../../models/solutions";
+import { Move } from "../../models/move";
 import solvers from "../../solvers";
 
 import { PuzzleActions } from "./usePlayPuzzleActions";
@@ -78,7 +78,7 @@ const buttons = {
   jellyfish: "Jellyfish",
   emptyRectangles: "Empty Rectangles",
   uniqueRectangles: "Unique Rectangles",
-  // bruteForce: "Brute Force",
+  bruteForce: "Brute Force",
 };
 
 const enabledClasses =

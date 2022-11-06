@@ -11,7 +11,7 @@ import {
 } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { Cell, GRID, Group } from "../models/grid";
-import { Move, Strategy } from "../models/solutions";
+import { Move, Strategy } from "../models/move";
 
 import {
   areEqual,
@@ -172,7 +172,7 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
 
       foundType1s.add(rect.key);
       moves.push(
-        new Move(Strategy.UniqueRectangle)
+        Move.start(Strategy.UniqueRectangle)
           .clue(corners, pair)
           .mark(fourth, pair)
       );
@@ -339,7 +339,7 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
         );
 
       moves.push(
-        new Move(Strategy.UniqueRectangle)
+        Move.start(Strategy.UniqueRectangle)
           .clue(rect.cells, pair)
           .clue([roofLeft, roofRight], candidate, "yellow")
           .mark(cells, candidate)
@@ -398,7 +398,7 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
           );
 
         moves.push(
-          new Move(Strategy.UniqueRectangle)
+          Move.start(Strategy.UniqueRectangle)
             .group(group)
             .clue(rect.cells, pair)
             .clue(roofCells, extra, "yellow")
@@ -434,7 +434,7 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
           );
 
         moves.push(
-          new Move(Strategy.UniqueRectangle)
+          Move.start(Strategy.UniqueRectangle)
             .group(group)
             .clue(rect.cells, pair)
             .mark(markCells, mark)
@@ -479,7 +479,7 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
         );
 
       moves.push(
-        new Move(Strategy.UniqueRectangle)
+        Move.start(Strategy.UniqueRectangle)
           .group(groups)
           .clue(rect.cells, pair)
           .mark(markCells, mark)

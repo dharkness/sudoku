@@ -1,7 +1,7 @@
 import { Known, stringFromKnownSet } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell } from "../models/grid";
-import { Move, Strategy } from "../models/solutions";
+import { Move, Strategy } from "../models/move";
 
 import {
   difference,
@@ -113,7 +113,7 @@ export default function solveYWings(board: ReadableBoard): Move[] {
         );
 
       moves.push(
-        new Move(Strategy.YWing)
+        Move.start(Strategy.YWing)
           .clue(cell, pair)
           .clue(c1, pair)
           .clue(c1, mark, "yellow")

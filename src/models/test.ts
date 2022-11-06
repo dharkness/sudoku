@@ -17,7 +17,7 @@ import {
   printCandidates,
   printValues,
 } from "./printers";
-import { Solutions, solutionsFromString } from "./solutions";
+import { Solutions, solutionsFromString } from "./move";
 import { createEmptySimpleBoard } from "./board";
 
 import solveNakedPairs from "../solvers/solveNakedPairs";
@@ -96,6 +96,11 @@ const EMPTY =
 //   ".4186539. .9..4..6. .3.7924.1 .28...94. 519624..3 .7.9.821. 15..8.629 .6..19.3. 98.2.61..";
 
 // ========== NEEDS ??? ========================================
+
+// const start =
+//   "..8...... 2.7.5.9.. .....9.3. 5.9.7.3.. .4....... ...1....6 .8....2.. .3..4.... 4.27...1."
+
+// ========== BREAKS BRUTE FORCE (OOM in browser) ========================================
 
 // const start =
 //   "..4...... ......... ..1.6.94. .8.....21 ..3.2.8.. 4........ .28.7.... .......8. .......9."

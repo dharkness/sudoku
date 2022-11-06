@@ -1,5 +1,5 @@
 import { Known, known, Value } from "../../models/basics";
-import { MarkColor } from "../../models/solutions";
+import { MarkColor } from "../../models/decoration";
 
 export enum ShowMarkNumber {
   Never,

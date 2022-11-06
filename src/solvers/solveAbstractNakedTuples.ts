@@ -1,7 +1,7 @@
 import { Known, stringFromKnownSet } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell } from "../models/grid";
-import { Move, Strategy } from "../models/solutions";
+import { Move, Strategy } from "../models/move";
 
 import {
   difference,
@@ -62,7 +62,7 @@ export default function solveAbstractNakedTuples(
 
         const cells = new Set(knownsByCell.keys());
         const erase = new Map<Known, Set<Cell>>();
-        const move = new Move(strategy).group(group).clue(cells, knowns);
+        const move = Move.start(strategy).group(group).clue(cells, knowns);
 
         for (const k of knowns) {
           const diff = difference(board.getCandidateCells(group, k), cells);

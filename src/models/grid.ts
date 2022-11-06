@@ -10,11 +10,10 @@ import {
   UNKNOWN,
 } from "./basics";
 import { ReadableBoard, WritableBoard } from "./board";
+import { Move, Moves, Strategy } from "./move";
+import { EMPTY, MISSING } from "./symbols";
 
-import { difference, intersect } from "../utils/collections";
-
-const MISSING = "·";
-const EMPTY_SET = "∅";
+import { difference, excluding, intersect } from "../utils/collections";
 
 /**
  * Implemented by all trackers that manipulate their own board.
@@ -96,12 +95,12 @@ export class Cell implements Stateful {
 
   static stringFromPoints(cells?: Iterable<Cell>, sort = true): string {
     if (!cells) {
-      return EMPTY_SET;
+      return EMPTY;
     }
 
     const points = Array.from(cells).map((cell) => cell.point.k);
     if (!points.length) {
-      return EMPTY_SET;
+      return EMPTY;
     }
 
     return (
@@ -113,14 +112,14 @@ export class Cell implements Stateful {
 
   static keyFromPoints(cells?: Iterable<Cell>): string {
     if (!cells) {
-      return EMPTY_SET;
+      return EMPTY;
     }
 
     return (
       Array.from(cells)
         .map((cell) => cell.point.k)
         .sort((a, b) => a.localeCompare(b))
-        .join(",") || EMPTY_SET
+        .join(",") || EMPTY
     );
   }
 
@@ -180,15 +179,25 @@ export abstract class Container implements Stateful {
     board.addContainer(this);
   }
 
-  onSetKnown(board: WritableBoard, cell: Cell, known: Known): void {
+  onSetKnown(
+    board: WritableBoard,
+    cell: Cell,
+    known: Known,
+    moves: Moves
+  ): void {
     // override to perform actions
   }
 
-  onOneCellLeft(board: WritableBoard, known: Known, cell: Cell): void {
+  onOneCellLeft(
+    board: WritableBoard,
+    known: Known,
+    cell: Cell,
+    moves: Moves
+  ): void {
     // override if necessary
   }
 
-  onNoCellsLeft(board: WritableBoard, known: Known): void {
+  onNoCellsLeft(board: WritableBoard, known: Known, moves: Moves): void {
     // override if necessary
   }
 
@@ -215,19 +224,30 @@ export abstract class Group extends Container {
     this.coord = coord;
   }
 
-  onSetKnown(board: WritableBoard, cell: Cell, known: Known): void {
-    const candidateCells = board.clearCandidateCells(this, known);
-    for (const candidate of candidateCells) {
-      if (candidate !== cell) {
-        // Naked/Hidden Singles
-        board.addErasedPencil(candidate, known);
-      }
+  onSetKnown(
+    board: WritableBoard,
+    cell: Cell,
+    known: Known,
+    moves: Moves
+  ): void {
+    const erase = excluding(board.clearCandidateCells(this, known), cell);
+
+    if (erase.size) {
+      moves
+        .add(Strategy.Neighbor)
+        .group(this)
+        .clue(cell, known)
+        .mark(erase, known);
     }
   }
 
-  onOneCellLeft(board: WritableBoard, known: Known, cell: Cell): void {
-    // Hidden Singles
-    board.addSolvedKnown(cell, known);
+  onOneCellLeft(
+    board: WritableBoard,
+    known: Known,
+    cell: Cell,
+    moves: Moves
+  ): void {
+    moves.add(Strategy.HiddenSingle).group(this).set(cell, known);
   }
 }
 
@@ -338,7 +358,8 @@ export class Intersection {
   removeCandidateFromOtherDisjoint(
     board: WritableBoard,
     known: Known,
-    disjoint: Disjoint
+    disjoint: Disjoint,
+    moves: Moves
   ): void {
     const candidates = board.getCandidateCells(
       disjoint === this.blockDisjoint ? this.groupDisjoint : this.blockDisjoint,
@@ -346,11 +367,24 @@ export class Intersection {
     );
 
     if (candidates.size) {
-      for (const cell of candidates) {
-        board.addErasedPencil(cell, known);
+      const intersectCells = board.getCandidateCells(this.intersection, known);
+      if (intersectCells.size > 1) {
+        moves
+          .add(
+            disjoint === this.blockDisjoint
+              ? intersectCells.size === 2
+                ? Strategy.PointingPair
+                : Strategy.PointingTriple
+              : Strategy.BoxLineReduction
+          )
+          .group(this.block)
+          .group(this.group)
+          .clue(intersectCells, known)
+          .mark(candidates, known);
       }
     } else {
       // both disjoints are empty; stop tracking the intersection entirely
+      // FIXME Move this outside of else? It is only called when the other disjoint no longer has the known either
       this.clearCandidateCells(board, known);
     }
   }
@@ -397,9 +431,8 @@ class Disjoint extends Container {
     this.parent.clearCandidateCells(board, known);
   }
 
-  onNoCellsLeft(board: WritableBoard, known: Known): void {
-    // TODO Remove this since it would be solved by Intersection Removal?
-    this.parent.removeCandidateFromOtherDisjoint(board, known, this);
+  onNoCellsLeft(board: WritableBoard, known: Known, moves: Moves): void {
+    this.parent.removeCandidateFromOtherDisjoint(board, known, this, moves);
   }
 }
 

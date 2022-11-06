@@ -1,7 +1,7 @@
 import { ALL_KNOWNS, Known, stringFromKnownSet } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell, Group } from "../models/grid";
-import { Move, Strategy } from "../models/solutions";
+import { Move, Strategy } from "../models/move";
 
 import { singleSetValue } from "../utils/collections";
 
@@ -72,7 +72,7 @@ export default function solveHiddenSingles(board: ReadableBoard): Move[] {
 
   for (const [cell, [known, groups]] of found) {
     moves.push(
-      new Move(Strategy.HiddenSingle)
+      Move.start(Strategy.HiddenSingle)
         .group(groups)
         .clue(cell, known)
         .set(cell, known)
