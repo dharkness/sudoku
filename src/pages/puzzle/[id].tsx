@@ -40,7 +40,7 @@ const ViewPuzzle: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className="container flex flex-col items-center justify-center min-h-screen p-10 px-0 mx-auto md:py-20 md:p-10 md:px-0">
+      <div className="flex flex-col items-center justify-center min-h-screen p-10 px-0 mx-auto md:py-20 md:p-10 md:px-0">
         <h1 className="font-extrabold text-center text-7xl">
           Sudoku Puzzle #{id}
         </h1>

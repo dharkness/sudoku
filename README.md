@@ -67,6 +67,10 @@ but feel free to explore and scavenge any code you find useful.
   - Key binding popup card
 
 - Model
+  - `Board` was a better name for the structure than the current knowns and candidates
+    - rename `Grid` back to `Board` and `Board` to `Clues`?
+      - `ReadableClues` and `WritableClues`? `SimpleClues`?
+      - are these distinctions even necessary anymore with cloning instead of copy-on-write? 
   - group candidate cells hold index sets instead of point sets for performance?
     - GroupCellSet
       - group: Group
@@ -94,10 +98,10 @@ but feel free to explore and scavenge any code you find useful.
       - add pencil toggle button to swap behavior of number keys (set vs. mark)
     - show errors
       - note that we currently block setting cell to non-candidate
+      - duplicate in group
+      - no candidates left in cell/group (don't detect the latter yet)
       - incorrectly solved cell
       - incorrectly removed candidate
-      - solutions that make puzzle impossible (good for creating new puzzles)
-      - easier to show banner when making errors given the model
     - move highlighting
       - show non-clue sets with large number without candidates or overlaid on top?
       - clues only, marks only, cells only to help you learn to spot stuff
@@ -113,7 +117,8 @@ but feel free to explore and scavenge any code you find useful.
           - run each solver in a promise
             - show icons on solver buttons that are still running
             - break Brute Force up somehow so it doesn't block the UI
-        - store strategy to preview to update move after application (what was this?)
+        - store strategy to highlight in state on hover instead of its first move
+          so applying the move can highlight the next move for the strategy
       - checkbox to automatically apply individual strategies
       - show/apply each solution separately; highlight cells on hover; animate on apply
       - new solvers

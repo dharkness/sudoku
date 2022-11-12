@@ -5,6 +5,8 @@ import solvers from "../../solvers";
 
 import { PuzzleActions } from "./usePlayPuzzleActions";
 
+const COLUMN_LENGTH = 9;
+
 type SolverPanelProps = {
   actions: PuzzleActions;
 };
@@ -19,8 +21,10 @@ type Solution = {
 const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
   const { current } = actions;
 
-  const solutions = useMemo(() => {
-    return Object.entries(buttons)
+  const columns = useMemo(() => {
+    const start = performance.now();
+
+    const solutions = Object.entries(buttons)
       .map(([key, label]) => {
         const solve = solvers[key];
         if (!solve) {
@@ -36,27 +40,43 @@ const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
         return { key, label, disabled: !moves.length, moves };
       })
       .filter(Boolean) as Solution[];
+
+    const time = performance.now() - start;
+
+    console.info("[solver] Total", time.toLocaleString(), "ms");
+
+    const columns = [];
+
+    for (let i = 0; i < solutions.length; i += COLUMN_LENGTH) {
+      columns.push(solutions.slice(i, i + COLUMN_LENGTH));
+    }
+
+    return columns;
   }, [current]);
 
   return (
-    <div className="flex flex-col gap-5">
-      {solutions.map(({ key, label, disabled, moves }) => (
-        <button
-          key={key}
-          type="button"
-          disabled={disabled}
-          onClick={() => actions.applyMoves(moves)}
-          onMouseEnter={() => actions.preview(moves[0] || null)}
-          onMouseLeave={() => actions.preview(null)}
-          className={disabled ? disabledClasses : enabledClasses}
-        >
-          <div className="flex flex-row justify-between gap-5">
-            <span>{label}</span>
-            <span style={{ minWidth: 20 }}>{moves.length || null}</span>
-          </div>
-        </button>
+    <>
+      {columns.map((column, index) => (
+        <div key={index} className="flex flex-col gap-5">
+          {column.map(({ key, label, disabled, moves }) => (
+            <button
+              key={key}
+              type="button"
+              disabled={disabled}
+              onClick={() => actions.applyMoves(moves)}
+              onMouseEnter={() => actions.preview(moves[0] || null)}
+              onMouseLeave={() => actions.preview(null)}
+              className={disabled ? disabledClasses : enabledClasses}
+            >
+              <div className="flex flex-row justify-between gap-5">
+                <span>{label}</span>
+                <span style={{ minWidth: 20 }}>{moves.length || null}</span>
+              </div>
+            </button>
+          ))}
+        </div>
       ))}
-    </div>
+    </>
   );
 };
 
