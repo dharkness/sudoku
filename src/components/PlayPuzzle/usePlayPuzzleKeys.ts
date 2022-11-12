@@ -21,7 +21,6 @@ export default function usePlayPuzzleKeys(actions: PuzzleActions) {
         actions.highlight(UNKNOWN);
       } else if ("1" <= key && key <= "9") {
         const k = known(key.charCodeAt(0) - ZERO_CODE);
-        console.log(k, "=", locked);
         actions.highlight(k === locked ? UNKNOWN : k);
       } else if (key in SET_KNOWN_KEYS) {
         const k = SET_KNOWN_KEYS[key]!;
@@ -148,7 +147,7 @@ export default function usePlayPuzzleKeys(actions: PuzzleActions) {
             break;
 
           default:
-            console.log("ignoring keydown", event);
+            console.info("ignoring keydown", event);
             return;
         }
       }

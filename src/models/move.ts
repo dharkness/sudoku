@@ -154,10 +154,8 @@ export class Move {
       knowns,
       (cell: Cell, known: Known) => {
         if (this.clues.has(cell)) {
-          // console.log("add", cell.point.k, known);
           this.clues.get(cell)!.set(known, color);
         } else {
-          // console.log("set", cell.point.k, known);
           this.clues.set(cell, new Map([[known, color]]));
         }
       }
@@ -186,10 +184,8 @@ export class Move {
       knowns,
       (cell: Cell, known: Known) => {
         if (this.marks.has(cell)) {
-          // console.log("add", cell.point.k, known);
           this.marks.get(cell)!.add(known);
         } else {
-          // console.log("set", cell.point.k, known);
           this.marks.set(cell, new Set([known]));
         }
       }
@@ -201,7 +197,6 @@ export class Move {
     knowns: Known | Iterable<Known> | IterableIterator<Known>,
     apply: (c: Cell, k: Known) => void
   ): Move {
-    // console.log("apply", cells, knowns);
     if (isIterable(cells)) {
       if (isIterable(knowns)) {
         for (const c of cells as Iterable<Cell>) {
