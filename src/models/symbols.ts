@@ -11,4 +11,4 @@ export const NOT_IN_LEFT = "∌";
 export const NOT_IN_RIGHT = "∉";
 
 export const SOLVE_CELL = "⇨";
-export const REMOVE_MARK = "⊖";
+export const REMOVE_MARK = "×";

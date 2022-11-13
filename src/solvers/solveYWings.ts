@@ -15,20 +15,20 @@ import {
 const LOG = false;
 
 /**
- * Looks for one cell with two candidates AB and two more cells it can see
- * with two candidates AC and BC. The C candidate can be removed from every
+ * Looks for one cell with two candidates XY and two more cells it can see
+ * with two candidates XZ and YZ. The Z candidate can be removed from every
  * cell that can see both of the last two cells.
  *
- * Example: The 7s in cells 13, 25 and 26.
+ * Example: The 7s in cells A3, B5 and B6.
  *
- *      1   2   3   4   5   6
+ *      1   2   3     4   5   6
  *     ··· ··· ··· | ··· ··· ···
- *   1 ··· ·5· ··· | ··· ·5· ···
- *     ··· ··9 ··7 | ··· 7·· ···
+ *   A ··· ·5· ··· | ··· ·5· ···
+ *     ··· ··9 7·· | ··· 7·· ···
  *                 |
  *     ··· ··· ··· | ··· ··· ···
- *   2 ··· ··· ··· | ··· ··· ···
- *     7·9 ··· ··· | ··· ··7 ··7
+ *   B ··· ··· ··· | ··· ··· ···
+ *     7·9 ··· ··· | ··· 7·· 7··
  *
  * "9..24.... .5.69.231 .2..5..9. .9.7..32. ..29356.7 .7...29.. .69.2..73 51..79.62 2.7.86..9"
  *

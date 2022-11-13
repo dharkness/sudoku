@@ -18,15 +18,15 @@ const LOG = false;
  * Example: This shows one Pointing Pair and one Box Line Reduction.
  *
  *     123456789
- *   1 ·········
- *   2 ···777···  ←-- cells in box 5 (45 55) point to cell (25)
- *   3 ·········
- *   4 ····7····
- *   5 ····7····
- *   6 ·········
- *   7 ·77······  ←-- cells in line (74-79) being empty
- *   8 ······77·
- *   9 7·7··7···  ←-- ... clear box cells (91 93)
+ *   A ·········
+ *   B ···777···  ←-- cells in box 5 (D5 E5) point to cell (B5)
+ *   C ·········
+ *   D ····7····
+ *   E ····7····
+ *   F ·········
+ *   G ·77······  ←-- cells in line (G4...G9) being empty
+ *   H ······77·
+ *   J 7·7··7···  ←-- ... clear box 7 cells (J1 J3)
  *
  * "7..1....9 .2.3..7.. 4.9...... .6.8..2.. ......... .7...1.5. .....49.. .46..5..2 .1...68.."
  */

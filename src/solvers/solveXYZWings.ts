@@ -18,15 +18,15 @@ const LOG = false;
  * instead of only the first two. In this case, only cells that can
  * see all three cells in the wing may have the third value eliminated.
  *
- * Example: The 7s in cells 11 and 13.
+ * Example: The 7s in cells A1 and A3.
  *
- *      1   2   3   4   5   6
+ *      1   2   3     4   5   6
  *     ··· ··· ··· | ··· ··· ···
- *   1 ··· ·5· ··· | ··· ·5· ···
- *     7·· 7·9 ··7 | ··· 7·· ···
+ *   A ··· ·5· ··· | ··· ·5· ···
+ *     7·· 7·9 7·· | ··· 7·· ···
  *                 |
  *     ··· ··· ··· | ··· ··· ···
- *   2 ··· ··· ··· | ··· ··· ···
+ *   B ··· ··· ··· | ··· ··· ···
  *     7·9 ··· ··· | ··· ··· ···
  *
  * ".92..175. 5..2....8 ....3.2.. .75..496. 2...6..75 .697...3. ..8.9..2. 7....3.89 9.38...4."

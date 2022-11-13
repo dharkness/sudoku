@@ -9,6 +9,7 @@ import {
   NO_BORDERS,
 } from "./decoration";
 import { Cell, GRID, Group } from "./grid";
+import { REMOVE_MARK, SOLVE_CELL } from "./symbols";
 
 import { deepCloneMap, deepCloneMapOfSets } from "../utils/collections";
 
@@ -108,6 +109,8 @@ export class Move {
   readonly sets: Map<Cell, Known>;
   readonly marks: Map<Cell, Set<Known>>;
 
+  private _key: string | null = null;
+
   constructor(
     strategy: Strategy,
     groups?: Set<Group> | null,
@@ -130,6 +133,32 @@ export class Move {
       new Map(this.sets),
       deepCloneMapOfSets(this.marks)
     );
+  }
+
+  get key() {
+    if (!this._key) {
+      const sets = Array.from(this.sets.entries())
+        .sort(([a], [b]) => a.compare(b))
+        .map(([cell, known]) => `${cell.key} ${SOLVE_CELL} ${known}`)
+        .join(", ");
+      const marks = Array.from(this.marks.entries())
+        .sort(([a], [b]) => a.compare(b))
+        .map(
+          ([cell, knowns]) =>
+            `${cell.key} ${REMOVE_MARK} ${Array.from(knowns)
+              .sort((a, b) => a - b)
+              .join("")}`
+        )
+        .join(", ");
+
+      this._key = `{ ${[sets, marks].filter(Boolean).join(" | ")} }`;
+    }
+
+    return this._key;
+  }
+
+  toString(): string {
+    return this.key;
   }
 
   group(groups: Group | Iterable<Group> | IterableIterator<Group>): Move {
@@ -233,19 +262,19 @@ export class Move {
       ...Array.from(this.groups).map((g) => g.name),
       "clues",
       ...Array.from(this.clues.entries()).flatMap(([cell, colorsByKnown]) => [
-        cell.point.k,
+        cell.key,
         Array.from(colorsByKnown.entries())
           .map(([known, color]) => `${known}:${color}`)
           .join(", "),
       ]),
       "sets",
       ...Array.from(this.sets.entries()).flatMap(([cell, known]) => [
-        cell.point.k,
+        cell.key,
         known,
       ]),
       "marks",
       ...Array.from(this.marks.entries()).flatMap(([cell, known]) => [
-        cell.point.k,
+        cell.key,
         ...known,
       ])
     );
@@ -393,5 +422,9 @@ export class Moves implements Iterable<Move> {
     }
 
     return next;
+  }
+
+  toString(): string {
+    return this.moves.toString();
   }
 }

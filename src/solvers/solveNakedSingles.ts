@@ -24,7 +24,7 @@ export default function solveNakedSingles(board: ReadableBoard): Move[] {
           .set(cell, candidate)
       );
 
-      LOG && console.info("SOLVE NAKED SINGLE", cell.point.k, "=>", candidate);
+      LOG && console.info("SOLVE NAKED SINGLE", cell.key, "=>", candidate);
     }
   }
 

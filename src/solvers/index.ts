@@ -1,5 +1,5 @@
-import { Move } from "../models/move";
 import { ReadableBoard } from "../models/board";
+import { Move } from "../models/move";
 
 import nakedSingles from "./solveNakedSingles";
 import hiddenSingles from "./solveHiddenSingles";

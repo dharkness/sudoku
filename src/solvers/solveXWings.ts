@@ -9,19 +9,19 @@ import solveAbstractFish from "./solveAbstractFish";
  * Looks for X-Wings in rows and columns to determine pencil marks to remove.
  * Removes found known from other cells in opposite row/column.
  *
- * Example: This grid of cells having 4 as a candidate shows an X-Wing in rows 2 and 5
+ * Example: This grid of cells having 4 as a candidate shows an X-Wing in rows B and E
  *
  *        ↓   ↓
  *     123456789
- *   1 ·········
- *   2 ···4···4·
- *   3 ·········
- *   4 ·········
- * → 5 ···4···4·
- * → 6 ·········
- *   7 ···4·····  ←-- remove 4 from cell 74
- *   8 ·······4·  ←-- remove 4 from cell 88
- *   9 ·········
+ *   A ·········
+ * → B ···4···4·
+ *   C ·········
+ *   D ·········
+ * → E ···4···4·
+ *   F ·········
+ *   G ···4·····  ←-- remove 4 from cell G4
+ *   H ·······4·  ←-- remove 4 from cell H8
+ *   J ·········
  *
  * "1.....569 492.561.8 .561.924. ..964.8.1 .64.1.... 218.356.4 .4.5...16 9.5.614.2 621.....5"
  */

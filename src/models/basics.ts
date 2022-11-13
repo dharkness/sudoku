@@ -24,6 +24,44 @@ export function coord(value: number, type: string): Coord {
   return value as Coord;
 }
 
+/**
+ * Used when indicating cells and rows.
+ */
+export const ROW_LABELS = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "J",
+] as const;
+
+/**
+ * Used when indicating cells and columns.
+ */
+export const COLUMN_LABELS = [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+] as const;
+
+export function rowLabel(row: Coord): string {
+  return ROW_LABELS[row];
+}
+
+export function columnLabel(column: Coord): string {
+  return COLUMN_LABELS[column];
+}
+
 // ========== POINTS ============================================================ //
 
 /**
@@ -52,7 +90,7 @@ const pointsByRowCol: Point[][] = ALL_COORDS.reduce(
           c,
           b,
           i: [c, r, coord(3 * (r % 3) + (c % 3), "bc")],
-          k: `${r + 1}${c + 1}`,
+          k: `${rowLabel(r)}${columnLabel(c)}`,
         },
       ];
     }, [] as Point[]),

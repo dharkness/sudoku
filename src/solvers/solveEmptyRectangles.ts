@@ -16,18 +16,18 @@ const LOG = false;
  * If the removed cell and the candidate partner also form a conjugate pair,
  * the first candidate on the row (column) may also be removed.
  *
- * Example: This shows a singles chain of 7 linking cells (58, 52, 61, 81).
+ * Example:
  *
  *     123456789
- *   1 ·········
- *   2 ·········
- *   3 ·········
- *   4 ···7·7·7·  ←-- block 5 holds the Empty Rectangle for row 4 and column 4
- *   5 ···7·····      and cells 48 and 88 form the candidate pair
- *   6 ·········
- *   7 ·········
- *   8 ·7·7···7·  ←-- remove 7 from cell 48
- *   9 ····7····
+ *   A ·········
+ *   B ·········
+ *   C ·········
+ *   D ···7·7·7·  ←-- block 5 holds the Empty Rectangle for row D and column 4
+ *   E ···7·····      and cells D8 and H8 form the candidate pair
+ *   F ·········
+ *   G ·········
+ *   H ·7·7···7·  ←-- remove 7 from cell H8
+ *   J ····7····
  *
  * Regular:
  * "724956138 168423597 935718624 5..3..81. .4..8175. .81.7.24. .13....72 ...1...85 .5...7.61"
@@ -129,11 +129,7 @@ export default function solveEmptyRectangles(board: ReadableBoard): Move[] {
           }
 
           LOG &&
-            console.info(
-              "[empty-rectangle] CONJUGATE",
-              start.point.k,
-              end.point.k
-            );
+            console.info("[empty-rectangle] CONJUGATE", start.key, end.key);
 
           const candidates = board.getCandidateCells(
             isRow ? end.row : end.column,
@@ -159,14 +155,10 @@ export default function solveEmptyRectangles(board: ReadableBoard): Move[] {
 
           if (double) {
             LOG &&
-              console.info(
-                "[empty-rectangle] DOUBLE",
-                start.point.k,
-                remove.point.k
-              );
+              console.info("[empty-rectangle] DOUBLE", start.key, remove.key);
             move.mark(start, k);
           } else {
-            LOG && console.info("[empty-rectangle] SINGLE", remove.point.k);
+            LOG && console.info("[empty-rectangle] SINGLE", remove.key);
             move.clue(start, k);
           }
 

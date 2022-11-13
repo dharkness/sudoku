@@ -5,6 +5,8 @@ import solvers from "../../solvers";
 
 import { PuzzleActions } from "./usePlayPuzzleActions";
 
+const LOG = true;
+
 const COLUMN_LENGTH = 9;
 
 type SolverPanelProps = {
@@ -35,7 +37,11 @@ const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
         const moves = solve(current);
         const time = performance.now() - start;
 
-        console.info("[solver]", label, time.toLocaleString(), "ms", moves);
+        LOG &&
+          console.info("[solver]", label, time.toLocaleString(), "ms", moves);
+        if (moves.length) {
+          LOG && console.info(moves.toString());
+        }
 
         return { key, label, disabled: !moves.length, moves };
       })
@@ -43,7 +49,7 @@ const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
 
     const time = performance.now() - start;
 
-    console.info("[solver] Total", time.toLocaleString(), "ms");
+    LOG && console.info("[solver] Total", time.toLocaleString(), "ms");
 
     const columns = [];
 

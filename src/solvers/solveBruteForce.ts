@@ -16,7 +16,7 @@ export default function solveBruteForce(board: ReadableBoard): Move[] {
   const moves: Move[] = [];
   const unsolved = Array.from(GRID.cells.values())
     .filter((cell) => board.getValue(cell) === UNKNOWN)
-    .sort((a, b) => a.point.k.localeCompare(b.point.k));
+    .sort((a, b) => a.compare(b));
 
   if (unsolved.length) {
     const cells = new Set(unsolved);

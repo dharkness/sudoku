@@ -13,18 +13,18 @@ const LOG = false;
  * not in the chain can see two links in the chain,
  * and removes the known from that cell.
  *
- * Example: This shows a singles chain of 7 linking cells (58, 52, 61, 81).
+ * Example: This shows a singles chain of 7 linking cells (E8, E2, F1, H1).
  *
  *     123456789
- *   1 ·········
- *   2 ·······7·
- *   3 ·········
- *   4 ·········
- *   5 ·7·····7·  ←-- chain starts here because 7 appears 3 times in column 8
- *   6 7········
- *   7 ·········
- *   8 7······77  ←-- remove 7 from cell 88
- *   9 ······7··
+ *   A ·········
+ *   B ·······7·
+ *   C ·········
+ *   D ·········
+ *   E ·7·····7·  ←-- chain starts here because 7 appears 3 times in column 8
+ *   F 7········
+ *   G ·········
+ *   H 7······77  ←-- remove 7 from cell H8
+ *   J ······7··
  *
  * "..7.836.. .397.68.. 826419753 64.19.387 .8.367... .73.48.6. 39.87..26 7649..138 2.863.97."
  * "32.5479.6 ..6213.5. .4569823. 5..472... ..79.1.25 ..28.57.. 214359678 673184592 .5.726143"
@@ -105,7 +105,7 @@ export default function solveSinglesChains(board: ReadableBoard): Move[] {
     for (const candidate of candidates) {
       const sees = intersect(nodes, candidate.neighbors);
 
-      LOG && console.info("[singles-chain] CHECK", candidate.point.k);
+      LOG && console.info("[singles-chain] CHECK", candidate.key);
 
       const chain = new Chain(candidate);
       const stack = [Array.from(sees)];
@@ -115,7 +115,7 @@ export default function solveSinglesChains(board: ReadableBoard): Move[] {
         LOG &&
           console.info(
             "[singles-chain] STEP",
-            candidate.point.k,
+            candidate.key,
             Cell.stringFromPoints(chain.nodes, false),
             "stack",
             `[ ${stack
@@ -140,9 +140,9 @@ export default function solveSinglesChains(board: ReadableBoard): Move[] {
           LOG &&
             console.info(
               "[singles-chain] SKIP",
-              candidate.point.k,
+              candidate.key,
               "dupe",
-              node.point.k
+              node.key
             );
 
           continue;
@@ -154,7 +154,7 @@ export default function solveSinglesChains(board: ReadableBoard): Move[] {
             LOG &&
               console.info(
                 "[singles-chain] IGNORE",
-                candidate.point.k,
+                candidate.key,
                 "Box Line Reduction",
                 Cell.stringFromPoints(chain.nodes, false)
               );
@@ -168,7 +168,7 @@ export default function solveSinglesChains(board: ReadableBoard): Move[] {
           LOG &&
             console.info(
               "[singles-chain] FOUND",
-              candidate.point.k,
+              candidate.key,
               Cell.stringFromPoints(chain.nodes, false)
             );
 
@@ -186,7 +186,7 @@ export default function solveSinglesChains(board: ReadableBoard): Move[] {
         }
 
         if (next.size) {
-          LOG && console.info("[singles-chain] EXTEND", node.point.k);
+          LOG && console.info("[singles-chain] EXTEND", node.key);
 
           stack.push(Array.from(next));
         } else {

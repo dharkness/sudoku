@@ -31,7 +31,7 @@ export default function solveHiddenSingles(board: ReadableBoard): Move[] {
             console.info(
               "SKIP NAKED HIDDEN SINGLE",
               group.name,
-              cell.point.k,
+              cell.key,
               known
             );
           continue;
@@ -47,7 +47,7 @@ export default function solveHiddenSingles(board: ReadableBoard): Move[] {
               console.warn(
                 "SOLVE HIDDEN SINGLE",
                 group.name,
-                cell.point.k,
+                cell.key,
                 known,
                 "!=",
                 entry[0]
@@ -61,7 +61,7 @@ export default function solveHiddenSingles(board: ReadableBoard): Move[] {
           console.info(
             "SOLVE HIDDEN SINGLE",
             group.name,
-            cell.point.k,
+            cell.key,
             stringFromKnownSet(candidates),
             "=>",
             known

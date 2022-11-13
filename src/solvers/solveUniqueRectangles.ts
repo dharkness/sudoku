@@ -34,10 +34,10 @@ const LOG = false;
  * - contain the same two candidates (pair), and
  * - have additional candidates in at most two of the cells.
  *
- * They form a Unique Rectangle when either
+ * They form a Unique Rectangle when
  *
  * 1. three have only the pair and the fourth has one or more additional candidates,
- * 2. two have only the pair and the other two have the same additional candidate,
+ * 2. two have only the pair and the other two share one additional candidate,
  * 3. two have only the pair and the other two each have a subset of two additional candidates,
  * 4. two have only the pair and one of the candidates must appear in the other two
  *    (last two candidate cells in their shared row/column/block) regardless of any additional candidates, or
@@ -64,11 +64,11 @@ const LOG = false;
  *
  *      1   2   3     4   5   6
  *     ··· ··· ··· | ··· ··· ···
- *   1 ··· ·5· ··· | ··· ·5· ···
+ *   A ··· ·5· ··· | ··· ·5· ···
  *     ··· ··9 ··· | ··· ··9 ···
  *                 |
  *     ··· ··· ··· | ··· ·2· ···
- *   2 ··· ·5· ··· | ··· 45· ···  ←-- cell 25 may not contain 5 or 9, and so they can be removed
+ *   B ··· ·5· ··· | ··· 45· ···  ←-- cell B5 may not contain 5 or 9, and so they can be removed
  *     ··· ··9 ··· | ··· ··9 ···
  *
  * "..6324815 85.691.7. ..1785... ..4.3768. 38..62147 .6741835. ...173..8 ...846.21 ..82597.."
@@ -77,12 +77,12 @@ const LOG = false;
  *
  *      1   2   3     4   5   6     7   8   9
  *     ··· ··· ··· | ··· ··· ··· | ··· ··· ···
- *   1 ··· ·5· ··· | ··· ··· ··· | ··· ·5· ···
+ *   A ··· ·5· ··· | ··· ··· ··· | ··· ·5· ···
  *     ··· ··9 ··· | ··· ··· ··· | ··· ··9 ···
  *                 |             |
  *     ·2· ·2· ··· | ··· ·2· ··· | ··· ·2· ···
- *   2 ··· ·5· ··· | ··· ··· ··· | ··· ·5· ···  ←-- 2 must appear in cell 22 or 28,
- *     ··· ··9 ··· | ··· ··· ··· | ··· ··9 ···      and so it can be removed from cells 21 and 25
+ *   B ··· ·5· ··· | ··· ··· ··· | ··· ·5· ···  ←-- 2 must appear in cell B2 or B8,
+ *     ··· ··9 ··· | ··· ··· ··· | ··· ··9 ···      and so it can be removed from cells B1 and B5
  *
  * "42.9..386 .6.2..794 8.9.6.251 7....3.25 9..1.26.3 2..5....8 ..4.2.567 6827..439 ......812"
  * ".4186539. .9..4..6. .3.7924.1 .28...94. 519624..3 .7.9.821. 15..8.629 .6..19.3. 98.2.61.."
@@ -90,15 +90,42 @@ const LOG = false;
  *
  * Example: Type 3.
  *
+ *      1   2   3     4   5   6     7   8   9
+ *     ··· ··· ··· | ··· ··· ··· | ··· 12· ·2·
+ *   A ··· ·5· ··· | ··· ··· ··· | ··· ·5· 4··
+ *     ··· ··9 ··· | ··· ··· ··· | ··· ··9 ·89
+ *                 |             |
+ *     ··· ··· ··· | ··· ··· ··· | 1·3 ·2· 12·  ←-- (1 2) in cell B9 forms a pseudo naked pair
+ *   B ··· ·5· ··· | ··· ··· ··· | 4·· ·5· ···      with cells A8 and B8, and so (1 2)
+ *     ··· ··9 ··· | ··· ··· ··· | 7·· ··9 ···      can be removed from cells A9 and B7.
+ *
  * "...5.347. 5..8.4.6. 4...96.52 857..96.4 3246.759. ..6..5.37 285.61.4. ..9..8..5 .43952.86"
  * "419.2...6 .6.1.9... .3.465921 .9.2.1.8. ..1.5.29. .7.9.4.1. ..65.2.79 .5.398.62 92......8"
  * "7529.8.4. 3..21.... .1....28. .63.82..9 .27.9.5.8 8..1...32 271..98.4 ....213.7 .3.874.2."
  *
  * Example: Type 4.
  *
+ *      1   2   3     4   5   6     7   8   9
+ *     ··· ··· ··· | ··· ··· ··· | ··· ··· ···
+ *   A ··· ·5· ··· | ··· ··· ··· | ··· ·5· ···
+ *     ··· ··9 ··· | ··· ··· ··· | ··· ··9 ···
+ *                 |             |
+ *     ··· ·2· ··· | ··· ··· ··· | ··· 1·· ···
+ *   B ··· ·5· ··· | ·5· ·5· ··· | ··· 45· ···  ←-- 9 must appear in B2 or B8, so 5 can be removed
+ *     ··· ··9 ··· | ··· ··· ··· | ··· ··9 ···      from them to avoid the deadly rectangle
+ *
  * "..6324815 85.691.7. ..1785... ..4.3768. 38..62147 .6741835. ...173..8 ...846.21 ..82597.."
  *
  * Example: Type 5.
+ *
+ *      1   2   3     4   5   6     7   8   9
+ *     ··· ··· ··· | ··· ··· ··· | ··· ·2· ···
+ *   A ··· ·5· ··· | ··· ··· ··· | ··· 45· ···
+ *     ··· ··9 ··9 | ··· ··9 ··· | ··· ··9 ···
+ *                 |             |
+ *     ··· 1·· ··· | ··· ··· ··· | ··· ··· ···
+ *   B ··· 45· ··· | ··· ··· ··· | ··· ·5· ···  ←-- 5 must appear in cells A2 or A8 and also in B2 or B8,
+ *     ··· ··9 ··· | ··· ··· ··9 | ··9 ··9 ···      and so 9 can be removed from cells A2 and B8
  *
  * "7..4.6..1 .2.8....5 1..3...9. 3.4..5... .7..3..1. ...6..3.9 .3.5....8 5....3.4. 6..1.9..3"
  *
@@ -167,7 +194,7 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
           "[unique-rectangle] TYPE 1",
           stringFromKnownSet(pair),
           "x",
-          fourth.point.k
+          fourth.key
         );
 
       foundType1s.add(rect.key);
@@ -212,12 +239,12 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
           "[unique-rectangle] NEIGHBORS",
           rect.key,
           "floor",
-          floorLeft.point.k,
-          floorRight.point.k,
+          floorLeft.key,
+          floorRight.key,
           "roof",
-          roofLeft.point.k,
+          roofLeft.key,
           stringFromKnownSet(roofLeftExtra),
-          roofRight.point.k,
+          roofRight.key,
           stringFromKnownSet(roofRightExtra)
         );
 
@@ -275,12 +302,12 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
           "[unique-rectangle] DIAGONAL",
           rect.key,
           "floor",
-          floorLeft.point.k,
-          floorRight.point.k,
+          floorLeft.key,
+          floorRight.key,
           "roof",
-          roofLeft.point.k,
+          roofLeft.key,
           stringFromKnownSet(roofLeftExtra),
-          roofRight.point.k,
+          roofRight.key,
           stringFromKnownSet(roofRightExtra)
         );
 

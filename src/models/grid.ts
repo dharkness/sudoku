@@ -32,6 +32,7 @@ interface Stateful {
  */
 export class Cell implements Stateful {
   readonly point: Point;
+  readonly key: string;
   readonly row: Row;
   readonly column: Column;
   readonly block: Block;
@@ -49,6 +50,7 @@ export class Cell implements Stateful {
 
   constructor(point: Point, row: Row, column: Column, block: Block) {
     this.point = point;
+    this.key = point.k;
     this.row = row;
     this.column = column;
     this.block = block;
@@ -89,8 +91,12 @@ export class Cell implements Stateful {
     return this.neighbors.has(cell);
   }
 
+  compare(cell: Cell): number {
+    return this.key.localeCompare(cell.key);
+  }
+
   toString() {
-    return `Cell ${this.point.k}`;
+    return `Cell ${this.key}`;
   }
 
   static stringFromPoints(cells?: Iterable<Cell>, sort = true): string {
@@ -98,7 +104,7 @@ export class Cell implements Stateful {
       return EMPTY;
     }
 
-    const points = Array.from(cells).map((cell) => cell.point.k);
+    const points = Array.from(cells).map((cell) => cell.key);
     if (!points.length) {
       return EMPTY;
     }
@@ -117,8 +123,8 @@ export class Cell implements Stateful {
 
     return (
       Array.from(cells)
-        .map((cell) => cell.point.k)
-        .sort((a, b) => a.localeCompare(b))
+        .sort((a, b) => a.compare(b))
+        .map((cell) => cell.key)
         .join(",") || EMPTY
     );
   }
@@ -149,7 +155,7 @@ export class Cell implements Stateful {
   }
 
   static sortedByRowColumn(cells: Iterable<Cell>): Cell[] {
-    return Array.from(cells).sort((a, b) => a.point.k.localeCompare(b.point.k));
+    return Array.from(cells).sort((a, b) => a.compare(b));
   }
 
   static sortedByColumnRow(cells: Iterable<Cell>): Cell[] {
