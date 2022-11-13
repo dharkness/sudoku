@@ -11,7 +11,7 @@ import {
 } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { Cell, GRID, Group } from "../models/grid";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import {
@@ -132,8 +132,8 @@ const LOG = false;
  *
  * @link https://www.sudokuwiki.org/Unique_Rectangles
  */
-export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
-  const moves: Move[] = [];
+export default function solveUniqueRectangles(board: ReadableBoard): Moves {
+  const moves = Moves.createEmpty();
 
   // find and group all tuple cells
 
@@ -199,11 +199,10 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
         );
 
       foundType1s.add(rect.key);
-      moves.push(
-        Move.start(Strategy.UniqueRectangle)
-          .clue(corners, pair)
-          .mark(fourth, pair)
-      );
+      moves
+        .start(Strategy.UniqueRectangle)
+        .clue(corners, pair)
+        .mark(fourth, pair);
     }
 
     // Check a rectangle where the floor cells are neighbors
@@ -366,12 +365,11 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
           Cell.stringFromPoints(cells)
         );
 
-      moves.push(
-        Move.start(Strategy.UniqueRectangle)
-          .clue(rect.cells, pair)
-          .clue([roofLeft, roofRight], candidate, "yellow")
-          .mark(cells, candidate)
-      );
+      moves
+        .start(Strategy.UniqueRectangle)
+        .clue(rect.cells, pair)
+        .clue([roofLeft, roofRight], candidate, "yellow")
+        .mark(cells, candidate);
     }
 
     function checkType3(
@@ -425,14 +423,13 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
             Cell.stringFromPoints(cells)
           );
 
-        moves.push(
-          Move.start(Strategy.UniqueRectangle)
-            .group(group)
-            .clue(rect.cells, pair)
-            .clue(roofCells, extra, "yellow")
-            .clue(nakedPair, extra, "yellow")
-            .mark(cells, extra)
-        );
+        moves
+          .start(Strategy.UniqueRectangle)
+          .group(group)
+          .clue(rect.cells, pair)
+          .clue(roofCells, extra, "yellow")
+          .clue(nakedPair, extra, "yellow")
+          .mark(cells, extra);
       }
     }
 
@@ -461,12 +458,11 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
             Cell.stringFromPoints(markCells)
           );
 
-        moves.push(
-          Move.start(Strategy.UniqueRectangle)
-            .group(group)
-            .clue(rect.cells, pair)
-            .mark(markCells, mark)
-        );
+        moves
+          .start(Strategy.UniqueRectangle)
+          .group(group)
+          .clue(rect.cells, pair)
+          .mark(markCells, mark);
       }
     }
 
@@ -506,12 +502,11 @@ export default function solveUniqueRectangles(board: ReadableBoard): Move[] {
           Cell.stringFromPoints(markCells)
         );
 
-      moves.push(
-        Move.start(Strategy.UniqueRectangle)
-          .group(groups)
-          .clue(rect.cells, pair)
-          .mark(markCells, mark)
-      );
+      moves
+        .start(Strategy.UniqueRectangle)
+        .group(groups)
+        .clue(rect.cells, pair)
+        .mark(markCells, mark);
     }
 
     for (const corners of distinctTriples(cells)) {

@@ -1,6 +1,6 @@
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell, Intersection } from "../models/grid";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import { difference, intersect, withoutEmptySets } from "../utils/collections";
@@ -31,10 +31,8 @@ const LOG = false;
  *
  * "7..1....9 .2.3..7.. 4.9...... .6.8..2.. ......... .7...1.5. .....49.. .46..5..2 .1...68.."
  */
-export default function solveIntersectionRemovals(
-  board: ReadableBoard
-): Move[] {
-  const moves: Move[] = [];
+export default function solveIntersectionRemovals(board: ReadableBoard): Moves {
+  const moves = Moves.createEmpty();
 
   function check(intersection: Intersection, pointing: boolean) {
     const from = pointing
@@ -73,19 +71,18 @@ export default function solveIntersectionRemovals(
         continue;
       }
 
-      moves.push(
-        Move.start(
+      moves
+        .start(
           pointing
             ? count === 2
               ? Strategy.PointingPair
               : Strategy.PointingTriple
             : Strategy.BoxLineReduction
         )
-          .group(intersection.block)
-          .group(intersection.group)
-          .clue(blockCells, k, pointing ? "green" : "blue")
-          .mark(cells, k)
-      );
+        .group(intersection.block)
+        .group(intersection.group)
+        .clue(blockCells, k, pointing ? "green" : "blue")
+        .mark(cells, k);
 
       LOG &&
         console.info(

@@ -2,7 +2,7 @@ import { ALL_KNOWNS } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { MarkColor } from "../models/decoration";
 import { GRID, Cell } from "../models/grid";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import { difference, intersect, twoSetValues } from "../utils/collections";
@@ -30,8 +30,8 @@ const LOG = false;
  * "..7.836.. .397.68.. 826419753 64.19.387 .8.367... .73.48.6. 39.87..26 7649..138 2.863.97."
  * "32.5479.6 ..6213.5. .4569823. 5..472... ..79.1.25 ..28.57.. 214359678 673184592 .5.726143"
  */
-export default function solveSinglesChains(board: ReadableBoard): Move[] {
-  const moves: Move[] = [];
+export default function solveSinglesChains(board: ReadableBoard): Moves {
+  const moves = Moves.createEmpty();
 
   for (const k of ALL_KNOWNS) {
     LOG && console.info("[singles-chain] START", k);
@@ -198,13 +198,11 @@ export default function solveSinglesChains(board: ReadableBoard): Move[] {
     }
 
     for (const [cell, colors] of found) {
-      const move = Move.start(Strategy.SinglesChain).mark(cell, k);
+      const move = moves.start(Strategy.SinglesChain).mark(cell, k);
 
       for (const [c, color] of colors) {
         move.clue(c, k, color);
       }
-
-      moves.push(move);
     }
   }
 

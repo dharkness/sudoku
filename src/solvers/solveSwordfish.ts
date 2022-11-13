@@ -1,5 +1,5 @@
 import { ReadableBoard } from "../models/board";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import { distinctTriples } from "../utils/collections";
@@ -30,7 +30,7 @@ import solveAbstractFish from "./solveAbstractFish";
  * 2x2x2 columns "926...1.. 537.1.42. 841...6.3 259734816 714.6..3. 36812..4. 1.2....84 485.7136. 6.3.....1"
  * 3x2x3 rows    ".2..43.69 ..38962.. 96..25.3. 89.56..13 6...3.... .3..81.26 3...1..7. ..96743.2 27.358.9."
  */
-export default function solveSwordfish(board: ReadableBoard): Move[] {
+export default function solveSwordfish(board: ReadableBoard): Moves {
   return solveAbstractFish(
     Strategy.Swordfish,
     "swordfish",

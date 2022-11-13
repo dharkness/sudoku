@@ -1,7 +1,8 @@
 import { ALL_KNOWNS, Grouping } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { Cell, GRID, Group } from "../models/grid";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
+import { Strategy } from "../models/strategy";
 
 import {
   areEqual,
@@ -10,7 +11,6 @@ import {
   distinctTriples,
   union,
 } from "../utils/collections";
-import { Strategy } from "../models/strategy";
 
 const LOG = false;
 
@@ -23,8 +23,8 @@ export default function solveAbstractFish(
   tupleSizes: number[],
   mainsPicker: (fishGroups: FishGroup[]) => FishGroup[][],
   board: ReadableBoard
-): Move[] {
-  const moves: Move[] = [];
+): Moves {
+  const moves = Moves.createEmpty();
 
   for (const k of ALL_KNOWNS) {
     for (const groups of [GRID.rows, GRID.columns]) {
@@ -70,12 +70,11 @@ export default function solveAbstractFish(
             Cell.stringFromPoints(markCells)
           );
 
-        moves.push(
-          Move.start(strategy)
-            .group(fish.mains)
-            .clue(fish.cells, k)
-            .mark(markCells, k)
-        );
+        moves
+          .start(strategy)
+          .group(fish.mains)
+          .clue(fish.cells, k)
+          .mark(markCells, k);
       }
     }
   }

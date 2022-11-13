@@ -13,8 +13,8 @@ type Solution = { solved: Map<Cell, Known>; board: SimpleBoard };
 /**
  * Looks for cells with a single candidate to solve.
  */
-export default function solveBruteForce(board: ReadableBoard): Move[] {
-  const moves: Move[] = [];
+export default function solveBruteForce(board: ReadableBoard): Moves {
+  const moves = Moves.createEmpty();
 
   const clone = createInitialBoard(board);
   const unsolved = Array.from(GRID.cells.values())
@@ -52,7 +52,7 @@ export default function solveBruteForce(board: ReadableBoard): Move[] {
     for (const solution of solutions) {
       LOG && console.info("[brute-force] found", solution.solved);
 
-      moves.push(Move.createFrom(Strategy.BruteForce, solution.solved));
+      moves.add(Move.createFrom(Strategy.BruteForce, solution.solved));
     }
   }
 
@@ -188,7 +188,7 @@ function setKnownAndApplyAllMoves(
 ): boolean {
   let moves = Moves.createEmpty();
 
-  moves.add(Strategy.Solve).set(cell, known);
+  moves.start(Strategy.Solve).set(cell, known);
 
   while (moves.size()) {
     for (const move of moves) {

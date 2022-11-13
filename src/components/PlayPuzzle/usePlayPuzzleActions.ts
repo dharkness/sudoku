@@ -28,7 +28,7 @@ export type PuzzleActions = {
   select: (cell: Cell) => void;
   setCell: (known: Known) => void;
   removeCandidate: (known: Known) => void;
-  applyMoves: (moves: Move[]) => void;
+  applyMoves: (moves: Moves) => void;
 
   undo: () => void;
   redo: () => void;
@@ -88,7 +88,7 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
       setCell: (known: Known) => dispatch({ type: "set", known: known }),
       removeCandidate: (known: Known) =>
         dispatch({ type: "remove", known: known }),
-      applyMoves: (moves: Move[]) => dispatch({ type: "apply", moves }),
+      applyMoves: (moves: Moves) => dispatch({ type: "apply", moves }),
 
       undo: () => dispatch({ type: "undo" }),
       redo: () => dispatch({ type: "redo" }),
@@ -117,7 +117,7 @@ type Action =
   | { type: "select"; cell: Cell }
   | { type: "set"; known: Known }
   | { type: "remove"; known: Known }
-  | { type: "apply"; moves: Move[] }
+  | { type: "apply"; moves: Moves }
   | { type: "undo" }
   | { type: "redo" }
   | { type: "reset" };
@@ -188,13 +188,12 @@ const reducer: Reducer = (state: State, action: Action) => {
     case "apply":
       const newState = addStep(state, (board: SimpleBoard) => {
         const { moves } = action;
-        // const move = moves[Math.floor(Math.random() * moves.length)];
-        const move = moves[0];
-
-        if (!move) {
+        if (!moves.size()) {
           return board;
         }
 
+        // const move = moves.get(Math.floor(Math.random() * moves.length));
+        const move = moves.first()!;
         const clone = board.clone();
         const next = Moves.createEmpty();
 

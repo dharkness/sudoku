@@ -241,7 +241,7 @@ export abstract class Group extends Container {
 
     if (erase.size) {
       moves
-        .add(Strategy.Neighbor)
+        .start(Strategy.Neighbor)
         .group(this)
         .clue(cell, known)
         .mark(erase, known);
@@ -254,7 +254,7 @@ export abstract class Group extends Container {
     cell: Cell,
     moves: Moves
   ): void {
-    moves.add(Strategy.HiddenSingle).group(this).set(cell, known);
+    moves.start(Strategy.HiddenSingle).group(this).set(cell, known);
   }
 }
 
@@ -377,7 +377,7 @@ export class Intersection {
       const intersectCells = board.getCandidateCells(this.intersection, known);
       if (intersectCells.size > 1) {
         moves
-          .add(
+          .start(
             disjoint === this.blockDisjoint
               ? intersectCells.size === 2
                 ? Strategy.PointingPair

@@ -1,5 +1,5 @@
 import { ReadableBoard } from "../models/board";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import { distinctQuads } from "../utils/collections";
@@ -31,7 +31,7 @@ import solveAbstractHiddenTuples from "./solveAbstractHiddenTuples";
  * "65..87.24 ...649.5. .4..25... 57.438.61 ...5.1... 31.9.2.85 ...89..1. ...213... 13.75..98"
  * "9.15...46 425.9..81 86..1..2. 5.2...... .19...46. 6.......2 196.4.253 2...6.817 .....1694"
  */
-export default function solveHiddenQuads(board: ReadableBoard): Move[] {
+export default function solveHiddenQuads(board: ReadableBoard): Moves {
   return solveAbstractHiddenTuples(
     "hidden quad",
     Strategy.HiddenQuad,

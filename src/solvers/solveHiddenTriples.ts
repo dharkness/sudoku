@@ -1,5 +1,5 @@
 import { ReadableBoard } from "../models/board";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import { distinctTriples } from "../utils/collections";
@@ -28,7 +28,7 @@ import solveAbstractHiddenTuples from "./solveAbstractHiddenTuples";
  *     |  remove 2 and 6 from cell 4
  *     remove 6 from cell 1
  */
-export default function solveHiddenTriples(board: ReadableBoard): Move[] {
+export default function solveHiddenTriples(board: ReadableBoard): Moves {
   return solveAbstractHiddenTuples(
     "hidden triple",
     Strategy.HiddenTriple,

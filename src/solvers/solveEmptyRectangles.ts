@@ -1,7 +1,7 @@
 import { ALL_KNOWNS } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell, Column, Group, Row } from "../models/grid";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import { difference, intersect, singleSetValue } from "../utils/collections";
@@ -36,8 +36,8 @@ const LOG = false;
  * Dual:
  * "58.179..3 ...6.8975 69735.... 9..53.728 7.381.5.. 85.9.713. 469281357 ..8765... .75493..."
  */
-export default function solveEmptyRectangles(board: ReadableBoard): Move[] {
-  const moves: Move[] = [];
+export default function solveEmptyRectangles(board: ReadableBoard): Moves {
+  const moves = Moves.createEmpty();
 
   // for each known
   for (const k of ALL_KNOWNS) {
@@ -148,7 +148,8 @@ export default function solveEmptyRectangles(board: ReadableBoard): Move[] {
           const double = candidates.size === 2;
           checked.add(remove);
 
-          const move = Move.start(Strategy.EmptyRectangle)
+          const move = moves
+            .start(Strategy.EmptyRectangle)
             .group(block)
             .clue(cells, k, "blue")
             .clue(end, k)
@@ -162,8 +163,6 @@ export default function solveEmptyRectangles(board: ReadableBoard): Move[] {
             LOG && console.info("[empty-rectangle] SINGLE", remove.key);
             move.clue(start, k);
           }
-
-          moves.push(move);
         }
       }
     }

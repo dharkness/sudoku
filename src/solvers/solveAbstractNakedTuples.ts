@@ -1,7 +1,8 @@
 import { Known, stringFromKnownSet } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell } from "../models/grid";
-import { Move } from "../models/move";
+import { Move, Moves } from "../models/move";
+import { Strategy } from "../models/strategy";
 
 import {
   difference,
@@ -9,7 +10,6 @@ import {
   distinctTriples,
   union,
 } from "../utils/collections";
-import { Strategy } from "../models/strategy";
 
 const LOG = false;
 
@@ -23,8 +23,8 @@ export default function solveAbstractNakedTuples(
   tupleSizes: number[],
   tuplePicker: (tuples: [Cell, Set<Known>][]) => [Cell, Set<Known>][][],
   board: ReadableBoard
-): Move[] {
-  const moves: Move[] = [];
+): Moves {
+  const moves = Moves.createEmpty();
 
   for (const [g, groups] of GRID.groups) {
     for (const [_, group] of groups) {
@@ -99,7 +99,7 @@ export default function solveAbstractNakedTuples(
             ])
           );
 
-        moves.push(move);
+        moves.add(move);
       }
     }
   }

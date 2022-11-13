@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { Move } from "../../models/move";
+import { Moves } from "../../models/move";
 import solvers from "../../solvers";
 
 import { PuzzleActions } from "./usePlayPuzzleActions";
@@ -17,7 +17,7 @@ type Solution = {
   key: string;
   label: string;
   disabled: boolean;
-  moves: Move[];
+  moves: Moves;
 };
 
 const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
@@ -39,11 +39,11 @@ const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
 
         LOG &&
           console.info("[solver]", label, time.toLocaleString(), "ms", moves);
-        if (moves.length) {
+        if (moves.size()) {
           LOG && console.info(moves.toString());
         }
 
-        return { key, label, disabled: !moves.length, moves };
+        return { key, label, disabled: !moves.size(), moves };
       })
       .filter(Boolean) as Solution[];
 
@@ -70,13 +70,13 @@ const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
               type="button"
               disabled={disabled}
               onClick={() => actions.applyMoves(moves)}
-              onMouseEnter={() => actions.preview(moves[0] || null)}
+              onMouseEnter={() => actions.preview(moves.first())}
               onMouseLeave={() => actions.preview(null)}
               className={disabled ? disabledClasses : enabledClasses}
             >
               <div className="flex flex-row justify-between gap-5">
                 <span>{label}</span>
-                <span style={{ minWidth: 20 }}>{moves.length || null}</span>
+                <span style={{ minWidth: 20 }}>{moves.size() || null}</span>
               </div>
             </button>
           ))}

@@ -1,7 +1,7 @@
 import { ALL_KNOWNS, Known, stringFromKnownSet } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell } from "../models/grid";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import {
@@ -34,8 +34,8 @@ const LOG = false;
  *
  * @link https://www.sudokuwiki.org/XYZ_Wing
  */
-export default function solveXYZWings(board: ReadableBoard): Move[] {
-  const moves: Move[] = [];
+export default function solveXYZWings(board: ReadableBoard): Moves {
+  const moves = Moves.createEmpty();
 
   const allCandidates = Array.from(GRID.cells.values()).map(
     (c) => [c, board.getCandidates(c)] as [Cell, Set<Known>]
@@ -105,12 +105,11 @@ export default function solveXYZWings(board: ReadableBoard): Move[] {
             Cell.stringFromPoints(markCells)
           );
 
-        moves.push(
-          Move.start(Strategy.XYZWing)
-            .clue([cell, xCell, yCell], [x, y])
-            .clue([cell, xCell, yCell], z, "yellow")
-            .mark(markCells, z)
-        );
+        moves
+          .start(Strategy.XYZWing)
+          .clue([cell, xCell, yCell], [x, y])
+          .clue([cell, xCell, yCell], z, "yellow")
+          .mark(markCells, z);
       }
     }
   }

@@ -1,5 +1,5 @@
 import { ReadableBoard } from "../models/board";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import { distinctQuads } from "../utils/collections";
@@ -26,7 +26,7 @@ import solveAbstractNakedTuples from "./solveAbstractNakedTuples";
  *
  * "....3..86 ....2..4. .9..7852. 371856294 9..142375 4..397618 2..7.3859 .392.5467 7..9.4132"
  */
-export default function solveNakedQuads(board: ReadableBoard): Move[] {
+export default function solveNakedQuads(board: ReadableBoard): Moves {
   return solveAbstractNakedTuples(
     "naked triple",
     Strategy.NakedQuad,

@@ -78,11 +78,10 @@ but feel free to explore and scavenge any code you find useful.
       - cells: Map<Coord, Cell>
       - indexes: BitSet or CoordSet or 0b000000000 to 0b111111111
     - KnownSet for cell/group/container candidates
-  - replace Solutions with Moves
-    - update all strategies to use Moves instead of Move[]
-    - rename Move's set() to solve(), mark() to erase()?
-      - latter works with marks() unchanged, but sets() doesn't match (solutions()?)
-      - gets complicated when adding support for clearing knowns and adding candidates
+  - rename Move's set() to solve(), mark() to erase()?
+    - may not play nice if we add ability to clear a cell or add a mark
+    - latter works with marks() unchanged, but sets() doesn't match (solutions()?)
+    - gets complicated when adding support for clearing knowns and adding candidates
 
 - Play
   - UI
@@ -96,6 +95,7 @@ but feel free to explore and scavenge any code you find useful.
       - allow multiple locked knowns (alt-shift-# to toggle)
       - dim solved knowns
       - add pencil toggle button to swap behavior of number keys (set vs. mark)
+      - add button to reset all candidates using solved cells (and automatic strategies once implemented) only
     - show errors
       - note that we currently block setting cell to non-candidate
       - duplicate in group

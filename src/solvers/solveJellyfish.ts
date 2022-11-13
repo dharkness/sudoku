@@ -1,5 +1,5 @@
 import { ReadableBoard } from "../models/board";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import { distinctQuads } from "../utils/collections";
@@ -30,7 +30,7 @@ import solveAbstractFish from "./solveAbstractFish";
  * 3x4x2x2 rows "......... .7..3.92. .19.2563. ..4...21. ......... .57.9.46. .9514.37. ......... .4236759."
  * 4x4x4x4 rows ".5.749.8. .89..3... 6....139. .4...7.6. ...4..8.9 ......... .6...4.1. 5..21..47 .1...5.3."
  */
-export default function solveJellyfish(board: ReadableBoard): Move[] {
+export default function solveJellyfish(board: ReadableBoard): Moves {
   return solveAbstractFish(
     Strategy.Jellyfish,
     "jellyfish",

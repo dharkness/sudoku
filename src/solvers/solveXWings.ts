@@ -1,5 +1,5 @@
 import { ReadableBoard } from "../models/board";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import { distinctPairs } from "../utils/collections";
@@ -26,6 +26,6 @@ import solveAbstractFish from "./solveAbstractFish";
  *
  * "1.....569 492.561.8 .561.924. ..964.8.1 .64.1.... 218.356.4 .4.5...16 9.5.614.2 621.....5"
  */
-export default function solveXWings(board: ReadableBoard): Move[] {
+export default function solveXWings(board: ReadableBoard): Moves {
   return solveAbstractFish(Strategy.XWing, "x-wing", [2], distinctPairs, board);
 }

@@ -1,7 +1,7 @@
 import { ALL_KNOWNS, Known, stringFromKnownSet } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell, Group } from "../models/grid";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import { singleSetValue } from "../utils/collections";
@@ -12,8 +12,8 @@ const LOG = false;
  * Looks for values in groups with a single candidate cell to solve,
  * ignoring naked singles.
  */
-export default function solveHiddenSingles(board: ReadableBoard): Move[] {
-  const moves: Move[] = [];
+export default function solveHiddenSingles(board: ReadableBoard): Moves {
+  const moves = Moves.createEmpty();
   const found = new Map<Cell, [Known, Set<Group>]>();
 
   for (const known of ALL_KNOWNS) {
@@ -72,12 +72,11 @@ export default function solveHiddenSingles(board: ReadableBoard): Move[] {
   }
 
   for (const [cell, [known, groups]] of found) {
-    moves.push(
-      Move.start(Strategy.HiddenSingle)
-        .group(groups)
-        .clue(cell, known)
-        .set(cell, known)
-    );
+    moves
+      .start(Strategy.HiddenSingle)
+      .group(groups)
+      .clue(cell, known)
+      .set(cell, known);
   }
 
   return moves;

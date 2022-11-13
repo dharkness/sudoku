@@ -1,7 +1,7 @@
 import { Known, stringFromKnownSet } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell } from "../models/grid";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import {
@@ -35,8 +35,8 @@ const LOG = false;
  *
  * @link https://www.sudokuwiki.org/y_wing_strategy
  */
-export default function solveYWings(board: ReadableBoard): Move[] {
-  const moves: Move[] = [];
+export default function solveYWings(board: ReadableBoard): Moves {
+  const moves = Moves.createEmpty();
 
   const pairs = new Map(
     Array.from(GRID.cells.values())
@@ -113,15 +113,14 @@ export default function solveYWings(board: ReadableBoard): Move[] {
           Cell.stringFromPoints(markCells)
         );
 
-      moves.push(
-        Move.start(Strategy.YWing)
-          .clue(cell, pair)
-          .clue(c1, pair)
-          .clue(c1, mark, "yellow")
-          .clue(c2, pair)
-          .clue(c2, mark, "yellow")
-          .mark(markCells, mark)
-      );
+      moves
+        .start(Strategy.YWing)
+        .clue(cell, pair)
+        .clue(c1, pair)
+        .clue(c1, mark, "yellow")
+        .clue(c2, pair)
+        .clue(c2, mark, "yellow")
+        .mark(markCells, mark);
     }
   }
 

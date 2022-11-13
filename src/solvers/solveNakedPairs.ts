@@ -1,5 +1,5 @@
 import { ReadableBoard } from "../models/board";
-import { Move } from "../models/move";
+import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
 import { distinctPairs } from "../utils/collections";
@@ -26,7 +26,7 @@ import solveAbstractNakedTuples from "./solveAbstractNakedTuples";
  *
  * "9........ 3...6..2. ..5...7.3 .31.84... 82..1.549 .4....8.. 75.1.6.8. 4..8..1.. ...7....."
  */
-export default function solveNakedPairs(board: ReadableBoard): Move[] {
+export default function solveNakedPairs(board: ReadableBoard): Moves {
   return solveAbstractNakedTuples(
     "naked pair",
     Strategy.NakedPair,

@@ -345,7 +345,7 @@ export class Moves implements Iterable<Move> {
       const givens = new Moves();
 
       for (const [cell, known] of source) {
-        givens.add(Strategy.Given).set(cell, known);
+        givens.start(Strategy.Given).set(cell, known);
       }
 
       return givens;
@@ -362,12 +362,15 @@ export class Moves implements Iterable<Move> {
     return this.moves[Symbol.iterator]();
   }
 
-  add(moveOrStrategy: Move | Strategy): Move {
-    const move =
-      moveOrStrategy instanceof Move
-        ? moveOrStrategy
-        : Move.start(moveOrStrategy);
+  start(strategy: Strategy): Move {
+    const move = Move.start(strategy);
 
+    this.moves.push(move);
+
+    return move;
+  }
+
+  add(move: Move): Move {
     this.moves.push(move);
 
     return move;
@@ -387,6 +390,10 @@ export class Moves implements Iterable<Move> {
       : (m: Move) => m.strategy === strategy;
 
     return !!this.moves.find(filter);
+  }
+
+  first(): Move | null {
+    return this.moves[0] || null;
   }
 
   only(strategy: Strategy | Strategy[]): Moves {

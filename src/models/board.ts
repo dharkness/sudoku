@@ -289,7 +289,7 @@ export class SimpleBoard implements WritableBoard {
 
     // solve cell if only one candidate remaining
     if (triggerLastCandidate && remaining.size === 1) {
-      moves.add(Strategy.NakedSingle).set(cell, singleSetValue(remaining));
+      moves.start(Strategy.NakedSingle).set(cell, singleSetValue(remaining));
     }
 
     // remove candidate cell from its containers
