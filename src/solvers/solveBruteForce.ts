@@ -1,7 +1,8 @@
 import { Known, stringFromKnownSet, UNKNOWN } from "../models/basics";
 import { ReadableBoard, SimpleBoard } from "../models/board";
 import { Cell, GRID } from "../models/grid";
-import { Move, Moves, Strategy } from "../models/move";
+import { Move, Moves } from "../models/move";
+import { Strategy } from "../models/strategy";
 
 import { distinctPairs } from "../utils/collections";
 
@@ -14,8 +15,10 @@ type Solution = { solved: Map<Cell, Known>; board: SimpleBoard };
  */
 export default function solveBruteForce(board: ReadableBoard): Move[] {
   const moves: Move[] = [];
+
+  const clone = createInitialBoard(board);
   const unsolved = Array.from(GRID.cells.values())
-    .filter((cell) => board.getValue(cell) === UNKNOWN)
+    .filter((cell) => clone.getValue(cell) === UNKNOWN)
     .sort((a, b) => a.compare(b));
 
   if (unsolved.length) {
@@ -24,12 +27,7 @@ export default function solveBruteForce(board: ReadableBoard): Move[] {
 
     LOG && console.info("[brute-force] start", Cell.stringFromPoints(cells));
 
-    solveNextStep(
-      new SimpleBoard(board as SimpleBoard),
-      solutions,
-      new Map(),
-      cells
-    );
+    solveNextStep(clone, solutions, new Map(), cells);
 
     distinctPairs(solutions).forEach(([first, second]) => {
       const rectangles = findPossibleDeadlyRectangles(
@@ -40,7 +38,7 @@ export default function solveBruteForce(board: ReadableBoard): Move[] {
       if (rectangles) {
         LOG &&
           console.info(
-            "[brute-force] deadly rectangle",
+            "[brute-force] deadly rectangles",
             rectangles,
             first,
             second
@@ -54,15 +52,27 @@ export default function solveBruteForce(board: ReadableBoard): Move[] {
     for (const solution of solutions) {
       LOG && console.info("[brute-force] found", solution.solved);
 
-      moves.push(
-        new Move(Strategy.BruteForce, null, null, solution.solved, null)
-      );
+      moves.push(Move.createFrom(Strategy.BruteForce, solution.solved));
     }
   }
 
   return moves;
 }
 
+function createInitialBoard(board: ReadableBoard): SimpleBoard {
+  const [clone, moves] = SimpleBoard.createFrom(board.getSolvedCells());
+
+  moves.applyAll(clone, [
+    Strategy.Neighbor,
+    Strategy.PointingPair,
+    Strategy.PointingTriple,
+    Strategy.BoxLineReduction,
+  ]);
+
+  return clone;
+}
+
+// TODO Flip map to KnownKey -> Cells and check for actual rectangles
 function findPossibleDeadlyRectangles(
   first: SimpleBoard,
   second: SimpleBoard
@@ -119,7 +129,7 @@ function solveNextStep(
     );
 
   for (const k of candidates) {
-    const tryBoard = new SimpleBoard(board);
+    const tryBoard = board.clone();
     const trySolved = new Map(solved);
 
     LOG && console.info("[brute-force] guess", cell.toString(), "⇨", k);
@@ -176,7 +186,7 @@ function setKnownAndApplyAllMoves(
   cell: Cell,
   known: Known
 ): boolean {
-  let moves = new Moves();
+  let moves = Moves.createEmpty();
 
   moves.add(Strategy.Solve).set(cell, known);
 

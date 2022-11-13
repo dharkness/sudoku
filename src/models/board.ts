@@ -8,7 +8,8 @@ import {
   Value,
 } from "./basics";
 import { GRID, Cell, Container } from "./grid";
-import { Moves, Strategy } from "./move";
+import { Moves } from "./move";
+import { Strategy } from "./strategy";
 
 import {
   deepCloneMap,
@@ -25,9 +26,12 @@ enum CellError {
 }
 
 export interface ReadableBoard {
+  clone(): ReadableBoard;
+
   solvedCount(): number;
   isSolved(cell?: Cell): boolean;
   getValue(cell: Cell): Value;
+  getSolvedCells(): Map<Cell, Known>;
 
   getCandidateCount(cell: Cell): number;
   isCandidate(cell: Cell, known: Known): boolean;
@@ -40,6 +44,8 @@ export interface ReadableBoard {
 }
 
 export interface WritableBoard extends ReadableBoard {
+  clone(): WritableBoard;
+
   addCell(cell: Cell): void;
   addContainer(container: Container): void;
 
@@ -54,6 +60,39 @@ export interface WritableBoard extends ReadableBoard {
 }
 
 export class SimpleBoard implements WritableBoard {
+  /**
+   * Returns a new empty, writable board.
+   */
+  static createEmpty(): SimpleBoard {
+    const board = new SimpleBoard();
+    GRID.setupEmptyState(board);
+    return board;
+  }
+
+  static createFrom(values: string): [SimpleBoard, Moves];
+  static createFrom(knowns: Map<Cell, Known>): [SimpleBoard, Moves];
+  static createFrom(moves: Moves): [SimpleBoard, Moves];
+  static createFrom(board: ReadableBoard): [SimpleBoard, Moves];
+  static createFrom(
+    source?: string | Map<Cell, Known> | Moves | ReadableBoard
+  ): [SimpleBoard, Moves] {
+    if (source instanceof SimpleBoard) {
+      return [new SimpleBoard(source), Moves.createEmpty()];
+    } else if (!source) {
+      return [this.createEmpty(), Moves.createEmpty()];
+    } else if (typeof source === "string") {
+      return this.createFrom(Moves.createFrom(source));
+    } else if (source instanceof Moves) {
+      const board = this.createEmpty();
+
+      return [board, source.apply(board)];
+    } else if (source instanceof Map) {
+      return this.createFrom(Moves.createFrom(source));
+    } else {
+      return this.createFrom(Moves.createFrom(source.getSolvedCells()));
+    }
+  }
+
   public readonly step: number;
 
   private readonly values: Map<Cell, Value>;
@@ -86,6 +125,10 @@ export class SimpleBoard implements WritableBoard {
       this.candidateContainers = new Map<Cell, Map<Known, Set<Container>>>();
       this.candidateCells = new Map<Container, Map<Known, Set<Cell>>>();
     }
+  }
+
+  clone(): SimpleBoard {
+    return new SimpleBoard(this);
   }
 
   addCell(cell: Cell): void {
@@ -183,6 +226,13 @@ export class SimpleBoard implements WritableBoard {
     }
 
     return true;
+  }
+
+  getSolvedCells(): Map<Cell, Known> {
+    return Array.from(this.values.entries()).reduce(
+      (map, [cell, known]) => (known === UNKNOWN ? map : map.set(cell, known)),
+      new Map<Cell, Known>()
+    );
   }
 
   // ========== CANDIDATES ========================================
@@ -385,13 +435,4 @@ class ChangeCellValueError extends Error {
   constructor(cell: Cell, from: Known, to: Known) {
     super(`Cannot change ${cell.toString()} from ${from} to ${to}`);
   }
-}
-
-/**
- * Returns a new empty, writable board.
- */
-export function createEmptySimpleBoard(): SimpleBoard {
-  const board = new SimpleBoard();
-  GRID.setupEmptyState(board);
-  return board;
 }

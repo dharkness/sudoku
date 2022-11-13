@@ -2,11 +2,8 @@ import {
   ALL_KNOWNS,
   ALL_POINTS,
   getPoint,
-  isCorrectSoFar,
-  isFullyCorrect,
   Known,
   Point,
-  solutionDiff,
   stringFromKnownSet,
   UNKNOWN,
 } from "./basics";
@@ -18,7 +15,7 @@ import {
   printValues,
 } from "./printers";
 import { Solutions, solutionsFromString } from "./move";
-import { createEmptySimpleBoard } from "./board";
+import { SimpleBoard } from "./board";
 
 import solveNakedPairs from "../solvers/solveNakedPairs";
 import solveNakedTriples from "../solvers/solveNakedTriples";
@@ -26,6 +23,7 @@ import solveHiddenPairs from "../solvers/solveHiddenPairs";
 import solveHiddenTriples from "../solvers/solveHiddenTriples";
 import solveXWings from "../solvers/solveXWings";
 import solveSinglesChains from "../solvers/solveSinglesChains";
+import { isCorrectSoFar, isFullyCorrect, solutionDiff } from "./puzzle-string";
 
 const EMPTY =
   "......... ......... ......... ......... ......... ......... ......... ......... .........";
@@ -126,7 +124,7 @@ const full =
 // printAllCandidates(board);
 // solveNakeds(board, 2);
 
-const board = createEmptySimpleBoard();
+const board = SimpleBoard.createEmpty();
 const knowns = solutionsFromString(start).randomizedSolvedKnowns();
 const pencils = [];
 let stop = false;

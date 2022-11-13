@@ -1,4 +1,6 @@
-import { ALL_POINTS, Known, UNKNOWN, valueFromString } from "./basics";
+import { isArray } from "is-what";
+
+import { Known, UNKNOWN } from "./basics";
 import { WritableBoard } from "./board";
 import {
   Borders,
@@ -8,88 +10,16 @@ import {
   MarkColor,
   NO_BORDERS,
 } from "./decoration";
-import { Cell, GRID, Group } from "./grid";
+import { Cell, Group } from "./grid";
+import { solvedCellsFromPuzzleString } from "./puzzle-string";
+import { Strategy } from "./strategy";
 import { REMOVE_MARK, SOLVE_CELL } from "./symbols";
 
-import { deepCloneMap, deepCloneMapOfSets } from "../utils/collections";
-
-/**
- * Parses solutions from a partial or full puzzle string.
- *
- * Each row should contain the values for each cell, a digit for a solved cell
- * and any character (typically a period) for an unknown cell.
- * Rows may optionally be separated by any single character (typically a space).
- *
- * For example:
- *
- * "7..1....9 .2.3..7.. 4.9...... .6.8..2.. ......... .7...1.5. .....49.. .46..5..2 .1...68.."
- */
-export function movesFromString(values: string): Moves {
-  if (![81, 89].includes(values.length)) {
-    throw new Error(
-      `Puzzle string length ${values.length} must be 81 or 89 characters`
-    );
-  }
-
-  const givens = new Moves();
-  const width = values.length === 81 ? 9 : 10;
-
-  for (const p of ALL_POINTS) {
-    const value = valueFromString(values.charAt(width * p.r + p.c));
-    if (value !== UNKNOWN) {
-      givens.add(Strategy.Given).set(GRID.getCell(p), value);
-    }
-  }
-
-  return givens;
-}
-
-// TODO Support clearing knowns and adding candidates?
-
-export enum Strategy {
-  /**
-   * A known given at the start of the puzzle.
-   */
-  Given, // cell, known -> set cell to known
-  /**
-   * A manually set known.
-   */
-  Solve, // cell, known -> set cell to known
-  /**
-   * A manually removed candidate.
-   */
-  EraseMark, // cell, known -> remove candidate from cell
-
-  /**
-   * A mark cleared from a cell as a consequence of setting a known in one of its neighbors.
-   */
-  Neighbor,
-
-  NakedSingle, // cell, candidate -> set cell to candidate; remove candidate from neighbors
-  HiddenSingle, // cell, candidate, group(s) -> set cell to candidate
-
-  PointingPair, // cells, candidate, intersection (follows from cells) -> cells; remove candidate from cells
-  PointingTriple, // same ^
-  BoxLineReduction, // same ^ in other direction
-
-  NakedPair, // 2 cells, 2 candidates, 1 group -> cells; remove both candidates from other cells in group
-  NakedTriple, // same ^ but with 3 cells and candidates
-  NakedQuad,
-  HiddenPair, // 2 cells, 2 candidates, 1 group -> remove other candidates from the cells
-  HiddenTriple, // same ^ but with 3 cells and candidates
-  HiddenQuad,
-
-  XWing, // 4 cells, 1 candidate; 1 direction (row or column) -> cells; remove candidate from other cells in given direction
-  SinglesChain, // cells, 1 candidate -> cells; remove candidate from cells
-  YWing,
-  XYZWing,
-  Swordfish,
-  Jellyfish,
-  EmptyRectangle, // block, (2 cells, 1 candidate) -> cells; remove candidate from cells
-  UniqueRectangle,
-
-  BruteForce, // cell, candidate -> set cell to candidate
-}
+import {
+  deepCloneMap,
+  deepCloneMapOfSets,
+  isIterable,
+} from "../utils/collections";
 
 /**
  * Captures the strategy, clues (knowns and candidates), and the resulting changes
@@ -98,8 +28,18 @@ export enum Strategy {
  * Captures the player's moves as well to create a uniform interface.
  */
 export class Move {
+  /**
+   * Starts a new move for the given strategy.
+   */
   static start(strategy: Strategy): Move {
     return new Move(strategy);
+  }
+
+  /**
+   * Creates a move containing the given sets.
+   */
+  static createFrom(strategy: Strategy, sets: Map<Cell, Known>): Move {
+    return new this(strategy, null, null, sets, null);
   }
 
   readonly strategy: Strategy;
@@ -111,7 +51,7 @@ export class Move {
 
   private _key: string | null = null;
 
-  constructor(
+  private constructor(
     strategy: Strategy,
     groups?: Set<Group> | null,
     clues?: Map<Cell, Map<Known, MarkColor>> | null,
@@ -193,11 +133,11 @@ export class Move {
 
   set(
     cells: Cell | Iterable<Cell> | IterableIterator<Cell>,
-    known: Known
+    knowns: Known
   ): Move {
     return this.applyToCellsAndKnowns(
       cells,
-      known,
+      knowns,
       (cell: Cell, known: Known) => {
         this.sets.set(cell, known);
       }
@@ -362,21 +302,59 @@ export class Move {
       }
     }
   }
-
-  // highlight on hover over solver and history buttons
-  // - list of cell/known-set tuples used to detect the solution
-  // - list of cell/value tuples being set
-  // - list of cell/known-set tuples of candidates to mark
 }
 
-function isIterable<T>(t: T | Iterable<T> | IterableIterator<T>): boolean {
-  return typeof t === "object" && Symbol.iterator in t;
-}
-
+/**
+ * Collects an ordered set of moves from an initial puzzle string,
+ * solving cells or removing candidates on a board, or a solver.
+ */
 export class Moves implements Iterable<Move> {
+  /**
+   * Creates an empty set of moves.
+   */
+  static createEmpty(): Moves {
+    return new Moves();
+  }
+
+  /**
+   * Creates moves from the given values in a puzzle string.
+   *
+   * @see solvedCellsFromPuzzleString
+   */
+  static createFrom(values: string): Moves;
+
+  /**
+   * Creates moves from a collection of solved cells.
+   */
+  static createFrom(knowns: Map<Cell, Known>): Moves;
+
+  /**
+   * Creates moves from a list of existing moves.
+   */
+  static createFrom(moves: Move[]): Moves;
+
+  /**
+   * Creates moves from the given source.
+   */
+  static createFrom(source: string | Map<Cell, Known> | Move[]): Moves {
+    if (typeof source === "string") {
+      return this.createFrom(solvedCellsFromPuzzleString(source));
+    } else if (isArray(source)) {
+      return new Moves(source);
+    } else {
+      const givens = new Moves();
+
+      for (const [cell, known] of source) {
+        givens.add(Strategy.Given).set(cell, known);
+      }
+
+      return givens;
+    }
+  }
+
   private moves: Move[];
 
-  constructor(moves: Move[] = []) {
+  private constructor(moves: Move[] = []) {
     this.moves = moves;
   }
 
@@ -403,25 +381,48 @@ export class Moves implements Iterable<Move> {
     return this.moves.length;
   }
 
-  only(strategy: Strategy): Moves {
-    return new Moves(this.moves.filter((m) => m.strategy === strategy));
+  has(strategy: Strategy | Strategy[]): boolean {
+    const filter = isArray(strategy)
+      ? (m: Move) => strategy.includes(m.strategy)
+      : (m: Move) => m.strategy === strategy;
+
+    return !!this.moves.find(filter);
   }
 
-  except(strategy: Strategy): Moves {
-    return new Moves(this.moves.filter((m) => m.strategy !== strategy));
+  only(strategy: Strategy | Strategy[]): Moves {
+    const filter = isArray(strategy)
+      ? (m: Move) => strategy.includes(m.strategy)
+      : (m: Move) => m.strategy === strategy;
+
+    return Moves.createFrom(this.moves.filter(filter));
   }
 
-  apply(board: WritableBoard, strategy?: Strategy): Moves {
+  except(strategy: Strategy | Strategy[]): Moves {
+    const filter = isArray(strategy)
+      ? (m: Move) => !strategy.includes(m.strategy)
+      : (m: Move) => m.strategy !== strategy;
+
+    return Moves.createFrom(this.moves.filter(filter));
+  }
+
+  // FACTOR Remove strategy and use only()
+  apply(board: WritableBoard, strategy?: Strategy | Strategy[]): Moves {
     const next = new Moves();
-    const moves = strategy
-      ? this.moves.filter((m) => m.strategy === strategy)
-      : this.moves;
+    const moves = (strategy ? this.only(strategy) : this).moves;
 
     for (const move of moves) {
       move.apply(board, next);
     }
 
     return next;
+  }
+
+  applyAll(board: WritableBoard, strategy?: Strategy | Strategy[]) {
+    let moves = this as Moves;
+
+    while ((moves = moves.apply(board, strategy)).size()) {
+      // forever
+    }
   }
 
   toString(): string {

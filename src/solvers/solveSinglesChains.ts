@@ -1,10 +1,11 @@
 import { ALL_KNOWNS } from "../models/basics";
 import { ReadableBoard } from "../models/board";
+import { MarkColor } from "../models/decoration";
 import { GRID, Cell } from "../models/grid";
-import { Move, Strategy } from "../models/move";
+import { Move } from "../models/move";
+import { Strategy } from "../models/strategy";
 
 import { difference, intersect, twoSetValues } from "../utils/collections";
-import { MarkColor } from "../models/decoration";
 
 const LOG = false;
 

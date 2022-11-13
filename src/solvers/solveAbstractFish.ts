@@ -1,7 +1,7 @@
 import { ALL_KNOWNS, Grouping } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { Cell, GRID, Group } from "../models/grid";
-import { Move, Strategy } from "../models/move";
+import { Move } from "../models/move";
 
 import {
   areEqual,
@@ -10,6 +10,7 @@ import {
   distinctTriples,
   union,
 } from "../utils/collections";
+import { Strategy } from "../models/strategy";
 
 const LOG = false;
 

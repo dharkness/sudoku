@@ -1,6 +1,7 @@
 import { ReadableBoard } from "../models/board";
 import { GRID } from "../models/grid";
-import { Move, Strategy } from "../models/move";
+import { Move } from "../models/move";
+import { Strategy } from "../models/strategy";
 
 import { singleSetValue } from "../utils/collections";
 

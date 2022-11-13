@@ -107,6 +107,7 @@ but feel free to explore and scavenge any code you find useful.
       - clues only, marks only, cells only to help you learn to spot stuff
       - use green for sets only, blue/yellow for clues?
       - extract Move.getDecoration()?
+      - highlight Brute Force sets in yellow in cells without the solution as a candidate?
     - solvers
       - state management
         - run solvers in memoized actions state

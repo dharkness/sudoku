@@ -1,13 +1,10 @@
 import { useMemo, useReducer } from "react";
 
 import { Known, UNKNOWN, Value } from "../../models/basics";
-import {
-  createEmptySimpleBoard,
-  ReadableBoard,
-  SimpleBoard,
-} from "../../models/board";
+import { ReadableBoard, SimpleBoard } from "../../models/board";
 import { Cell } from "../../models/grid";
-import { Move, Moves, movesFromString, Strategy } from "../../models/move";
+import { Move, Moves } from "../../models/move";
+import { Strategy } from "../../models/strategy";
 
 import { singleSetValue } from "../../utils/collections";
 
@@ -43,11 +40,9 @@ export type PuzzleActions = {
  */
 export default function usePlayPuzzleActions(start?: string): PuzzleActions {
   const initialState = useMemo<State>(() => {
-    const board = createEmptySimpleBoard();
+    const [board, moves] = SimpleBoard.createFrom(start || "");
 
-    if (start) {
-      movesFromString(start).apply(board).only(Strategy.Neighbor).apply(board);
-    }
+    moves.only(Strategy.Neighbor).apply(board);
 
     return {
       steps: [{ board, selected: null }],
@@ -163,8 +158,8 @@ const reducer: Reducer = (state: State, action: Action) => {
           return board;
         }
 
-        const clone = new SimpleBoard(board);
-        const next = new Moves();
+        const clone = board.clone();
+        const next = Moves.createEmpty();
         Move.start(Strategy.Solve).set(selected, known).apply(clone, next);
         next.only(Strategy.Neighbor).apply(clone);
 
@@ -183,8 +178,8 @@ const reducer: Reducer = (state: State, action: Action) => {
           return board;
         }
 
-        const clone = new SimpleBoard(board);
-        const next = new Moves();
+        const clone = board.clone();
+        const next = Moves.createEmpty();
         Move.start(Strategy.EraseMark).mark(selected, known).apply(clone, next);
 
         return clone;
@@ -200,8 +195,8 @@ const reducer: Reducer = (state: State, action: Action) => {
           return board;
         }
 
-        const clone = new SimpleBoard(board);
-        const next = new Moves();
+        const clone = board.clone();
+        const next = Moves.createEmpty();
 
         // moves.forEach((move) => move.apply(clone));
         move.apply(clone, next);

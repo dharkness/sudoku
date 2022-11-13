@@ -154,6 +154,13 @@ export function hasEvery<T>(subset: Set<T>, set: Set<T>): boolean {
 }
 
 /**
+ * Returns true if the given value satisfies the Iterable contract.
+ */
+export function isIterable(value: any): boolean {
+  return typeof value === "object" && Symbol.iterator in value;
+}
+
+/**
  * Uses the `reducer` callback to calculate a value from the elements of an iterable
  * similar to `Array.reduce()`.
  */

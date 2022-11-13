@@ -1,7 +1,8 @@
 import { ALL_KNOWNS, Known, stringFromKnownSet } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell } from "../models/grid";
-import { Move, Strategy } from "../models/move";
+import { Move } from "../models/move";
+import { Strategy } from "../models/strategy";
 
 import {
   combinePairs,

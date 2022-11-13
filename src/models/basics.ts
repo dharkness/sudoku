@@ -1,6 +1,6 @@
-// ========== COORDS ============================================================ //
-
 import { EMPTY, MISSING } from "./symbols";
+
+// ========== COORDS ============================================================ //
 
 /**
  * Identifies a row, column, or block (numbered left-to-right, top-to-bottom)
@@ -227,9 +227,24 @@ export function stringFromPointGroupCoords(
 // ========== VALUES ============================================================ //
 
 /**
+ * Used to mark cells that are not yet known.
+ */
+export const UNKNOWN = null;
+
+/**
+ * Type of the unknown value for below.
+ */
+export type Unknown = null;
+
+/**
  * Identifies a value to track known and candidate values.
  */
 export type Known = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+
+/**
+ * Combination of known and unknown values.
+ */
+export type Value = Known | Unknown;
 
 /**
  * All valid cell values for iterating.
@@ -275,74 +290,4 @@ export function keyFromKnownSet(knowns: Set<Known>): string {
   return Array.from(knowns)
     .sort((a, b) => a - b)
     .join(",");
-}
-
-/**
- * Used to mark cells that are not yet known.
- */
-export const UNKNOWN = null;
-export type Unknown = null;
-export type Value = Known | Unknown;
-
-/**
- * Returns true if any cell in the test string doesn't match the solution.
- */
-export function isCorrectSoFar(test: string, solution: string): boolean {
-  if (test.length !== solution.length) {
-    throw new Error("Test and solution strings must have equal length");
-  }
-
-  for (let i = 0; i < test.length; i++) {
-    const t = test[i]!;
-    const s = solution[i]!;
-
-    if (t !== s && "1" <= t && t <= "9" && "1" <= s && s <= "9") {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/**
- * Returns true if the test full matches the solution.
- */
-export function isFullyCorrect(test: string, solution: string): boolean {
-  if (test.length !== solution.length) {
-    throw new Error("Test and solution strings must have equal length");
-  }
-
-  for (let i = 0; i < test.length; i++) {
-    const t = test[i]!;
-    const s = solution[i]!;
-
-    if (t !== s && "1" <= s && s <= "9") {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/**
- * Compare two solved known strings and return the differences as a string.
- */
-export function solutionDiff(test: string, solution: string): string {
-  if (test.length !== solution.length) {
-    throw new Error("Test and solution strings must have equal length");
-  }
-
-  let result = "";
-  for (let i = 0; i < test.length; i++) {
-    const t = test[i]!;
-    const s = solution[i]!;
-
-    if (t === s || t < "1" || "9" < t || s < "1" || "9" < s) {
-      result += MISSING;
-    } else {
-      result += "x";
-    }
-  }
-
-  return result;
 }

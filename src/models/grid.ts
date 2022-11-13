@@ -10,7 +10,8 @@ import {
   UNKNOWN,
 } from "./basics";
 import { ReadableBoard, WritableBoard } from "./board";
-import { Move, Moves, Strategy } from "./move";
+import { Moves } from "./move";
+import { Strategy } from "./strategy";
 import { EMPTY, MISSING } from "./symbols";
 
 import { difference, excluding, intersect } from "../utils/collections";

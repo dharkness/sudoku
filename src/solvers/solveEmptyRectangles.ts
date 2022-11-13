@@ -1,7 +1,8 @@
 import { ALL_KNOWNS } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { GRID, Cell, Column, Group, Row } from "../models/grid";
-import { Move, Strategy } from "../models/move";
+import { Move } from "../models/move";
+import { Strategy } from "../models/strategy";
 
 import { difference, intersect, singleSetValue } from "../utils/collections";
 

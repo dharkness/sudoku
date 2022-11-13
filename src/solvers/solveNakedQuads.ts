@@ -1,5 +1,6 @@
 import { ReadableBoard } from "../models/board";
-import { Move, Strategy } from "../models/move";
+import { Move } from "../models/move";
+import { Strategy } from "../models/strategy";
 
 import { distinctQuads } from "../utils/collections";
 
