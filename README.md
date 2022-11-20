@@ -67,6 +67,19 @@ but feel free to explore and scavenge any code you find useful.
   - Key binding popup card
 
 - Model
+  - refactor `SimpleBoard`
+    - create CopyOnWriteBoard
+      - move logic from Board to Grid, using API to apply changes, or just use a base class
+    - data model
+      - change `values` to `knowns` and hold only solved cells
+        - solvedCount() and isSolved() become simple size checks
+      - add full grid container to easily find all cells that contain a candidate
+      - maintain cell errors and remove `collectErrors()`
+        - duplicate known in group
+        - no candidates in cell
+        - cell solved to non-candidate?
+      - track cells with N candidates per container (group and grid)
+      - track candidates with N cells per group?
   - `Board` was a better name for the structure than the current knowns and candidates
     - rename `Grid` back to `Board` and `Board` to `Clues`?
       - `ReadableClues` and `WritableClues`? `SimpleClues`?
@@ -77,19 +90,30 @@ but feel free to explore and scavenge any code you find useful.
       - set: Set<Cell>
       - cells: Map<Coord, Cell>
       - indexes: BitSet or CoordSet or 0b000000000 to 0b111111111
+        - use `number` types with functions and table lookup for `size()`
     - KnownSet for cell/group/container candidates
   - rename Move's set() to solve(), mark() to erase()?
     - may not play nice if we add ability to clear a cell or add a mark
     - latter works with marks() unchanged, but sets() doesn't match (solutions()?)
     - gets complicated when adding support for clearing knowns and adding candidates
+  - Add methods to Move:
+    - check if all marks/sets are still valid
+    - create a new Move that contains only the valid clues/marks/sets
+    - probably not super useful since we run all solvers after each move is applied
 
 - Play
   - UI
+    - reset/undo/redo/redo-all using old school tape recorder button icons
+      - undo to first error
+    - number of cells solved/unsolved
     - options
       - dark mode
-      - show mark numbers: never, always, when highlighted
+      - show marks: no, or numbers never, always, when highlighted
+      - mark/panel layout (phone vs. keypad); right-to-left too?
+      - grid coords: top/left, bottom/right, both
     - selected cell
       - highlight all common candidates, not just known of solved cell
+      - Y is PageUp and Redo; Shift-Z or A or B for Redo?
     - known panel
       - highlight hovered known in puzzle panel
       - allow multiple locked knowns (alt-shift-# to toggle)
@@ -108,6 +132,12 @@ but feel free to explore and scavenge any code you find useful.
       - use green for sets only, blue/yellow for clues?
       - extract Move.getDecoration()?
       - highlight Brute Force sets in yellow in cells without the solution as a candidate?
+        - requires forcing a missing candidate when it has a color
+          and altering the color unless the solver does it which is doable
+      - filter moves to those that affect a cell/candidate somehow
+        - use current cell (easy)
+        - combine with highlighted known (easy until we allow locking multiple knowns)
+        - use to provide clues
     - solvers
       - state management
         - run solvers in memoized actions state
@@ -121,15 +151,32 @@ but feel free to explore and scavenge any code you find useful.
         - store strategy to highlight in state on hover instead of its first move
           so applying the move can highlight the next move for the strategy
       - checkbox to automatically apply individual strategies
+      - ctrl-click to apply all moves for the strategy
       - show/apply each solution separately; highlight cells on hover; animate on apply
+      - standardize debug logging
+      - log all moves in a panel
+        - model specific solutions
       - new solvers
         - X-Cycles
-          https://www.sudokuwiki.org/X_Cycles
+          - https://www.sudokuwiki.org/X_Cycles
+            - collect strong and weak links
+            - form cycles
+            - adjust strong links to weak links to expand choices
         - XY-Chain
-          https://www.sudokuwiki.org/XY_Chains
+          - https://www.sudokuwiki.org/XY_Chains
+            - collect links between neighbors each with two candidates and sharing one
+            - or collect groups with knowns with two cell candidates, each containing two candidates
         - Fish
           - Finned and Sashimi Fish
-            https://www.sudokuonline.io/tips/sudoku-x-wing
+            - https://www.sudokuonline.io/tips/sudoku-x-wing
+        - 3D Medusa
+          - https://www.sudokuwiki.org/3D_Medusa
+        - WXYZ-Wing
+          - https://www.sudokuwiki.org/WXYZ_Wing
+        - Fireworks
+          - https://www.sudokuwiki.org/Fireworks
+      - fix Brute Force
+        - fails when it finds a deadly rectangle but reports a solution
 
 - Create
   - manual partial puzzles
