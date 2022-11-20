@@ -76,7 +76,7 @@ export default function solveAbstractNakedTuples(
         if (!erase.size) {
           LOG &&
             console.info(
-              `[${name}] EMPTY`,
+              `[${name}] empty`,
               stringFromKnownSet(knowns),
               "in",
               group.name,
@@ -87,7 +87,7 @@ export default function solveAbstractNakedTuples(
 
         LOG &&
           console.info(
-            `[${name}] FOUND`,
+            `[${name}] found`,
             stringFromKnownSet(knowns),
             "in",
             group.name,

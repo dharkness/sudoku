@@ -2,6 +2,7 @@ import { ReadableBoard } from "../models/board";
 import { GRID, Cell, Intersection } from "../models/grid";
 import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
+import { REMOVE_MARK } from "../models/symbols";
 
 import { difference, intersect, withoutEmptySets } from "../utils/collections";
 
@@ -86,15 +87,14 @@ export default function solveIntersectionRemovals(board: ReadableBoard): Moves {
 
       LOG &&
         console.info(
-          "SOLVE",
           pointing
             ? count === 2
-              ? "POINTING PAIR"
-              : "POINTING TRIPLE"
-            : "BOX LINE REDUCTION",
+              ? "[pointing-pair] FOUND"
+              : "[pointing-triple] FOUND"
+            : "[box-line-reduction] FOUND",
           Cell.stringFromPoints(blockCells),
           k,
-          "x",
+          REMOVE_MARK,
           Cell.stringFromPoints(cells)
         );
     }

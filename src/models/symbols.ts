@@ -1,5 +1,6 @@
 export const CANDIDATES = "∴";
 export const EMPTY = "∅";
+export const CROSS = "/";
 
 export const MISSING = "·";
 export const NOT = "≠";

@@ -1,12 +1,15 @@
 import {
   ALL_COORDS,
   ALL_POINTS,
+  BLOCK_LABELS,
+  COLUMN_LABELS,
   coord,
   Coord,
   getPoint,
   Grouping,
   Known,
   Point,
+  ROW_LABELS,
   UNKNOWN,
 } from "./basics";
 import { ReadableBoard, WritableBoard } from "./board";
@@ -225,8 +228,8 @@ export abstract class Group extends Container {
   // top, right, bottom, left
   readonly borders = new Map<Cell, [boolean, boolean, boolean, boolean]>();
 
-  protected constructor(grouping: Grouping, coord: Coord) {
-    super(`${Grouping[grouping]} ${coord + 1}`);
+  constructor(name: string, grouping: Grouping, coord: Coord) {
+    super(name);
     this.grouping = grouping;
     this.coord = coord;
   }
@@ -263,7 +266,7 @@ export abstract class Group extends Container {
  */
 export class Row extends Group {
   constructor(coord: Coord) {
-    super(Grouping.ROW, coord);
+    super(`Row ${ROW_LABELS[coord]}`, Grouping.ROW, coord);
   }
 
   addCell(cell: Cell) {
@@ -279,7 +282,7 @@ export class Row extends Group {
  */
 export class Column extends Group {
   constructor(coord: Coord) {
-    super(Grouping.COLUMN, coord);
+    super(`Col ${COLUMN_LABELS[coord]}`, Grouping.COLUMN, coord);
   }
 
   addCell(cell: Cell) {
@@ -295,7 +298,7 @@ export class Column extends Group {
  */
 export class Block extends Group {
   constructor(coord: Coord) {
-    super(Grouping.BLOCK, coord);
+    super(`Box ${BLOCK_LABELS[coord]}`, Grouping.BLOCK, coord);
   }
 
   addCell(cell: Cell) {

@@ -54,6 +54,21 @@ export const COLUMN_LABELS = [
   "9",
 ] as const;
 
+/**
+ * Used when indicating blocks.
+ */
+export const BLOCK_LABELS = [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+] as const;
+
 export function rowLabel(row: Coord): string {
   return ROW_LABELS[row];
 }

@@ -1,8 +1,9 @@
-import { ALL_KNOWNS, Grouping } from "../models/basics";
+import { ALL_KNOWNS, Grouping, Known } from "../models/basics";
 import { ReadableBoard } from "../models/board";
 import { Cell, GRID, Group } from "../models/grid";
 import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
+import { CROSS, EMPTY, REMOVE_MARK } from "../models/symbols";
 
 import {
   areEqual,
@@ -35,7 +36,7 @@ export default function solveAbstractFish(
 
       for (const fgs of mainsPicker(candidates)) {
         const fish = new Fish(fgs);
-        if (!fish.isValid(name)) {
+        if (!fish.isValid(name, k)) {
           continue;
         }
 
@@ -52,8 +53,9 @@ export default function solveAbstractFish(
               `[${name}] EMPTY`,
               k,
               ...Array.from(fish.mains).map((g) => g.name),
-              "x",
-              ...Array.from(fish.crosses).map((g) => g.name)
+              CROSS,
+              ...Array.from(fish.crosses).map((g) => g.name),
+              EMPTY
             );
 
           continue;
@@ -64,9 +66,9 @@ export default function solveAbstractFish(
             `[${name}] FOUND`,
             k,
             ...Array.from(fish.mains).map((g) => g.name),
-            "x",
+            CROSS,
             ...Array.from(fish.crosses).map((g) => g.name),
-            "∉",
+            REMOVE_MARK,
             Cell.stringFromPoints(markCells)
           );
 
@@ -110,7 +112,7 @@ class Fish {
     this.cells = groups.map((g) => g.cells).reduce(union, new Set());
   }
 
-  isValid(name: string): boolean {
+  isValid(name: string, k: Known): boolean {
     const size = this.groups.length;
     if (size !== this.crosses.size) {
       return false;
@@ -125,9 +127,10 @@ class Fish {
         if (areEqual(ac, bc)) {
           LOG &&
             console.info(
-              `[${name}] X-WING`,
+              `[${name}] IGNORE X-Wing`,
+              k,
               ...[am, bm].map((g) => g.name),
-              "x",
+              CROSS,
               ...Array.from(ac).map((g) => g.name)
             );
 
@@ -148,9 +151,10 @@ class Fish {
         if (crosses.size <= 3) {
           LOG &&
             console.info(
-              `[${name}] SWORDFISH`,
+              `[${name}] IGNORE Swordfish`,
+              k,
               ...[am, bm, cm].map((g) => g.name),
-              "x",
+              CROSS,
               ...Array.from(crosses).map((g) => g.name)
             );
 
