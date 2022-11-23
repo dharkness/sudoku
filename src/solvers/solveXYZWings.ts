@@ -8,8 +8,8 @@ import {
   combinePairs,
   excluding,
   intersect,
-  singleSetValue,
-  twoSetValues,
+  singleValue,
+  twoValues,
 } from "../utils/collections";
 
 const LOG = false;
@@ -51,7 +51,7 @@ export default function solveXYZWings(board: ReadableBoard): Moves {
           allCandidates
             .filter(([_, pair]) => pair.size === 2 && pair.has(z))
             .reduce((map, [c, pair]) => {
-              const xy = singleSetValue(excluding(pair, z));
+              const xy = singleValue(excluding(pair, z));
               if (map.has(xy)) {
                 map.get(xy)!.add(c);
               } else {
@@ -65,7 +65,7 @@ export default function solveXYZWings(board: ReadableBoard): Moves {
 
   for (const [cell, triple] of triples) {
     for (const z of triple) {
-      const [x, y] = twoSetValues(excluding(triple, z));
+      const [x, y] = twoValues(excluding(triple, z));
       const pairCellsByXY = pairCellsByXYByZ.get(z)!;
       if (!pairCellsByXY.has(x) || !pairCellsByXY.has(y)) {
         continue;

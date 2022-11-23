@@ -4,7 +4,7 @@ import { GRID, Cell, Column, Group, Row } from "../models/grid";
 import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
-import { difference, intersect, singleSetValue } from "../utils/collections";
+import { difference, intersect, singleValue } from "../utils/collections";
 
 const LOG = false;
 
@@ -144,7 +144,7 @@ export default function solveEmptyRectangles(board: ReadableBoard): Moves {
             continue;
           }
 
-          const remove = singleSetValue(candidate);
+          const remove = singleValue(candidate);
           const double = candidates.size === 2;
           checked.add(remove);
 

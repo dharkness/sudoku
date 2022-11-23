@@ -21,61 +21,91 @@ export function shuffle<T>(array: T[]): T[] {
 }
 
 /**
- * Returns the single value of the given set
+ * Returns the single value of the given set or array.
  *
- * @throws {Error} If the set does not have exactly one element
+ * @throws {Error} If the set or array does not have exactly one element
  */
-export function singleSetValue<T>(set: Set<T>): T {
-  if (set.size !== 1) {
-    throw new Error(`Set must have 1 element but has ${set.size}`);
+export function singleValue<T>(values: Set<T> | T[]): T {
+  if (values instanceof Set) {
+    if (values.size !== 1) {
+      throw new Error(`Set must have 1 element but has ${values.size}`);
+    }
+
+    return values.values().next().value;
   }
 
-  return set.values().next().value;
+  if (values.length !== 1) {
+    throw new Error(`Array must have 1 element but has ${values.length}`);
+  }
+
+  return values[0] as T;
 }
 
 /**
- * Returns the pair of values of the given set
+ * Returns the pair of values of the given set or array.
  *
- * @throws {Error} If the set does not have exactly two elements
+ * @throws {Error} If the set or array does not have exactly two elements
  */
-export function twoSetValues<T>(set: Set<T>): [T, T] {
-  if (set.size !== 2) {
-    throw new Error(`Set must have 2 elements but has ${set.size}`);
+export function twoValues<T>(values: Set<T> | T[]): [T, T] {
+  if (values instanceof Set) {
+    if (values.size !== 2) {
+      throw new Error(`Set must have 1 element but has ${values.size}`);
+    }
+
+    return Array.from(values.values()) as [T, T];
   }
 
-  return [...set.values()] as [T, T];
+  if (values.length !== 2) {
+    throw new Error(`Array must have 2 elements but has ${values.length}`);
+  }
+
+  return values as [T, T];
 }
 
 /**
- * Returns the pair of values of the given set
+ * Returns the triple of values of the given set or array.
  *
- * @throws {Error} If the set does not have exactly two elements
+ * @throws {Error} If the set or array does not have exactly three elements
  */
-export function threeSetValues<T>(set: Set<T>): [T, T, T] {
-  if (set.size !== 3) {
-    throw new Error(`Set must have 3 elements but has ${set.size}`);
+export function threeValues<T>(values: Set<T> | T[]): [T, T, T] {
+  if (values instanceof Set) {
+    if (values.size !== 3) {
+      throw new Error(`Set must have 1 element but has ${values.size}`);
+    }
+
+    return Array.from(values.values()) as [T, T, T];
   }
 
-  return [...set.values()] as [T, T, T];
+  if (values.length !== 3) {
+    throw new Error(`Array must have 2 elements but has ${values.length}`);
+  }
+
+  return values as [T, T, T];
 }
 
 /**
- * Returns a copy of the given set with the given element added
- * even if it doesn't currently contain the element.
+ * Returns a copy of the given set with the given element(s) added.
  */
-export function including<T>(set: Set<T>, t: T): Set<T> {
+export function including<T>(set: Set<T>, ...values: T[]): Set<T> {
   const clone = new Set(set);
-  clone.add(t);
+
+  for (const value of values) {
+    clone.add(value);
+  }
+
   return clone;
 }
 
 /**
- * Returns a copy of the given set with the given element removed
- * even if it doesn't currently contain the element.
+ * Returns a copy of the given set with the given element(s) removed.
  */
-export function excluding<T>(set: Set<T>, t: T): Set<T> {
+export function excluding<T>(set: Set<T>, ...values: T[]): Set<T> {
   const clone = new Set(set);
-  clone.delete(t);
+
+  for (const value of values) {
+    clone.delete(value);
+  }
+
   return clone;
 }
 

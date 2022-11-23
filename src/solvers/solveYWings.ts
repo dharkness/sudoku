@@ -8,8 +8,8 @@ import {
   difference,
   distinctPairs,
   intersect,
-  singleSetValue,
-  twoSetValues,
+  singleValue,
+  twoValues,
   union,
 } from "../utils/collections";
 
@@ -46,7 +46,7 @@ export default function solveYWings(board: ReadableBoard): Moves {
   const cells = new Set(pairs.keys());
 
   for (const [cell, pair] of pairs) {
-    const [k1, k2] = twoSetValues(pair);
+    const [k1, k2] = twoValues(pair);
     const neighbors = intersect(cell.neighbors, cells);
     if (neighbors.size < 2) {
       continue;
@@ -78,7 +78,7 @@ export default function solveYWings(board: ReadableBoard): Moves {
         continue;
       }
 
-      const mark = singleSetValue(ks);
+      const mark = singleValue(ks);
       if (!ks1.has(mark) || !ks2.has(mark)) {
         continue;
       }

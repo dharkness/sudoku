@@ -20,8 +20,8 @@ import {
   distinctPairs,
   distinctTriples,
   hasEvery,
-  singleSetValue,
-  twoSetValues,
+  singleValue,
+  twoValues,
   union,
 } from "../utils/collections";
 
@@ -165,7 +165,7 @@ export default function solveUniqueRectangles(board: ReadableBoard): Moves {
         Cell.stringFromPoints(cells)
       );
 
-    const [pair1, pair2] = twoSetValues(pair);
+    const [pair1, pair2] = twoValues(pair);
     const foundType1s = new Set<string>(); // blocks all other types once checked
 
     function checkType1(corners: Iterable<Cell>): void {
@@ -182,7 +182,7 @@ export default function solveUniqueRectangles(board: ReadableBoard): Moves {
           Cell.stringFromPoints(rect.cells)
         );
 
-      const fourth = singleSetValue(
+      const fourth = singleValue(
         difference(new Set(rect.cells), new Set(corners))
       );
       const candidates = board.getCandidates(fourth);
@@ -281,9 +281,10 @@ export default function solveUniqueRectangles(board: ReadableBoard): Moves {
         new Set(rect.cells),
         new Set([floorLeft, floorRight])
       );
-      const [roofLeft, roofRight] = Cell.sortedByColumnRow(
-        twoSetValues(roof)
-      ) as [Cell, Cell];
+      const [roofLeft, roofRight] = Cell.sortedByColumnRow(twoValues(roof)) as [
+        Cell,
+        Cell
+      ];
 
       const roofLeftCandidates = board.getCandidates(roofLeft);
       const roofRightCandidates = board.getCandidates(roofRight);
@@ -349,7 +350,7 @@ export default function solveUniqueRectangles(board: ReadableBoard): Moves {
         return;
       }
 
-      const candidate = singleSetValue(roofLeftExtra);
+      const candidate = singleValue(roofLeftExtra);
       const cells = Array.from(roofLeft.commonNeighbors.get(roofRight)!).filter(
         (c) => board.isCandidate(c, candidate)
       );
@@ -386,7 +387,7 @@ export default function solveUniqueRectangles(board: ReadableBoard): Moves {
         return;
       }
 
-      const [extra1, extra2] = twoSetValues(extra);
+      const [extra1, extra2] = twoValues(extra);
       const roofCells = new Set([roofLeft, roofRight]);
       for (const g of ALL_GROUPINGS) {
         const group = roofLeft.groups.get(g)!;
@@ -599,8 +600,8 @@ class Rectangle {
       return null;
     }
 
-    const [top, bottom] = twoSetValues(rows);
-    const [left, right] = twoSetValues(columns);
+    const [top, bottom] = twoValues(rows);
+    const [left, right] = twoValues(columns);
 
     return new Rectangle(
       GRID.getCell(getPoint(top, left)),

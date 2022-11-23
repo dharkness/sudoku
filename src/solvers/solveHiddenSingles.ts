@@ -4,7 +4,7 @@ import { GRID, Cell, Group } from "../models/grid";
 import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
-import { singleSetValue } from "../utils/collections";
+import { singleValue } from "../utils/collections";
 
 const LOG = false;
 
@@ -24,7 +24,7 @@ export default function solveHiddenSingles(board: ReadableBoard): Moves {
           continue;
         }
 
-        const cell = singleSetValue(cells);
+        const cell = singleValue(cells);
         const candidates = board.getCandidates(cell);
 
         if (candidates.size === 1) {

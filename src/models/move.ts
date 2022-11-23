@@ -13,7 +13,7 @@ import {
 import { Cell, Group } from "./grid";
 import { solvedCellsFromPuzzleString } from "./puzzle-string";
 import { Strategy } from "./strategy";
-import { REMOVE_MARK, SOLVE_CELL } from "./symbols";
+import { EMPTY, MISSING, REMOVE_MARK, SOLVE_CELL } from "./symbols";
 
 import {
   deepCloneMap,
@@ -75,23 +75,26 @@ export class Move {
     );
   }
 
-  get key() {
+  get key(): string {
     if (!this._key) {
-      const sets = Array.from(this.sets.entries())
-        .sort(([a], [b]) => a.compare(b))
-        .map(([cell, known]) => `${cell.key} ${SOLVE_CELL} ${known}`)
-        .join(", ");
-      const marks = Array.from(this.marks.entries())
-        .sort(([a], [b]) => a.compare(b))
-        .map(
-          ([cell, knowns]) =>
-            `${cell.key} ${REMOVE_MARK} ${Array.from(knowns)
-              .sort((a, b) => a - b)
-              .join("")}`
-        )
-        .join(", ");
-
-      this._key = `{ ${[sets, marks].filter(Boolean).join(" | ")} }`;
+      if (this.sets.size) {
+        this._key = Array.from(this.sets.entries())
+          .sort(([a], [b]) => a.compare(b))
+          .map(([cell, known]) => `${cell.key}${SOLVE_CELL}${known}`)
+          .join(MISSING);
+      } else if (this.marks.size) {
+        this._key = Array.from(this.marks.entries())
+          .sort(([a], [b]) => a.compare(b))
+          .map(
+            ([cell, knowns]) =>
+              `${cell.key}${REMOVE_MARK}${Array.from(knowns)
+                .sort((a, b) => a - b)
+                .join("")}`
+          )
+          .join(MISSING);
+      } else {
+        this._key = EMPTY;
+      }
     }
 
     return this._key;

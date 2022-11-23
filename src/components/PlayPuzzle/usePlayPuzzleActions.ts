@@ -6,7 +6,7 @@ import { Cell } from "../../models/grid";
 import { Move, Moves } from "../../models/move";
 import { Strategy } from "../../models/strategy";
 
-import { singleSetValue } from "../../utils/collections";
+import { singleValue } from "../../utils/collections";
 
 export type PuzzleActions = {
   current: ReadableBoard;
@@ -64,7 +64,7 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
     const candidates = selected ? current.getCandidates(selected) : null;
 
     const singleton =
-      candidates?.size === 1 ? singleSetValue(candidates) : UNKNOWN;
+      candidates?.size === 1 ? singleValue(candidates) : UNKNOWN;
     const highlighted = locked || value || singleton;
 
     return {

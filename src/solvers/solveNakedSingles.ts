@@ -3,7 +3,7 @@ import { GRID } from "../models/grid";
 import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
-import { singleSetValue } from "../utils/collections";
+import { singleValue } from "../utils/collections";
 
 const LOG = false;
 
@@ -17,7 +17,7 @@ export default function solveNakedSingles(board: ReadableBoard): Moves {
     const candidates = board.getCandidates(cell);
 
     if (candidates.size === 1) {
-      const candidate = singleSetValue(candidates);
+      const candidate = singleValue(candidates);
 
       moves
         .start(Strategy.NakedSingle)

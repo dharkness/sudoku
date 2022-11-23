@@ -5,7 +5,7 @@ import { GRID, Cell } from "../models/grid";
 import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
-import { difference, intersect, twoSetValues } from "../utils/collections";
+import { difference, intersect, twoValues } from "../utils/collections";
 
 const LOG = false;
 
@@ -45,7 +45,7 @@ export default function solveSinglesChains(board: ReadableBoard): Moves {
         const cells = board.getCandidateCells(group, k);
 
         if (cells.size === 2) {
-          const [first, second] = twoSetValues(cells);
+          const [first, second] = twoValues(cells);
           nodes.add(first);
           if (board.getCandidates(first).size > 1) {
             candidates.add(first);

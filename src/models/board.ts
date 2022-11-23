@@ -15,7 +15,7 @@ import {
   deepCloneMap,
   deepCloneMapOfSets,
   excluding,
-  singleSetValue,
+  singleValue,
 } from "../utils/collections";
 
 const LOG = false;
@@ -289,7 +289,7 @@ export class SimpleBoard implements WritableBoard {
 
     // solve cell if only one candidate remaining
     if (triggerLastCandidate && remaining.size === 1) {
-      moves.start(Strategy.NakedSingle).set(cell, singleSetValue(remaining));
+      moves.start(Strategy.NakedSingle).set(cell, singleValue(remaining));
     }
 
     // remove candidate cell from its containers
@@ -329,12 +329,7 @@ export class SimpleBoard implements WritableBoard {
       // notify container when zero or one candidate cell remains
       switch (remaining.size) {
         case 1:
-          container.onOneCellLeft(
-            this,
-            known,
-            singleSetValue(remaining),
-            moves
-          );
+          container.onOneCellLeft(this, known, singleValue(remaining), moves);
           break;
 
         case 0:
