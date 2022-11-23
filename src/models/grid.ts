@@ -95,6 +95,18 @@ export class Cell implements Stateful {
     return this.neighbors.has(cell);
   }
 
+  commonGroups(cell: Cell): Set<Group> {
+    const common = new Set<Group>();
+
+    for (const [g, group] of this.groups) {
+      if (cell.groups.get(g) === group) {
+        common.add(group);
+      }
+    }
+
+    return common;
+  }
+
   compare(cell: Cell): number {
     return this.key.localeCompare(cell.key);
   }
@@ -228,7 +240,7 @@ export abstract class Group extends Container {
   // top, right, bottom, left
   readonly borders = new Map<Cell, [boolean, boolean, boolean, boolean]>();
 
-  constructor(name: string, grouping: Grouping, coord: Coord) {
+  protected constructor(name: string, grouping: Grouping, coord: Coord) {
     super(name);
     this.grouping = grouping;
     this.coord = coord;

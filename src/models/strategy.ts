@@ -23,16 +23,15 @@ export enum Strategy {
    */
   Neighbor,
 
+  NakedSingle, // cell, candidate -> set cell to candidate; remove candidate from neighbors
+  HiddenSingle, // cell, candidate, group(s) -> set cell to candidate
   PointingPair, // cells, candidate, intersection (follows from cells) -> cells; remove candidate from cells
   PointingTriple, // same ^
   BoxLineReduction, // same ^ in other direction
 
-  NakedSingle, // cell, candidate -> set cell to candidate; remove candidate from neighbors
   NakedPair, // 2 cells, 2 candidates, 1 group -> cells; remove both candidates from other cells in group
   NakedTriple, // same ^ but with 3 cells and candidates
   NakedQuad,
-
-  HiddenSingle, // cell, candidate, group(s) -> set cell to candidate
   HiddenPair, // 2 cells, 2 candidates, 1 group -> remove other candidates from the cells
   HiddenTriple, // same ^ but with 3 cells and candidates
   HiddenQuad,
@@ -43,8 +42,10 @@ export enum Strategy {
   XYZWing,
   Swordfish,
   Jellyfish,
-  EmptyRectangle, // block, (2 cells, 1 candidate) -> cells; remove candidate from cells
   UniqueRectangle,
+  XYChains,
+
+  EmptyRectangle, // block, (2 cells, 1 candidate) -> cells; remove candidate from cells
 
   BruteForce, // cell, candidate -> set cell to candidate
 }

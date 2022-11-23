@@ -173,6 +173,16 @@ export function areEqual<T>(a: Set<T>, b: Set<T>): boolean {
   return true;
 }
 
+export function hasAny<T>(subset: Set<T>, set: Set<T>): boolean {
+  for (const t of subset) {
+    if (set.has(t)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export function hasEvery<T>(subset: Set<T>, set: Set<T>): boolean {
   for (const t of subset) {
     if (!set.has(t)) {
@@ -285,6 +295,96 @@ export function combinePairs<T>(a: Set<T>, b: Set<T>): [T, T][] {
     ],
     [] as [T, T][]
   );
+}
+
+/**
+ * Appends the value to an array in a nested map of any depth, creating maps and the array if necessary.
+ */
+export function deepPush<T>(
+  root: Map<any, any>,
+  value: T,
+  ...keys: any[]
+): T[] {
+  const lastKey = keys.pop();
+  let map = root;
+
+  for (const k of keys) {
+    if (map.has(k)) {
+      map = map.get(k)!;
+    } else {
+      map.set(k, (map = new Map<any, any>()));
+    }
+  }
+
+  let array;
+  if (map.has(lastKey)) {
+    array = map.get(lastKey)!;
+    array.push(value);
+  } else {
+    array = [value];
+    map.set(lastKey, array);
+  }
+
+  return array;
+}
+
+/**
+ * Adds the value to a set in a nested map of any depth, creating maps and the set if necessary.
+ */
+export function deepAdd<T>(
+  root: Map<any, any>,
+  value: T,
+  ...keys: any[]
+): Set<T> {
+  const lastKey = keys.pop();
+  let map = root;
+
+  for (const k of keys) {
+    if (map.has(k)) {
+      map = map.get(k)!;
+    } else {
+      map.set(k, (map = new Map<any, any>()));
+    }
+  }
+
+  let set;
+  if (map.has(lastKey)) {
+    set = map.get(lastKey)!.add(value);
+  } else {
+    map.set(lastKey, (set = new Set<T>().add(value)));
+  }
+
+  return set;
+}
+
+/**
+ * Sets the value/value pair in the deepest map of a nested map of any depth, creating maps when necessary.
+ */
+export function deepSet<K, V>(
+  root: Map<any, any>,
+  key: K,
+  value: V,
+  ...keys: any[]
+): Map<K, V> {
+  const lastKey = keys.pop();
+  let map = root;
+
+  for (const k of keys) {
+    if (map.has(k)) {
+      map = map.get(k)!;
+    } else {
+      map.set(k, (map = new Map<any, any>()));
+    }
+  }
+
+  let leaf: Map<K, V>;
+  if (map.has(lastKey)) {
+    leaf = map.get(lastKey)!.set(key, value);
+  } else {
+    map.set(lastKey, (leaf = new Map<K, V>().set(key, value)));
+  }
+
+  return leaf;
 }
 
 /**

@@ -7,7 +7,7 @@ import { PuzzleActions } from "./usePlayPuzzleActions";
 
 const LOG = true;
 
-const COLUMN_LENGTH = 9;
+const COLUMN_LENGTH = 10;
 
 type SolverPanelProps = {
   actions: PuzzleActions;
@@ -90,20 +90,25 @@ const buttons = {
   nakedSingles: "Naked Singles",
   hiddenSingles: "Hidden Singles",
   intersectionRemovals: "Intersection Removals",
+
   nakedPairs: "Naked Pairs",
   nakedTriples: "Naked Triples",
   nakedQuads: "Naked Quads",
   hiddenPairs: "Hidden Pairs",
   hiddenTriples: "Hidden Triples",
   hiddenQuads: "Hidden Quads",
+
   xWings: "X-Wings",
   singlesChains: "Singles Chains",
   yWings: "Y-Wings",
   swordfish: "Swordfish",
   xyzWings: "XYZ-Wings",
   jellyfish: "Jellyfish",
-  emptyRectangles: "Empty Rectangles",
   uniqueRectangles: "Unique Rectangles",
+  xyChains: "XY-Chains",
+
+  emptyRectangles: "Empty Rectangles",
+
   bruteForce: "Brute Force",
 };
 

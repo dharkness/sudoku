@@ -18,6 +18,7 @@ import xyzWings from "./solveXYZWings";
 import jellyfish from "./solveJellyfish";
 import emptyRectangles from "./solveEmptyRectangles";
 import uniqueRectangles from "./solveUniqueRectangles";
+import xyChains from "./solveXYChains";
 import bruteForce from "./solveBruteForce";
 
 type Solver = (board: ReadableBoard) => Moves;
@@ -38,8 +39,9 @@ export default {
   swordfish,
   xyzWings,
   jellyfish,
-  emptyRectangles,
   uniqueRectangles,
+  xyChains,
+  emptyRectangles,
   bruteForce,
 } as {
   [key: string]: Solver;

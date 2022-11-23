@@ -405,10 +405,10 @@ export class SimpleBoard implements WritableBoard {
  * Thrown when attempting to set a cell to a value that is not a candidate.
  */
 class NotCandidateError extends Error {
-  constructor(cell: Cell, to: Known, candidatess: Set<Known>) {
+  constructor(cell: Cell, to: Known, candidates: Set<Known>) {
     super(
       `Cannot set ${cell.toString()} to ${to} not in ${stringFromKnownSet(
-        candidatess
+        candidates
       )}`
     );
   }
