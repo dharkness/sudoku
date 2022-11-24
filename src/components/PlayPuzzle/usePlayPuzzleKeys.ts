@@ -155,11 +155,27 @@ export default function usePlayPuzzleKeys(actions: PuzzleActions) {
       switch (key) {
         case "u":
         case "Home":
+        case "k":
+        case "Down":
+        case "ArrowDown":
+        case "l":
+        case "Right":
+        case "ArrowRight":
+        case "h":
+        case "PageDown":
           actions.select(GRID.getCell(getPoint(0, 0)));
           event.preventDefault();
           return;
         case "o":
         case "End":
+        case "i":
+        case "Up":
+        case "ArrowUp":
+        case "j":
+        case "Left":
+        case "ArrowLeft":
+        case "y":
+        case "PageUp":
           actions.select(GRID.getCell(getPoint(8, 8)));
           event.preventDefault();
           return;
