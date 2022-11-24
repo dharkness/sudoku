@@ -151,7 +151,6 @@ but feel free to explore and scavenge any code you find useful.
         - store strategy to highlight in state on hover instead of its first move
           so applying the move can highlight the next move for the strategy
       - checkbox to automatically apply individual strategies
-      - ctrl-click to apply all moves for the strategy
       - show/apply each solution separately; highlight cells on hover; animate on apply
       - standardize debug logging
       - log all moves in a panel

@@ -69,7 +69,7 @@ const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
               key={key}
               type="button"
               disabled={disabled}
-              onClick={() => actions.applyMoves(moves)}
+              onClick={(e) => actions.applyMoves(moves, e.ctrlKey || e.altKey)}
               onMouseEnter={() => actions.preview(moves.first())}
               onMouseLeave={() => actions.preview(null)}
               className={disabled ? disabledClasses : enabledClasses}
@@ -103,6 +103,7 @@ const buttons = {
   yWings: "Y-Wings",
   swordfish: "Swordfish",
   xyzWings: "XYZ-Wings",
+
   jellyfish: "Jellyfish",
   uniqueRectangles: "Unique Rectangles",
   xyChains: "XY-Chains",
