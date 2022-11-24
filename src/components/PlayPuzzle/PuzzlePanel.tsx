@@ -1,4 +1,9 @@
-import { ALL_COORDS, getPoint } from "../../models/basics";
+import {
+  ALL_COORDS,
+  COLUMN_LABELS,
+  getPoint,
+  ROW_LABELS,
+} from "../../models/basics";
 import { GRID } from "../../models/grid";
 
 import { PuzzleActions } from "./usePlayPuzzleActions";
@@ -17,14 +22,22 @@ const PuzzlePanel = ({ actions, size }: PuzzlePanelProps): JSX.Element => {
   return (
     <div>
       <table className="table-fixed border-collapse text-center select-none cursor-pointer">
+        <thead>
+          <tr className="cursor-auto" style={{ height: size / 2 }}>
+            <th></th>
+            {ALL_COORDS.map((c) => (
+              <th key={c}>
+                <span>{COLUMN_LABELS[c]}</span>
+              </th>
+            ))}
+          </tr>
+        </thead>
         <tbody>
           {ALL_COORDS.map((r) => (
-            <tr
-              key={r}
-              className={`border-b ${
-                r % 3 === 2 ? "border-black" : "border-slate-300"
-              }`}
-            >
+            <tr key={r}>
+              <th className="cursor-auto" style={{ width: size / 2 }}>
+                <span>{ROW_LABELS[r]}</span>
+              </th>
               {ALL_COORDS.map((c) => {
                 const cell = GRID.getCell(getPoint(r, c));
 
@@ -45,9 +58,22 @@ const PuzzlePanel = ({ actions, size }: PuzzlePanelProps): JSX.Element => {
                   />
                 );
               })}
+              <th className="cursor-auto" style={{ width: size / 2 }}>
+                <span>{ROW_LABELS[r]}</span>
+              </th>
             </tr>
           ))}
         </tbody>
+        <tfoot>
+          <tr className="cursor-auto" style={{ height: size / 2 }}>
+            <th></th>
+            {ALL_COORDS.map((c) => (
+              <th key={c}>
+                <span>{COLUMN_LABELS[c]}</span>
+              </th>
+            ))}
+          </tr>
+        </tfoot>
       </table>
     </div>
   );
