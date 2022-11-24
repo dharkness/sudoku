@@ -25,7 +25,7 @@ export type PuzzleActions = {
 
   highlight: (value: Value) => void;
   preview: (move: Move | null) => void;
-  select: (cell: Cell) => void;
+  select: (cell: Cell | null) => void;
   setCell: (known: Known) => void;
   removeCandidate: (known: Known) => void;
   applyMoves: (moves: Moves, all: boolean) => void;
@@ -84,7 +84,7 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
 
       highlight: (value: Value) => dispatch({ type: "highlight", value }),
       preview: (move: Move | null) => dispatch({ type: "preview", move }),
-      select: (cell: Cell) => dispatch({ type: "select", cell }),
+      select: (cell: Cell | null) => dispatch({ type: "select", cell }),
       setCell: (known: Known) => dispatch({ type: "set", known: known }),
       removeCandidate: (known: Known) =>
         dispatch({ type: "remove", known: known }),
@@ -115,7 +115,7 @@ type StepNode = {
 type Action =
   | { type: "highlight"; value: Value }
   | { type: "preview"; move: Move | null }
-  | { type: "select"; cell: Cell }
+  | { type: "select"; cell: Cell | null }
   | { type: "set"; known: Known }
   | { type: "remove"; known: Known }
   | { type: "apply"; moves: Moves; all: boolean }

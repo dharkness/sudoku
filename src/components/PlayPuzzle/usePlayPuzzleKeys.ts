@@ -49,7 +49,9 @@ export default function usePlayPuzzleKeys(actions: PuzzleActions) {
     }
 
     if (selected) {
-      if (key === " " || key === "Spacebar") {
+      if (key === "Escape") {
+        actions.select(null);
+      } else if (key === " " || key === "Spacebar") {
         if (singleton !== UNKNOWN) {
           actions.setCell(singleton);
         }
