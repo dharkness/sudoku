@@ -37,14 +37,14 @@ const SelectableCell = ({
   const [top, right, bottom, left] = borders;
   const backgroundColor = selected
     ? "bg-sky-400"
-    : given
-    ? "bg-black"
     : value
-    ? "bg-neutral-300"
+    ? highlighted === value
+      ? "bg-sky-900"
+      : given
+      ? "bg-black"
+      : "bg-neutral-300"
     : background
     ? BackgroundColors[background]
-    : highlighted && highlighted === value // impossible (line 42)
-    ? "bg-sky-900"
     : highlighted && candidates.has(highlighted) // remove?
     ? "bg-emerald-50"
     : null;
