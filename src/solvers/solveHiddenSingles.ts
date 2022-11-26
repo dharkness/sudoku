@@ -1,8 +1,9 @@
-import { ALL_KNOWNS, Known, stringFromKnownSet } from "../models/basics";
-import { ReadableBoard } from "../models/board";
-import { GRID, Cell, Group } from "../models/grid";
+import { Known, stringFromKnownSet } from "../models/basics";
+import { knownsWithNCandidates, ReadableBoard } from "../models/board";
+import { Cell, Group } from "../models/grid";
 import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
+import { NOT_EQUAL, SOLVE_CELL } from "../models/symbols";
 
 import { singleValue } from "../utils/collections";
 
@@ -16,59 +17,50 @@ export default function solveHiddenSingles(board: ReadableBoard): Moves {
   const moves = Moves.createEmpty();
   const found = new Map<Cell, [Known, Set<Group>]>();
 
-  for (const known of ALL_KNOWNS) {
-    for (const [_, groups] of GRID.groups) {
-      for (const [_, group] of groups) {
-        const cells = board.getCandidateCells(group, known);
-        if (cells.size !== 1) {
-          continue;
-        }
+  for (const [known, group, cells] of knownsWithNCandidates(board, 1)) {
+    const cell = singleValue(cells);
+    const candidates = board.getCandidates(cell);
 
-        const cell = singleValue(cells);
-        const candidates = board.getCandidates(cell);
+    if (candidates.size === 1) {
+      LOG &&
+        console.info(
+          "[hidden-singles] IGNORE Naked Single",
+          group.name,
+          cell.key,
+          known
+        );
+      continue;
+    }
 
-        if (candidates.size === 1) {
-          LOG &&
-            console.info(
-              "SKIP NAKED HIDDEN SINGLE",
-              group.name,
-              cell.key,
-              known
-            );
-          continue;
-        }
+    if (found.has(cell)) {
+      const [foundKnown, foundGroups] = found.get(cell)!;
 
-        if (found.has(cell)) {
-          const entry = found.get(cell)!;
-
-          if (entry[0] === known) {
-            entry[1].add(group);
-          } else {
-            LOG &&
-              console.warn(
-                "SOLVE HIDDEN SINGLE",
-                group.name,
-                cell.key,
-                known,
-                "!=",
-                entry[0]
-              );
-          }
-        } else {
-          found.set(cell, [known, new Set([group])]);
-        }
-
+      if (foundKnown === known) {
+        foundGroups.add(group);
+      } else {
         LOG &&
-          console.info(
-            "SOLVE HIDDEN SINGLE",
+          console.warn(
+            "[hidden-singles] MISMATCH",
             group.name,
             cell.key,
-            stringFromKnownSet(candidates),
-            "=>",
-            known
+            known,
+            NOT_EQUAL,
+            foundKnown
           );
       }
+    } else {
+      found.set(cell, [known, new Set([group])]);
     }
+
+    LOG &&
+      console.info(
+        "[hidden-singles] FOUND",
+        group.name,
+        cell.key,
+        stringFromKnownSet(candidates),
+        SOLVE_CELL,
+        known
+      );
   }
 
   for (const [cell, [known, groups]] of found) {

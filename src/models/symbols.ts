@@ -3,7 +3,7 @@ export const EMPTY = "∅";
 export const CROSS = "/";
 
 export const MISSING = "·";
-export const NOT = "≠";
+export const NOT_EQUAL = "≠";
 
 export const IN_LEFT = "∋";
 export const IN_RIGHT = "∈";

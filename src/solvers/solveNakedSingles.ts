@@ -1,7 +1,7 @@
-import { ReadableBoard } from "../models/board";
-import { GRID } from "../models/grid";
+import { cellsWithNCandidates, ReadableBoard } from "../models/board";
 import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
+import { SOLVE_CELL } from "../models/symbols";
 
 import { singleValue } from "../utils/collections";
 
@@ -13,19 +13,16 @@ const LOG = false;
 export default function solveNakedSingles(board: ReadableBoard): Moves {
   const moves = Moves.createEmpty();
 
-  for (const [_, cell] of GRID.cells) {
-    const candidates = board.getCandidates(cell);
+  for (const [cell, candidates] of cellsWithNCandidates(board, 1)) {
+    const candidate = singleValue(candidates);
 
-    if (candidates.size === 1) {
-      const candidate = singleValue(candidates);
+    moves
+      .start(Strategy.NakedSingle)
+      .clue(cell, candidate)
+      .set(cell, candidate);
 
-      moves
-        .start(Strategy.NakedSingle)
-        .clue(cell, candidate)
-        .set(cell, candidate);
-
-      LOG && console.info("SOLVE NAKED SINGLE", cell.key, "=>", candidate);
-    }
+    LOG &&
+      console.info("[naked-single] FOUND", cell.key, SOLVE_CELL, candidate);
   }
 
   return moves;

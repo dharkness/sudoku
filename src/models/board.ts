@@ -7,7 +7,7 @@ import {
   UNKNOWN,
   Value,
 } from "./basics";
-import { GRID, Cell, Container } from "./grid";
+import { GRID, Cell, Container, Group } from "./grid";
 import { Moves } from "./move";
 import { Strategy } from "./strategy";
 
@@ -398,6 +398,46 @@ export class SimpleBoard implements WritableBoard {
     }
 
     return errors;
+  }
+}
+
+/**
+ * Generates every cell that contains exactly N candidates.
+ *
+ * Each cell will be visited at most once.
+ */
+export function* cellsWithNCandidates(
+  board: ReadableBoard,
+  n: 1 | 2 | 3 | 4 | 5
+): Generator<[Cell, Set<Known>]> {
+  for (const cell of GRID.cells.values()) {
+    const candidates = board.getCandidates(cell);
+
+    if (candidates.size === n) {
+      yield [cell, candidates];
+    }
+  }
+}
+
+/**
+ * Generates every cell tuple that form the N candidate cells for each known within a group.
+ *
+ * Each unique known and group combination will be visited at most once.
+ */
+export function* knownsWithNCandidates(
+  board: ReadableBoard,
+  n: 1 | 2 | 3 | 4 | 5
+): Generator<[Known, Group, Set<Cell>]> {
+  for (const known of ALL_KNOWNS) {
+    for (const [_, groups] of GRID.groups) {
+      for (const [_, group] of groups) {
+        const candidates = board.getCandidateCells(group, known);
+
+        if (candidates.size === n) {
+          yield [known, group, candidates];
+        }
+      }
+    }
   }
 }
 
