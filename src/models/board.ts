@@ -14,13 +14,14 @@ import { Strategy } from "./strategy";
 import {
   deepCloneMap,
   deepCloneMapOfSets,
+  difference,
   excluding,
   singleValue,
 } from "../utils/collections";
 
 const LOG = false;
 
-enum CellError {
+export enum CellError {
   Unsolvable,
   Duplicate,
 }
@@ -439,6 +440,59 @@ export function* knownsWithNCandidates(
       }
     }
   }
+}
+
+export function removedCandidates(
+  from: ReadableBoard,
+  to: ReadableBoard
+): Map<Cell, Set<Known>> {
+  const removals = new Map<Cell, Set<Known>>();
+
+  for (const cell of GRID.cells.values()) {
+    const removed = difference(
+      from.getCandidates(cell),
+      to.getCandidates(cell)
+    );
+
+    if (removed.size) {
+      removals.set(cell, removed);
+    }
+  }
+
+  return removals;
+}
+
+export type CellChanges = { set?: Known; marks?: Set<Known> };
+
+export function changes(
+  from: ReadableBoard,
+  to: ReadableBoard
+): Map<Cell, CellChanges> {
+  const changes = new Map<Cell, CellChanges>();
+
+  for (const cell of GRID.cells.values()) {
+    const fromValue = from.getValue(cell);
+    const toValue = to.getValue(cell);
+    const fromCandidates = from.getCandidates(cell);
+    const toCandidates = to.getCandidates(cell);
+
+    if (fromValue !== UNKNOWN) {
+      if (toValue !== UNKNOWN && toValue !== fromValue) {
+        changes.set(cell, { set: toValue });
+      }
+
+      // TODO Handle clears?
+    } else if (toValue !== UNKNOWN) {
+      changes.set(cell, {
+        set: toValue,
+        marks: excluding(fromCandidates, toValue),
+      });
+    } else {
+      changes.set(cell, { marks: difference(fromCandidates, toCandidates) });
+    }
+  }
+
+  return changes;
 }
 
 /**

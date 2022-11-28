@@ -39,11 +39,13 @@ export enum Strategy {
   XWing, // 4 cells, 1 candidate; 1 direction (row or column) -> cells; remove candidate from other cells in given direction
   SinglesChain, // cells, 1 candidate -> cells; remove candidate from cells
   YWing,
-  XYZWing,
   Swordfish,
+  XYZWing,
+
+  XYChains,
+  ThreeDMedusa,
   Jellyfish,
   UniqueRectangle,
-  XYChains,
 
   EmptyRectangle, // block, (2 cells, 1 candidate) -> cells; remove candidate from cells
 

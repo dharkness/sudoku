@@ -24,14 +24,24 @@ export function shuffle<T>(array: T[]): T[] {
  * Returns the single value of the given set or array.
  *
  * @throws {Error} If the set or array does not have exactly one element
+ *
+ * FACTOR Copy Map body to new singleKey() and return value instead
  */
-export function singleValue<T>(values: Set<T> | T[]): T {
+export function singleValue<T>(values: Set<T> | Map<T, any> | T[]): T {
   if (values instanceof Set) {
     if (values.size !== 1) {
       throw new Error(`Set must have 1 element but has ${values.size}`);
     }
 
     return values.values().next().value;
+  }
+
+  if (values instanceof Map) {
+    if (values.size !== 1) {
+      throw new Error(`Map must have 1 entry but has ${values.size}`);
+    }
+
+    return values.keys().next().value;
   }
 
   if (values.length !== 1) {
@@ -45,14 +55,24 @@ export function singleValue<T>(values: Set<T> | T[]): T {
  * Returns the pair of values of the given set or array.
  *
  * @throws {Error} If the set or array does not have exactly two elements
+ *
+ * FACTOR Copy Map body to new twoKeys() and return values instead
  */
-export function twoValues<T>(values: Set<T> | T[]): [T, T] {
+export function twoValues<T>(values: Set<T> | Map<T, any> | T[]): [T, T] {
   if (values instanceof Set) {
     if (values.size !== 2) {
-      throw new Error(`Set must have 1 element but has ${values.size}`);
+      throw new Error(`Set must have 2 elements but has ${values.size}`);
     }
 
     return Array.from(values.values()) as [T, T];
+  }
+
+  if (values instanceof Map) {
+    if (values.size !== 2) {
+      throw new Error(`Map must have 2 keys but has ${values.size}`);
+    }
+
+    return Array.from(values.keys()) as [T, T];
   }
 
   if (values.length !== 2) {
@@ -66,18 +86,28 @@ export function twoValues<T>(values: Set<T> | T[]): [T, T] {
  * Returns the triple of values of the given set or array.
  *
  * @throws {Error} If the set or array does not have exactly three elements
+ *
+ * FACTOR Copy Map body to new threeKeys() and return values instead
  */
-export function threeValues<T>(values: Set<T> | T[]): [T, T, T] {
+export function threeValues<T>(values: Set<T> | Map<T, any> | T[]): [T, T, T] {
   if (values instanceof Set) {
     if (values.size !== 3) {
-      throw new Error(`Set must have 1 element but has ${values.size}`);
+      throw new Error(`Set must have 3 elements but has ${values.size}`);
     }
 
     return Array.from(values.values()) as [T, T, T];
   }
 
+  if (values instanceof Map) {
+    if (values.size !== 3) {
+      throw new Error(`Map must have 3 keys but has ${values.size}`);
+    }
+
+    return Array.from(values.keys()) as [T, T, T];
+  }
+
   if (values.length !== 3) {
-    throw new Error(`Array must have 2 elements but has ${values.length}`);
+    throw new Error(`Array must have 3 elements but has ${values.length}`);
   }
 
   return values as [T, T, T];
@@ -329,13 +359,14 @@ export function deepPush<T>(
 }
 
 /**
- * Adds the value to a set in a nested map of any depth, creating maps and the set if necessary.
+ * Adds the value to a set in a nested map of any depth, creating maps and the set if necessary,
+ * and returns true if the value was not already present.
  */
 export function deepAdd<T>(
   root: Map<any, any>,
   value: T,
   ...keys: any[]
-): Set<T> {
+): boolean {
   const lastKey = keys.pop();
   let map = root;
 
@@ -347,26 +378,29 @@ export function deepAdd<T>(
     }
   }
 
-  let set;
-  if (map.has(lastKey)) {
-    set = map.get(lastKey)!.add(value);
+  let set = map.get(lastKey);
+  if (set) {
+    if (set.has(value)) {
+      return false;
+    }
   } else {
-    map.set(lastKey, (set = new Set<T>().add(value)));
+    map.set(lastKey, (set = new Set<T>()));
   }
 
-  return set;
+  set.add(value);
+  return true;
 }
 
 /**
- * Sets the value/value pair in the deepest map of a nested map of any depth, creating maps when necessary.
+ * Sets the value/value pair in the deepest map of a nested map of any depth,
+ * creating maps when necessary, and returns true if the value was not already present.
  */
 export function deepSet<K, V>(
   root: Map<any, any>,
   key: K,
   value: V,
   ...keys: any[]
-): Map<K, V> {
-  const lastKey = keys.pop();
+): boolean {
   let map = root;
 
   for (const k of keys) {
@@ -377,14 +411,12 @@ export function deepSet<K, V>(
     }
   }
 
-  let leaf: Map<K, V>;
-  if (map.has(lastKey)) {
-    leaf = map.get(lastKey)!.set(key, value);
-  } else {
-    map.set(lastKey, (leaf = new Map<K, V>().set(key, value)));
+  if (map.has(key)) {
+    return false;
   }
 
-  return leaf;
+  map.set(key, value);
+  return true;
 }
 
 /**
@@ -394,6 +426,38 @@ export function withoutEmptySets<T, U>(map: Map<T, Set<U>>): Map<T, Set<U>> {
   return new Map(
     Array.from(map.entries()).filter(([_, cells]) => cells.size > 0)
   );
+}
+
+/**
+ * Returns a new set containing the elements that are in both sets,
+ * in the order they appear in the first.
+ */
+export function intersectMapsOfSets<T, U>(
+  a: Map<T, Set<U>>,
+  b: Map<T, Set<U>>,
+  keepEmptySets: boolean = false
+): Map<T, Set<U>> {
+  const result = new Map<T, Set<U>>();
+  const [smaller, larger] = a.size <= b.size ? [a, b] : [b, a];
+
+  for (const [t, su] of smaller) {
+    const lu = larger.get(t);
+
+    if (lu) {
+      const common = intersect(su, lu);
+
+      if (common.size) {
+        result.set(t, common);
+        continue;
+      }
+    }
+
+    if (keepEmptySets) {
+      result.set(t, new Set());
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -439,6 +503,22 @@ export function intersectMap<K, V>(set: Set<K>, map: Map<K, V>): Map<K, V> {
 
   return result;
   // return new Map(Array.from(map.entries()).filter(([k]) => set.has(k)));
+}
+
+/**
+ * Returns a new map containing the entries whose keys are only in the first map,
+ * in the order they appear in it. The values are not shallow copied without change.
+ */
+export function differenceMap<K, V>(a: Map<K, V>, b: Map<K, V>): Map<K, V> {
+  const result = new Map<K, V>();
+
+  for (const [k, v] of a) {
+    if (!b.has(k)) {
+      result.set(k, v);
+    }
+  }
+
+  return result;
 }
 
 /**

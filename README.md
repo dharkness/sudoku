@@ -164,8 +164,6 @@ but feel free to explore and scavenge any code you find useful.
         - Fish
           - Finned and Sashimi Fish
             - https://www.sudokuonline.io/tips/sudoku-x-wing
-        - 3D Medusa
-          - https://www.sudokuwiki.org/3D_Medusa
         - WXYZ-Wing
           - https://www.sudokuwiki.org/WXYZ_Wing
         - Fireworks

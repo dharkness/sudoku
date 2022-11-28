@@ -28,7 +28,7 @@ export type PuzzleActions = {
   select: (cell: Cell | null) => void;
   setCell: (known: Known) => void;
   removeCandidate: (known: Known) => void;
-  applyMoves: (moves: Moves, all: boolean) => void;
+  applyMoves: (moves: Moves, skip: boolean, all: boolean) => void;
 
   undo: () => void;
   redo: () => void;
@@ -88,8 +88,8 @@ export default function usePlayPuzzleActions(start?: string): PuzzleActions {
       setCell: (known: Known) => dispatch({ type: "set", known: known }),
       removeCandidate: (known: Known) =>
         dispatch({ type: "remove", known: known }),
-      applyMoves: (moves: Moves, all: boolean) =>
-        dispatch({ type: "apply", moves, all }),
+      applyMoves: (moves: Moves, skip: boolean, all: boolean) =>
+        dispatch({ type: "apply", moves, skip, all }),
 
       undo: () => dispatch({ type: "undo" }),
       redo: () => dispatch({ type: "redo" }),
@@ -118,7 +118,7 @@ type Action =
   | { type: "select"; cell: Cell | null }
   | { type: "set"; known: Known }
   | { type: "remove"; known: Known }
-  | { type: "apply"; moves: Moves; all: boolean }
+  | { type: "apply"; moves: Moves; skip: boolean; all: boolean }
   | { type: "undo" }
   | { type: "redo" }
   | { type: "reset" };
@@ -187,7 +187,7 @@ const reducer: Reducer = (state: State, action: Action) => {
       });
 
     case "apply":
-      const { moves, all } = action;
+      const { moves, skip, all } = action;
       if (!moves.size()) {
         return state;
       }

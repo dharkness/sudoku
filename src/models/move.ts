@@ -355,7 +355,7 @@ export class Moves implements Iterable<Move> {
     }
   }
 
-  private moves: Move[];
+  moves: Move[];
 
   private constructor(moves: Move[] = []) {
     this.moves = moves;
