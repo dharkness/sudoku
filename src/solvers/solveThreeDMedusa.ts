@@ -1,9 +1,11 @@
 import { Known } from "../models/basics";
 import {
+  BoardErrors,
   CellChanges,
   CellError,
   cellsWithNCandidates,
   changes,
+  GroupError,
   knownsWithNCandidates,
   ReadableBoard,
   SimpleBoard,
@@ -72,9 +74,6 @@ const LOG = false;
  *
  * The candidate may be removed from all off-graph cells that see both nodes.
  *
- * - Spot this by tracking cells per dual-color candidate while coloring; check at end.
- * - Map<Known, Map<KnownColorKey, Set<Cell>>>
- *
  * "1...56..3.43.9....8...43..2.3.56.21.95.421.37.21.3....31798...5...31.97....67.3.1"
  *
  * Rule 5
@@ -83,8 +82,6 @@ const LOG = false;
  * as one of the nodes, and obviously the nodes are neighbors.
  *
  * The off-graph candidate may be removed.
- *
- * - Need to check node cells with additional candidates that match another node and their colors.
  *
  * "9234.7.15876.5.9245..2...3.769.2.14.432....59185..426..98.42.712.7.3.486...7.8.92"
  *
@@ -95,10 +92,16 @@ const LOG = false;
  *
  * All nodes of the opposite color are solutions.
  *
- * - Apply both color solutions separately to a copy of the board,
- *   apply moves from that, and check for empty cells.
- *
  * "9867213453.4956..7..7.3.96..73.65..969..17..31..39.276...679.3..691437..731582694"
+ *
+ * Rule 7
+ *
+ * Similar to rule 6 but extended to checking for unsolvable groups.
+ *
+ * All nodes of the opposite color are solutions.
+ *
+ * "163...987794..3256258769..4..6...72.87.6...4.4....76..341..687.68..7...2.273.8461"
+ * "...4.........15....5.3.7..8135.8..9...2..9.53..9.53.......76.34..4..1...7..5..92."
  *
  * @link https://www.sudokuwiki.org/3D_Medusa
  */
@@ -416,22 +419,29 @@ class Graph {
       return;
     }
 
-    // Rule 6
+    // Rules 6 and 7
 
     const rule6s = new Map<MarkColor, Map<Cell, Set<Known>>>();
+    const rule7s = new Map<MarkColor, Map<Known, Set<Group>>>();
 
     for (const [solved, { errors }] of solutions) {
-      if (errors.size) {
-        const cellKnowns = new Map<Cell, Set<Known>>();
+      const cellKnowns = new Map<Cell, Set<Known>>();
 
-        for (const [cell, error] of errors) {
-          if (error === CellError.Unsolvable) {
-            cellKnowns.set(cell, board.getCandidates(cell));
-          }
+      for (const [cell, error] of errors.cells) {
+        if (error === CellError.Unsolvable) {
+          cellKnowns.set(cell, board.getCandidates(cell));
         }
+      }
 
-        if (cellKnowns.size) {
-          rule6s.set(solved, cellKnowns);
+      if (cellKnowns.size) {
+        rule6s.set(solved, cellKnowns);
+      }
+
+      for (const [group, knownErrors] of errors.groups) {
+        for (const [known, error] of knownErrors) {
+          if (error === GroupError.Unsolvable) {
+            deepAdd(rule7s, group, solved, known);
+          }
         }
       }
     }
@@ -440,10 +450,10 @@ class Graph {
       if (rule6s.size === 1) {
         const solution = solutions.get(opposite(singleValue(rule6s)))!;
 
-        LOG && console.info("[3d-medusa] RULE 6", this, solution);
-
         const move = solution.move.clone();
         const cellKnowns = rule6s.get(singleValue(rule6s))!;
+
+        LOG && console.info("[3d-medusa] RULE 6", this, cellKnowns, solution);
 
         for (const [cell, knowns] of cellKnowns) {
           move.clue(cell, knowns, "yellow");
@@ -453,6 +463,34 @@ class Graph {
       } else {
         LOG &&
           console.info("[3d-medusa] INVALID Rule 6 triggered for both colors");
+      }
+
+      return;
+    }
+
+    if (rule7s.size) {
+      if (rule7s.size === 1) {
+        const solution = solutions.get(opposite(singleValue(rule7s)))!;
+
+        const move = solution.move.clone();
+        const knownGroups = rule7s.get(singleValue(rule7s))!;
+
+        LOG && console.info("[3d-medusa] RULE 7", this, knownGroups, solution);
+
+        for (const [known, groups] of knownGroups) {
+          for (const group of groups) {
+            move.group(group);
+
+            for (const cell of board.getCandidateCells(group, known)) {
+              move.clue(cell, known, "yellow");
+            }
+          }
+        }
+
+        moves.add(move);
+      } else {
+        LOG &&
+          console.info("[3d-medusa] INVALID Rule 7 triggered for both colors");
       }
 
       return;
@@ -531,7 +569,7 @@ const opposite = (c: MarkColor): MarkColor =>
 type GraphSolution = {
   move: Move;
   clone: ReadableBoard;
-  errors: Map<Cell, CellError>;
+  errors: BoardErrors;
   causes: Moves;
   changed: Map<Cell, CellChanges>;
   diffs: Map<Cell, Set<Known>>;

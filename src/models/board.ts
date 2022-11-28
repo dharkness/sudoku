@@ -12,19 +12,16 @@ import { Moves } from "./move";
 import { Strategy } from "./strategy";
 
 import {
+  deepAdd,
   deepCloneMap,
   deepCloneMapOfSets,
+  deepSet,
   difference,
   excluding,
   singleValue,
 } from "../utils/collections";
 
 const LOG = false;
-
-export enum CellError {
-  Unsolvable,
-  Duplicate,
-}
 
 export interface ReadableBoard {
   clone(): ReadableBoard;
@@ -41,7 +38,7 @@ export interface ReadableBoard {
   getCandidateCells(container: Container, known: Known): Set<Cell>;
   getCandidateCellsByKnown(container: Container): Map<Known, Set<Cell>>;
 
-  collectErrors(): Map<Cell, CellError>;
+  collectErrors(): BoardErrors;
 }
 
 export interface WritableBoard extends ReadableBoard {
@@ -379,27 +376,84 @@ export class SimpleBoard implements WritableBoard {
 
   // ========== ERRORS ========================================
 
-  collectErrors(): Map<Cell, CellError> {
-    const errors = new Map<Cell, CellError>();
+  collectErrors(): BoardErrors {
+    const cells = new Map<Cell, CellError>();
 
-    for (const cell of GRID.cells.values()) {
-      if (this.isSolved(cell)) {
-        const known = this.getValue(cell);
+    for (const c of GRID.cells.values()) {
+      if (this.isSolved(c)) {
+        const known = this.getValue(c);
 
-        for (const neighbor of cell.neighbors) {
+        for (const neighbor of c.neighbors) {
           if (this.getValue(neighbor) === known) {
-            errors.set(cell, CellError.Duplicate);
+            cells.set(c, CellError.Duplicate);
           }
         }
       } else {
-        if (!this.getCandidates(cell).size) {
-          errors.set(cell, CellError.Unsolvable);
+        if (!this.getCandidates(c).size) {
+          cells.set(c, CellError.Unsolvable);
         }
       }
     }
 
-    return errors;
+    const groups = new Map<Group, Map<Known, GroupError>>();
+
+    for (const gs of GRID.groups.values()) {
+      for (const g of gs.values()) {
+        const solved = new Map<Known, Set<Cell>>();
+        const candidates = this.getCandidateCellsByKnown(g);
+
+        for (const c of g.cells) {
+          const value = this.getValue(c);
+
+          if (value !== UNKNOWN) {
+            deepAdd(solved, c, value);
+          }
+        }
+
+        for (const k of ALL_KNOWNS) {
+          if (solved.has(k)) {
+            if (solved.get(k)!.size > 1) {
+              deepSet(groups, k, GroupError.Duplicate, g);
+            }
+          } else {
+            if (!candidates.get(k)!.size) {
+              deepSet(groups, k, GroupError.Unsolvable, g);
+            }
+          }
+        }
+      }
+    }
+
+    return { size: cells.size + groups.size, cells, groups };
   }
+}
+
+export type BoardErrors = {
+  size: number;
+  cells: Map<Cell, CellError>;
+  groups: Map<Group, Map<Known, GroupError>>;
+};
+
+export enum CellError {
+  /**
+   * The unsolved cell has no candidates remaining.
+   */
+  Unsolvable,
+  /**
+   * The solved cell sees another cell with the same solution.
+   */
+  Duplicate,
+}
+
+export enum GroupError {
+  /**
+   * The group has a known with no candidate cells remaining.
+   */
+  Unsolvable,
+  /**
+   * The group has two solved cells with the same solution.
+   */
+  Duplicate,
 }
 
 /**
