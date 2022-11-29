@@ -267,3 +267,24 @@ console.log("diff    ", solutionDiff(test, full));
 
 console.log("correct?", isCorrectSoFar(test, full));
 console.log("complete?", isFullyCorrect(test, full));
+
+// 1.1ms without array; 0.8ms for Easter Monster
+if (typeof window !== "undefined") {
+  window.timeClones = function timeClones(n) {
+    // const clones = new Array(n);
+    let [clone] = SimpleBoard.createFrom(
+      "100000002090400050006000700050903000000070000000850040700000600030009080002000001"
+    );
+    // let clone = SimpleBoard.createEmpty();
+
+    console.time("cloning");
+    // const start = performance.now();
+    for (let i = 0; i < n; i++) {
+      // clones[i] = clone = clone.clone();
+      clone = clone.clone();
+    }
+    // const end = performance.now();
+
+    console.timeEnd("cloning");
+  };
+}

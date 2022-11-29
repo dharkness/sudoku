@@ -7,7 +7,7 @@ import { PuzzleActions } from "./usePlayPuzzleActions";
 
 const LOG = true;
 
-const COLUMN_LENGTH = 10;
+const COLUMN_LENGTH = 11;
 
 type SolverPanelProps = {
   actions: PuzzleActions;
@@ -108,6 +108,7 @@ const buttons = {
   singlesChains: "Singles Chains",
   yWings: "Y-Wings",
   swordfish: "Swordfish",
+  skyscrapers: "Skyscrapers",
   xyzWings: "XYZ-Wings",
 
   xyChains: "XY-Chains",

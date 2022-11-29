@@ -16,6 +16,7 @@ import xWings from "./solveXWings";
 import singlesChains from "./solveSinglesChains";
 import yWings from "./solveYWings";
 import swordfish from "./solveSwordfish";
+import skyscrapers from "./solveSkyscrapers";
 import xyzWings from "./solveXYZWings";
 
 import xyChains from "./solveXYChains";
@@ -41,6 +42,7 @@ export default {
   hiddenTriples,
   hiddenQuads,
 
+  skyscrapers,
   xWings,
   singlesChains,
   yWings,

@@ -246,14 +246,21 @@ export abstract class Container implements Stateful {
 export abstract class Group extends Container {
   readonly grouping: Grouping;
   readonly coord: Coord;
+  readonly cross: Grouping;
 
   // top, right, bottom, left
   readonly borders = new Map<Cell, [boolean, boolean, boolean, boolean]>();
 
-  protected constructor(name: string, grouping: Grouping, coord: Coord) {
+  protected constructor(
+    name: string,
+    grouping: Grouping,
+    coord: Coord,
+    cross: Grouping
+  ) {
     super(name);
     this.grouping = grouping;
     this.coord = coord;
+    this.cross = cross;
   }
 
   onSetKnown(
@@ -292,7 +299,7 @@ export abstract class Group extends Container {
  */
 export class Row extends Group {
   constructor(coord: Coord) {
-    super(`Row ${ROW_LABELS[coord]}`, Grouping.ROW, coord);
+    super(`Row ${ROW_LABELS[coord]}`, Grouping.ROW, coord, Grouping.COLUMN);
   }
 
   addCell(cell: Cell) {
@@ -308,7 +315,7 @@ export class Row extends Group {
  */
 export class Column extends Group {
   constructor(coord: Coord) {
-    super(`Col ${COLUMN_LABELS[coord]}`, Grouping.COLUMN, coord);
+    super(`Col ${COLUMN_LABELS[coord]}`, Grouping.COLUMN, coord, Grouping.ROW);
   }
 
   addCell(cell: Cell) {
@@ -324,7 +331,7 @@ export class Column extends Group {
  */
 export class Block extends Group {
   constructor(coord: Coord) {
-    super(`Box ${BLOCK_LABELS[coord]}`, Grouping.BLOCK, coord);
+    super(`Box ${BLOCK_LABELS[coord]}`, Grouping.BLOCK, coord, Grouping.BLOCK);
   }
 
   addCell(cell: Cell) {

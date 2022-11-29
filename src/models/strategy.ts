@@ -36,6 +36,7 @@ export enum Strategy {
   HiddenTriple, // same ^ but with 3 cells and candidates
   HiddenQuad,
 
+  Skyscraper,
   XWing, // 4 cells, 1 candidate; 1 direction (row or column) -> cells; remove candidate from other cells in given direction
   SinglesChain, // cells, 1 candidate -> cells; remove candidate from cells
   YWing,

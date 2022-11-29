@@ -114,6 +114,39 @@ export function threeValues<T>(values: Set<T> | Map<T, any> | T[]): [T, T, T] {
 }
 
 /**
+ * Returns the triple of values of the given set or array.
+ *
+ * @throws {Error} If the set or array does not have exactly three elements
+ *
+ * FACTOR Copy Map body to new fourKeys() and return values instead
+ */
+export function fourValues<T>(
+  values: Set<T> | Map<T, any> | T[]
+): [T, T, T, T] {
+  if (values instanceof Set) {
+    if (values.size !== 4) {
+      throw new Error(`Set must have 4 elements but has ${values.size}`);
+    }
+
+    return Array.from(values.values()) as [T, T, T, T];
+  }
+
+  if (values instanceof Map) {
+    if (values.size !== 4) {
+      throw new Error(`Map must have 4 keys but has ${values.size}`);
+    }
+
+    return Array.from(values.keys()) as [T, T, T, T];
+  }
+
+  if (values.length !== 4) {
+    throw new Error(`Array must have 4 elements but has ${values.length}`);
+  }
+
+  return values as [T, T, T, T];
+}
+
+/**
  * Returns a copy of the given set with the given element(s) added.
  */
 export function including<T>(set: Set<T>, ...values: T[]): Set<T> {
