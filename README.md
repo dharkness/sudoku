@@ -151,6 +151,13 @@ but feel free to explore and scavenge any code you find useful.
       - standardize debug logging
       - log all moves in a panel
         - model specific solutions
+      - XY-Chains
+        - improve performance
+          - first example hits 1.4s
+          - use same technique as 3D Medusa?
+          - it's slow because it checks each length of chain while 3D Medusa checks whole graphs
+            - could we detect removed marks and quickly find the shortest chain that sees them?
+            - https://www.geeksforgeeks.org/shortest-path-unweighted-graph/
       - new solvers
         - X-Cycles
           - https://www.sudokuwiki.org/X_Cycles

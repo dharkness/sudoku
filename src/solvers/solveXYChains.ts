@@ -1,7 +1,7 @@
 import { Known } from "../models/basics";
-import { ReadableBoard } from "../models/board";
+import { cellsWithNCandidates, ReadableBoard } from "../models/board";
 import { MarkColor } from "../models/decoration";
-import { Cell, GRID } from "../models/grid";
+import { Cell } from "../models/grid";
 import { Move, Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
 
@@ -19,9 +19,9 @@ import {
 const LOG = false;
 
 /**
- * Yadda yadda yadda...
- *
- * Example:
+ * Builds graphs of bi-value cells, connecting them by common candidates,
+ * and removes off-graph cell candidates that see two nodes with opposite
+ * colors for one candidate.
  *
  * TODO Track shortest chains per cell?
  * TODO Ignore if all nodes are in one group (naked triple/quad)
@@ -305,12 +305,8 @@ const opposite = (c: MarkColor): MarkColor =>
 function collectCellsWithTwoCandidates(board: ReadableBoard): Node[] {
   const nodes: Node[] = [];
 
-  for (const cell of GRID.cells.values()) {
-    const candidates = board.getCandidates(cell);
-
-    if (candidates.size === 2) {
-      nodes.push(new Node(cell, candidates));
-    }
+  for (const [cell, pair] of cellsWithNCandidates(board, 2)) {
+    nodes.push(new Node(cell, pair));
   }
 
   return nodes;

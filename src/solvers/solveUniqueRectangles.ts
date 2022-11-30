@@ -9,7 +9,7 @@ import {
   stringFromKnownSet,
   Value,
 } from "../models/basics";
-import { ReadableBoard } from "../models/board";
+import { cellsWithNCandidates, ReadableBoard } from "../models/board";
 import { Cell, GRID, Group } from "../models/grid";
 import { Moves } from "../models/move";
 import { Strategy } from "../models/strategy";
@@ -137,22 +137,19 @@ export default function solveUniqueRectangles(board: ReadableBoard): Moves {
 
   // find and group all tuple cells
 
-  const tuples = new Map<string, [Set<Known>, Set<Cell>]>();
-  for (const [_, cell] of GRID.cells) {
-    const candidates = board.getCandidates(cell);
-    if (candidates.size === 2) {
-      const key = keyFromKnownSet(candidates);
-      if (tuples.has(key)) {
-        tuples.get(key)![1].add(cell);
-      } else {
-        tuples.set(key, [candidates, new Set([cell])]);
-      }
+  const tuples = new Map<string, { pair: Set<Known>; cells: Set<Cell> }>();
+  for (const [cell, pair] of cellsWithNCandidates(board, 2)) {
+    const key = keyFromKnownSet(pair);
+    if (tuples.has(key)) {
+      tuples.get(key)!.cells.add(cell);
+    } else {
+      tuples.set(key, { pair, cells: new Set([cell]) });
     }
   }
 
   // check various cell permutations for each pair found
 
-  for (const [_, [pair, cells]] of tuples) {
+  for (const [_, { pair, cells }] of tuples) {
     if (cells.size < 2) {
       continue;
     }
