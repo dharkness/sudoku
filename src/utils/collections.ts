@@ -483,8 +483,11 @@ export function deepCloneMapOfSets<K, V>(
   map: Map<K, Set<V>>,
   cloneValue?: (v: V) => V
 ) {
-  return deepCloneMap(map, (set) =>
-    cloneValue ? new Set(Array.from(set).map(cloneValue)) : new Set(set)
+  return deepCloneMap(
+    map,
+    cloneValue
+      ? (set) => new Set(Array.from(set).map(cloneValue))
+      : (set) => new Set(set)
   );
 }
 

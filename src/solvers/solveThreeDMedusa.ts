@@ -376,7 +376,7 @@ class Graph {
           {
             move,
             clone,
-            errors: clone.collectErrors(),
+            errors: clone.getErrors(),
             causes: causes.except(Strategy.Neighbor),
             changed,
             diffs,

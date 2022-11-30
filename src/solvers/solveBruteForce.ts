@@ -200,7 +200,7 @@ function setKnownAndApplyAllMoves(
     moves = moves.apply(board);
   }
 
-  return board.collectErrors().size === 0;
+  return board.getErrors().empty;
 }
 
 function areRemainingCellsValid(board: SimpleBoard, rest: Set<Cell>): boolean {

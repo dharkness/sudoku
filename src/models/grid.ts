@@ -12,7 +12,7 @@ import {
   ROW_LABELS,
   UNKNOWN,
 } from "./basics";
-import { ReadableBoard, WritableBoard } from "./board";
+import { GroupError, ReadableBoard, WritableBoard } from "./board";
 import { Moves } from "./move";
 import { Strategy } from "./strategy";
 import { EMPTY, MISSING } from "./symbols";
@@ -179,6 +179,16 @@ export class Cell implements Stateful {
       a.point.c === b.point.c ? a.point.r - b.point.r : a.point.c - b.point.c
     );
   }
+
+  primaryCommonGroup(neighbor: Cell): Group | null {
+    return this.block === neighbor.block
+      ? this.block
+      : this.row === neighbor.row
+      ? this.row
+      : this.column === neighbor.column
+      ? this.column
+      : null;
+  }
 }
 
 /**
@@ -270,6 +280,10 @@ export abstract class Group extends Container {
     moves: Moves
   ): void {
     moves.start(Strategy.HiddenSingle).group(this).set(cell, known);
+  }
+
+  onNoCellsLeft(board: WritableBoard, known: Known, moves: Moves): void {
+    board.addGroupError(this, known, GroupError.Unsolvable);
   }
 }
 

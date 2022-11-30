@@ -12,7 +12,6 @@ import { Moves } from "./move";
 import { Strategy } from "./strategy";
 
 import {
-  deepAdd,
   deepCloneMap,
   deepCloneMapOfSets,
   deepSet,
@@ -38,7 +37,8 @@ export interface ReadableBoard {
   getCandidateCells(container: Container, known: Known): Set<Cell>;
   getCandidateCellsByKnown(container: Container): Map<Known, Set<Cell>>;
 
-  collectErrors(): BoardErrors;
+  hasErrors(): boolean;
+  getErrors(): BoardErrors;
 }
 
 export interface WritableBoard extends ReadableBoard {
@@ -55,6 +55,9 @@ export interface WritableBoard extends ReadableBoard {
     moves: Moves
   ): boolean;
   clearCandidateCells(container: Container, known: Known): Set<Cell>;
+
+  addCellError(cell: Cell, error: CellError): void;
+  addGroupError(group: Group, known: Known, error: GroupError): void;
 }
 
 export class SimpleBoard implements WritableBoard {
@@ -101,6 +104,8 @@ export class SimpleBoard implements WritableBoard {
 
   private readonly candidateCells: Map<Container, Map<Known, Set<Cell>>>;
 
+  private readonly errors: BoardErrors;
+
   constructor(clone?: SimpleBoard) {
     if (clone) {
       this.step = clone.step + 1;
@@ -115,6 +120,7 @@ export class SimpleBoard implements WritableBoard {
         clone.candidateCells,
         deepCloneMapOfSets
       );
+      this.errors = clone.errors.clone();
     } else {
       this.step = 1;
       this.values = new Map<Cell, Value>();
@@ -122,6 +128,7 @@ export class SimpleBoard implements WritableBoard {
       this.containers = new Map<Cell, Set<Container>>();
       this.candidateContainers = new Map<Cell, Map<Known, Set<Container>>>();
       this.candidateCells = new Map<Container, Map<Known, Set<Cell>>>();
+      this.errors = new BoardErrors();
     }
   }
 
@@ -195,6 +202,22 @@ export class SimpleBoard implements WritableBoard {
       throw new NotCandidateError(cell, known, candidates);
     }
 
+    // FACTOR Move logic to Group.onSetKnown() called below?
+    const remainingContainers = this.candidateContainers.get(cell)!.get(known)!;
+    for (const group of cell.groups.values()) {
+      if (!remainingContainers.has(group)) {
+        this.addCellError(cell, CellError.Duplicate);
+        this.addGroupError(group, known, GroupError.Duplicate);
+
+        // FACTOR Track solved knowns per container? Need to track sets to handle three or more dupe cells in a group
+        for (const neighbor of group.cells) {
+          if (this.values.get(neighbor) === known) {
+            this.addCellError(neighbor, CellError.Duplicate);
+          }
+        }
+      }
+    }
+
     const remaining = excluding(candidates, known);
     LOG &&
       console.info(
@@ -266,13 +289,13 @@ export class SimpleBoard implements WritableBoard {
         );
       return false;
     }
-    // if (candidates.size === 1 && !this.isSolved(cell)) {
-    //   throw new RemoveLastCandidateError(cell, known);
-    // }
+    if (candidates.size === 1 && !this.isSolved(cell)) {
+      this.addCellError(cell, CellError.Unsolvable);
+      // throw new RemoveLastCandidateError(cell, known);
+    }
 
     // remove candidate from cell
-    const remaining = new Set(candidates);
-    remaining.delete(known);
+    const remaining = excluding(candidates, known);
     this.candidates.set(cell, remaining);
 
     LOG &&
@@ -376,63 +399,54 @@ export class SimpleBoard implements WritableBoard {
 
   // ========== ERRORS ========================================
 
-  collectErrors(): BoardErrors {
-    const cells = new Map<Cell, CellError>();
+  hasErrors(): boolean {
+    return !this.errors.empty;
+  }
 
-    for (const c of GRID.cells.values()) {
-      if (this.isSolved(c)) {
-        const known = this.getValue(c);
+  getErrors(): BoardErrors {
+    return this.errors;
+  }
 
-        for (const neighbor of c.neighbors) {
-          if (this.getValue(neighbor) === known) {
-            cells.set(c, CellError.Duplicate);
-          }
-        }
-      } else {
-        if (!this.getCandidates(c).size) {
-          cells.set(c, CellError.Unsolvable);
-        }
-      }
-    }
+  addCellError(cell: Cell, error: CellError): void {
+    this.errors.addCellError(cell, error);
+  }
 
-    const groups = new Map<Group, Map<Known, GroupError>>();
-
-    for (const gs of GRID.groups.values()) {
-      for (const g of gs.values()) {
-        const solved = new Map<Known, Set<Cell>>();
-        const candidates = this.getCandidateCellsByKnown(g);
-
-        for (const c of g.cells) {
-          const value = this.getValue(c);
-
-          if (value !== UNKNOWN) {
-            deepAdd(solved, c, value);
-          }
-        }
-
-        for (const k of ALL_KNOWNS) {
-          if (solved.has(k)) {
-            if (solved.get(k)!.size > 1) {
-              deepSet(groups, k, GroupError.Duplicate, g);
-            }
-          } else {
-            if (!candidates.get(k)!.size) {
-              deepSet(groups, k, GroupError.Unsolvable, g);
-            }
-          }
-        }
-      }
-    }
-
-    return { size: cells.size + groups.size, cells, groups };
+  addGroupError(group: Group, known: Known, error: GroupError): void {
+    this.errors.addGroupError(group, known, error);
   }
 }
 
-export type BoardErrors = {
-  size: number;
-  cells: Map<Cell, CellError>;
-  groups: Map<Group, Map<Known, GroupError>>;
-};
+export class BoardErrors {
+  readonly cells: Map<Cell, CellError>;
+  readonly groups: Map<Group, Map<Known, GroupError>>;
+
+  constructor(
+    cells?: Map<Cell, CellError>,
+    groups?: Map<Group, Map<Known, GroupError>>
+  ) {
+    this.cells = cells || new Map<Cell, CellError>();
+    this.groups = groups || new Map<Group, Map<Known, GroupError>>();
+  }
+
+  clone(): BoardErrors {
+    return new BoardErrors(
+      deepCloneMap(this.cells),
+      deepCloneMap(this.groups, deepCloneMap)
+    );
+  }
+
+  get empty(): boolean {
+    return this.cells.size === 0 && this.groups.size === 0;
+  }
+
+  addCellError(cell: Cell, error: CellError): void {
+    this.cells.set(cell, error);
+  }
+
+  addGroupError(group: Group, known: Known, error: GroupError): void {
+    deepSet(this.groups, known, error, group);
+  }
+}
 
 export enum CellError {
   /**
