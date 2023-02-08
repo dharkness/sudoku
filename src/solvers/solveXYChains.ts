@@ -29,6 +29,7 @@ const LOG = false;
  * ".8.1.3.7. .9.5.6... ..14.8.2. 578241639 143659782 926837451 .379.52.. ...3.4.97 419782.6."
  * ".92...376 .1..3.5.. 3.....19. 93.85.7.1 ...3.4... 2...97..3 689..341. 523.4..6. 147...23."
  * "..3..1... 8........ .51..9.6. .8....29. ...7...8. 2...4.5.3 6..9..... ..2.84... 41..5.6.."
+ * "3..7....1 .......56 .74....3. ...9..... .....2.98 5...6.1.. .8....2.. .....6... .293.8.74"
  *
  * @link https://www.sudokuwiki.org/XY_Chains
  */
@@ -40,6 +41,10 @@ export default function solveXYChains(board: ReadableBoard): Moves {
     const nodes = collectCellsWithTwoCandidates(board); // need to map by cell?
     const nodesByKnown = groupNodesByKnown(nodes);
     const linksByKnown = createLinks(board, nodesByKnown);
+
+    // for each candidate, find nodes that see a cell containing it
+    // won't that be all as every link is one such node; if it has no links, it gets skipped anyway
+    // except we can skip it also if the seen cell is a link
 
     for (const [candidate, links] of linksByKnown) {
       LOG && console.info("[xy-chains] START", candidate, links);
@@ -82,8 +87,10 @@ export default function solveXYChains(board: ReadableBoard): Moves {
     console.error(e);
   }
 
-  for (const [_, [__, move]] of possibles) {
-    moves.add(move as Move);
+  for (const [_, [chain, move]] of possibles) {
+    if (chain.length() >= 4) {
+      moves.add(move as Move);
+    }
   }
 
   return moves;
@@ -254,10 +261,6 @@ class Chain {
   }
 
   createMove(board: ReadableBoard): Move | null {
-    if (this.length() < 4) {
-      return null;
-    }
-
     const candidate = this.first.fromCandidate;
 
     if (candidate !== this.last.toCandidate) {
