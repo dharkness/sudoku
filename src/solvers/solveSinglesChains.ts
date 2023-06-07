@@ -99,8 +99,8 @@ export default function solveSinglesChains(board: ReadableBoard): Moves {
         Cell.stringFromPoints(nodes)
       );
 
-    const found = new Map<Cell, Map<Cell, MarkColor>>();
-    const ignore = new Set<Cell>();
+    const chains = [];
+    const cellChains = new Map<Cell, [number, number]>(); // chain index, length
 
     // for each cell in candidate pool
     for (const candidate of candidates) {
@@ -110,7 +110,7 @@ export default function solveSinglesChains(board: ReadableBoard): Moves {
 
       const chain = new Chain(candidate);
       const stack = [Array.from(sees)];
-      let shortest = 1000;
+      let shortest = cellChains.get(candidate)?.[1] ?? 1000;
 
       while (stack.length) {
         LOG &&
@@ -160,8 +160,7 @@ export default function solveSinglesChains(board: ReadableBoard): Moves {
                 Cell.stringFromPoints(chain.nodes, false)
               );
 
-            ignore.add(candidate);
-            found.delete(candidate);
+            cellChains.delete(candidate);
 
             break;
           }
@@ -174,10 +173,13 @@ export default function solveSinglesChains(board: ReadableBoard): Moves {
             );
 
           shortest = chain.nodes.size;
-          found.set(candidate, new Map(chain.colors));
+          chains.push(chain.clone());
+          const erased = intersect(candidates, chain.sees());
+          for (const cell of erased) {
+            cellChains.set(cell, [chains.length - 1, chain.length()]);
+          }
 
           chain.pop();
-          // stack.pop();
           continue;
         }
 
@@ -197,10 +199,19 @@ export default function solveSinglesChains(board: ReadableBoard): Moves {
       }
     }
 
-    for (const [cell, colors] of found) {
-      const move = moves.start(Strategy.SinglesChain).mark(cell, k);
+    const grouped = new Map<number, Set<Cell>>();
+    for (const [cell, [index, _]] of cellChains) {
+      if (grouped.has(index)) {
+        grouped.get(index)!.add(cell);
+      } else {
+        grouped.set(index, new Set([cell]));
+      }
+    }
+    for (const [index, cells] of grouped) {
+      const chain = chains[index]!;
+      const move = moves.start(Strategy.SinglesChain).mark(cells, k);
 
-      for (const [c, color] of colors) {
+      for (const [c, color] of chain.colors) {
         move.clue(c, k, color);
       }
     }
@@ -221,8 +232,21 @@ class Chain {
   end?: Cell;
   color: MarkColor = "yellow";
 
-  constructor(candidate: Cell) {
-    this.candidate = candidate;
+  constructor(candidateOrClone: Cell | Chain) {
+    if (candidateOrClone instanceof Chain) {
+      this.candidate = candidateOrClone.candidate;
+      this.nodes = new Set(candidateOrClone.nodes);
+      this.colors = new Map(candidateOrClone.colors);
+      this.stack = Array.from(candidateOrClone.stack);
+      this.end = candidateOrClone.end;
+      this.color = candidateOrClone.color;
+    } else {
+      this.candidate = candidateOrClone;
+    }
+  }
+
+  clone(): Chain {
+    return new Chain(this);
   }
 
   mismatched(): boolean {
@@ -269,5 +293,15 @@ class Chain {
     this.nodes.delete(this.end);
     this.colors.delete(this.end);
     this.end = this.stack[this.stack.length - 1];
+  }
+
+  length(): number {
+    return this.nodes.size - 1;
+  }
+
+  sees(): Set<Cell> {
+    return this.stack[0]!.commonNeighbors.get(
+      this.stack[this.stack.length - 1]!
+    )!;
   }
 }
