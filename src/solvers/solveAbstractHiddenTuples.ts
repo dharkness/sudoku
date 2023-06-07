@@ -34,17 +34,15 @@ export default function solveAbstractHiddenTuples(
 
       for (const candidates of tuplePicker(tuples)) {
         const cellsByKnown = new Map(candidates);
-        const cells = Array.from(cellsByKnown.values()).reduce(
-          union,
-          new Set()
-        );
+        const cellSets = cellsByKnown.values();
+        const cells = Array.from(cellSets).reduce(union, new Set());
         if (cells.size !== candidates.length) {
           continue;
         }
 
         if (candidates.length >= 3) {
           if (
-            distinctPairs(cellsByKnown.values()).filter(
+            distinctPairs(cellSets).filter(
               ([cs1, cs2]) => union(cs1, cs2).size === 2
             ).length
           ) {
@@ -53,7 +51,7 @@ export default function solveAbstractHiddenTuples(
         }
         if (candidates.length >= 4) {
           if (
-            distinctTriples(cellsByKnown.values()).filter(
+            distinctTriples(cellSets).filter(
               ([cs1, cs2, cs3]) => union(union(cs1, cs2), cs3).size <= 3
             ).length
           ) {
