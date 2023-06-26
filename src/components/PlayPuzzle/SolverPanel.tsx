@@ -24,10 +24,17 @@ const SolverPanel = ({ actions }: SolverPanelProps): JSX.Element => {
   const { current } = actions;
 
   const columns = useMemo(() => {
+    console.log("has errors", current.hasErrors());
     const start = performance.now();
 
     const solutions = Object.entries(buttons)
       .map(([key, label]) => {
+        // if (typeof window === "undefined") {
+        //   return { key, label, disabled: true, moves: Moves.createEmpty() };
+        // } else {
+        //   return { key, label, disabled: true, moves: Moves.createEmpty() };
+        // }
+
         const solve = solvers[key];
         if (!solve) {
           return null;
@@ -118,7 +125,7 @@ const buttons = {
 
   emptyRectangles: "Empty Rectangles",
 
-  bruteForce: "Brute Force",
+  // bruteForce: "Brute Force",
 };
 
 const enabledClasses =

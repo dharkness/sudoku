@@ -28,7 +28,7 @@ import emptyRectangles from "./solveEmptyRectangles";
 
 import bruteForce from "./solveBruteForce";
 
-type Solver = (board: ReadableBoard) => Moves;
+export type Solver = (board: ReadableBoard) => Moves;
 
 export default {
   nakedSingles,

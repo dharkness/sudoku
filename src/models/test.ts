@@ -108,6 +108,12 @@ const start =
 const full =
   "398..7... 217.5.9.. 654..9.3. 529.7.3.1 146...... 8731....6 .8....2.. .3..4.... 4627...1.";
 
+// ========== "HARDEST PUZZLE DEVISED" ========================================
+//https://www.quora.com/What-is-the-hardest-sudoku-puzzle-ever-created-And-what-makes-it-so-difficult?no_redirect=1
+
+// const start =
+//   "8........ ..36..... .7..9.2.. .5...7... ....457.. ...1...3. ..1....68 ..85...1. .9....4.."
+
 // const board = createEmptySimpleState();
 // for (const [p, k] of [
 //   [getPoint(0, 1), 1],

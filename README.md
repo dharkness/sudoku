@@ -65,8 +65,15 @@ but feel free to explore and scavenge any code you find useful.
   - Home page
   - How to play
   - Key binding popup card
+  - Animation library? https://motion-canvas.github.io/
 
 - Model
+  - Monorepo?
+    - model
+    - solvers
+    - app
+    - UI
+    - DB (tho generated starts could be hard-coded in JS)
   - refactor `SimpleBoard`
     - create CopyOnWriteBoard
       - move logic from Board to Grid, using API to apply changes, or just use a base class
@@ -111,9 +118,9 @@ but feel free to explore and scavenge any code you find useful.
       - highlight all common candidates, not just known of solved cell
       - Y is PageUp and Redo; Shift-Z or A or B for Redo?
     - known panel
+      - dim solved knowns
       - highlight hovered known in puzzle panel
       - allow multiple locked knowns (alt-shift-# to toggle)
-      - dim solved knowns
       - add pencil toggle button to swap behavior of number keys (set vs. mark)
       - add button to reset all candidates using solved cells (and automatic strategies once implemented) only
     - show errors
@@ -123,6 +130,7 @@ but feel free to explore and scavenge any code you find useful.
       - incorrectly solved cell
       - incorrectly removed candidate
     - move highlighting
+      - replace non-clue candidates with dots
       - show non-clue sets with large number without candidates or overlaid on top?
       - clues only, marks only, cells only to help you learn to spot stuff
       - use green for sets only, blue/yellow for clues?
@@ -141,7 +149,8 @@ but feel free to explore and scavenge any code you find useful.
           - use strategies for buttons instead of solvers
           - group by a key that allows detecting identical moves
             - store added and removed moves in each step instead of full set (why?)
-          - run each solver in a promise
+          - run each solver async
+            - pass async (generator?) function they can call to give up time
             - show icons on solver buttons that are still running
             - break Brute Force up somehow so it doesn't block the UI
         - store strategy to highlight in state on hover instead of its first move
@@ -173,6 +182,13 @@ but feel free to explore and scavenge any code you find useful.
           - https://www.sudokuwiki.org/Fireworks
       - fix Brute Force
         - fails when it finds a deadly rectangle but reports a solution
+
+- Bugs
+  - ctrl-click does not rerender; when last skipped, button remains enabled
+  - Strip excess nodes from 3D Medusa?
+    - find the shortest path to trim unnecessary nodes
+    - how to handle when multiple candidates are removed?
+      - combine all shortest paths or split?
 
 - Create
   - manual partial puzzles

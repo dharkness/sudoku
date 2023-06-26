@@ -395,6 +395,16 @@ export class Moves implements Iterable<Move> {
     return !!this.moves.find(filter);
   }
 
+  solves(cell: Cell) {
+    for (const move of this.moves) {
+      if (move.sets.has(cell)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   first(): Move | null {
     return this.moves[0] || null;
   }

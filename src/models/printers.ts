@@ -7,15 +7,16 @@ const MISSING = "·";
 /**
  * Prints a grid of cells with their known value or a period.
  */
-export function printValues(board: ReadableBoard) {
+export function printValues(board: ReadableBoard, cli: boolean = false) {
   console.log("  ", 123456789);
   ALL_COORDS.forEach((r) =>
     console.log(
       r + 1,
-      ALL_COORDS.map((c) => {
-        const value = board.getValue(GRID.getCell(getPoint(r, c)));
-        return value === UNKNOWN ? MISSING : value.toString();
-      }).join("")
+      (cli ? " " : "") +
+        ALL_COORDS.map((c) => {
+          const value = board.getValue(GRID.getCell(getPoint(r, c)));
+          return value === UNKNOWN ? MISSING : value.toString();
+        }).join("")
     )
   );
 }
@@ -23,15 +24,19 @@ export function printValues(board: ReadableBoard) {
 /**
  * Prints a grid of cells with the number of candidates.
  */
-export function printCandidateCounts(board: ReadableBoard) {
+export function printCandidateCounts(
+  board: ReadableBoard,
+  cli: boolean = false
+) {
   console.log("  ", 123456789, "CANDIDATE COUNTS");
   ALL_COORDS.forEach((r) =>
     console.log(
       r + 1,
-      ALL_COORDS.reduce((cells: string[], c) => {
-        const count = board.getCandidateCount(GRID.getCell(getPoint(r, c)));
-        return [...cells, count ? count.toString() : MISSING];
-      }, []).join("")
+      (cli ? " " : "") +
+        ALL_COORDS.reduce((cells: string[], c) => {
+          const count = board.getCandidateCount(GRID.getCell(getPoint(r, c)));
+          return [...cells, count ? count.toString() : MISSING];
+        }, []).join("")
     )
   );
 }
@@ -41,11 +46,12 @@ export function printCandidateCounts(board: ReadableBoard) {
  */
 export function printAllCandidates(
   board: ReadableBoard,
-  showKnowns: boolean = false
+  showKnowns: boolean = false,
+  cli: boolean = false
 ) {
   const lines = Array.from(Array(3 * 9 + 8), (_, i) =>
     [1, 5, 9, 13, 17, 21, 25, 29, 33].includes(i)
-      ? [Math.floor((i - 1) / 4) + 1, ""]
+      ? [Math.floor((i - 1) / 4) + 1, cli ? " " : ""]
       : [
           [11, 23].includes(i)
             ? "   --------------+---------------+--------------"
@@ -61,9 +67,9 @@ export function printAllCandidates(
       const cell = GRID.getCell(getPoint(r, c));
       const value = board.getValue(cell);
       if (showKnowns && value !== UNKNOWN) {
-        [0, 1, 2].forEach(
-          (i) => (lines[4 * r + i]![1] += `${value}${value}${value}`)
-        );
+        lines[4 * r]![1] += "   ";
+        lines[4 * r + 1]![1] += ` ${value} `;
+        lines[4 * r + 2]![1] += "   ";
       } else {
         const candidates = board.getCandidates(cell);
         for (const k of ALL_KNOWNS) {
