@@ -33,7 +33,7 @@ const LOG = false;
  *   H ·········
  *   J ·········
  *
- * ".1..9.......68..2.2...........35..9..7...98.3...2....4..316...54.8...1........7.."
+ * "697.....2 ..1972.63 ..3..679. 912...6.7 374.6.95. 8657.9.24 148693275 7.9.24..6 ..68.7..9"
  *
  * @link https://hodoku.sourceforge.net/en/tech_sdp.php
  */
@@ -46,9 +46,7 @@ export default function solveSkyscrapers(board: ReadableBoard): Moves {
         .map((g) => [g, board.getCandidateCells(g, k)] as [Group, Set<Cell>])
         .filter(([_, cells]) => cells.size === 2);
 
-      for (const [[group1, cells1], [group2, cells2]] of distinctPairs(
-        candidates
-      )) {
+      for (const [[group1, cells1], [_, cells2]] of distinctPairs(candidates)) {
         const cross = group1.cross;
         const cells = union(cells1, cells2);
         const [c11, c12] = twoValues(cells1);
